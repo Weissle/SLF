@@ -15,7 +15,7 @@ void VF2::ToDoAfterFindASolution()
 	return;
 }
 
-State VF2::run()
+void VF2::run()
 {
 	State initialState = StateVF2(targetGraph, queryGraph);
 	goDeeper(initialState);
@@ -24,8 +24,8 @@ State VF2::run()
 bool VF2::goDeeper(State & s)
 {
 	if (s.isCoverQueryGraph()) {
-		if(this->onlyNeedOneSolution) return true;
-		else this->ToDoAfterFindASolution();
+		if(this->onlyNeedOneSolution ==false) this->ToDoAfterFindASolution();
+		return true;
 	}
 	for (auto tempCanditatePair : s.calCandidatePairs()) {
 		if (s.addCanditatePairToMapping(tempCanditatePair)) {

@@ -12,5 +12,5 @@ public:
 	~VF2() = default;
 	VF2(Graph &_targetGraph, Graph &_queryGraph);
 	virtual void ToDoAfterFindASolution();
-	State run();
+	void run();
 };

@@ -10,7 +10,7 @@ public:
 	~Pair() = default;
 };
 template<typename K, typename V>
-class MappingPair : public Pair {
+class MappingPair : public Pair<K,V> {
 
 public:
 	MappingPair() = default;
