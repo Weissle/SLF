@@ -29,10 +29,21 @@ public:
 	StateVF2() = default;
 	~StateVF2() = default;
 	virtual vector<MappingPair<Node, Node>> calCandidatePairs();
-	virtual bool addCanditatePairToMapping(Pair<Node, Node> cp);
-	virtual void deleteCanditatePairToMapping(Pair<Node, Node> cp);
+	virtual bool addCanditatePairToMapping(MappingPair<Node, Node> cp);
+	virtual void deleteCanditatePairToMapping(MappingPair<Node, Node> cp);
 	virtual bool isCoverQueryGraph() { 
 		if (queryGraph.graphSize() == mapping.size())return true; 
 		return false;
 	};
 };
+inline vector<MappingPair<Node, Node>> StateVF2::calCandidatePairs()
+{
+	return vector<MappingPair<Node, Node>>();
+}
+bool StateVF2::addCanditatePairToMapping(MappingPair<Node, Node> cp) {
+	return false;
+}
+inline void StateVF2::deleteCanditatePairToMapping(MappingPair<Node, Node> cp)
+{
+	return;
+}

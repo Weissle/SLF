@@ -33,4 +33,5 @@ bool VF2::goDeeper(State & s)
 			s.deleteCanditatePairToMapping(tempCanditatePair);
 		}
 	}
+	return false;
 }
