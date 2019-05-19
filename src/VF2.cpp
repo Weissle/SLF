@@ -28,7 +28,8 @@ bool VF2::goDeeper(State & s)
 		return true;
 	}
 	for (auto tempCanditatePair : s.calCandidatePairs()) {
-		if (s.addCanditatePairToMapping(tempCanditatePair)) {
+		if (s.checkCanditatePairIsAddable(tempCanditatePair)) {
+			s.addCanditatePairToMapping(tempCanditatePair);
 			if (goDeeper(s) && this->onlyNeedOneSolution) return true;
 			s.deleteCanditatePairToMapping(tempCanditatePair);
 		}
