@@ -27,7 +27,7 @@ bool VF2::goDeeper(State & s)
 		if(this->onlyNeedOneSolution ==false) this->ToDoAfterFindASolution();
 		return true;
 	}
-	for (auto tempCanditatePair : s.calCandidatePairs()) {
+	for (const auto &tempCanditatePair : s.calCandidatePairs()) {
 		if (s.checkCanditatePairIsAddable(tempCanditatePair)) {
 			s.addCanditatePairToMapping(tempCanditatePair);
 			if (goDeeper(s) && this->onlyNeedOneSolution) return true;

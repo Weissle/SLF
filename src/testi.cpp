@@ -35,19 +35,21 @@ int main() {
 	cout << hash<A>()(A(5, 4)) << endl;
 	*/
 	unordered_set<int> s;
-	while (true) {
+	/*while (true) {
 		int a;
 		cin >> a;
 	//	calUOS_reserveSize(a);
 		s.reserve(calUOS_reserveSize(a));
 		cout << s.bucket_count() << endl;
-	}
-/*	s.insert(20);
+	}*/
+	s.insert(20);
 	s.insert(10);
 	s.insert(10);
+	s.size();
+	s.erase(18);
 	if (s.find(10) == s.end()) cout << "not find" << endl;
 	else cout << "find" << endl;
-	s.erase(10);*/
+	s.erase(10);
 /*
 	if (s.find(10) == s.end()) cout << "not find" << endl;
 	else cout << "find" << endl;

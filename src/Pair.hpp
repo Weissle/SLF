@@ -1,40 +1,51 @@
 #pragma once
 
 template<typename K, typename V>
-class Pair {
+class KVPair {
 	K key;
 	V value;
 public:
-	Pair() = default;
-	Pair(K _k, V _v) :key(_k), value(_v) {};
-	~Pair() = default;
-	K getFirst()const { return key; }
+	KVPair() = default;
+	KVPair(K _k, V _v) :key(_k), value(_v) {};
+	~KVPair() = default;	
 	K getKey()const { return key; }
-	V getSecond()const { return value; }
 	V getValue()const { return value; }
-	inline bool operator==(const Pair<K, V> &p) const {
-		return (p.getKey() == key && p.getValue() == value);
+	inline bool operator==(const KVPair<K, V> &p) const {
+		return p.getKey() == key;
 	}
-	/*	inline static bool operator==()(const Pair<K, V> &p1, const Pair<K, V> &p2){
-			return p1 == p2;
-		}*/
 };
 namespace std {
 	template<typename K, typename V>
-	struct hash<Pair<K, V> >
+	struct hash<KVPair<K, V> >
 	{
-		size_t operator()(const Pair<K, V> &p)const {
-			auto hash1 = hash<K>()(p.getFirst());
-			auto hash2 = hash<V>()(p.getValue());
+		size_t operator()(const KVPair<K, V> &p)const {
+			return hash<K>()(p.getKey());
+		}
+	};
+}
+
+template<typename F, typename S>
+class FSPair {
+	F first;
+	S second;
+public:
+	F getFirst()const { return first; }
+	S getSecond()const { return second; }
+	FSPair() = default;
+	~FSPair() = default;
+	FSPair(F _f, S _s) :first(_f),second(_s) {};
+	inline bool operator==(const FSPair<F, S> &p) const {
+		return (p.getFirst() == key && p.getSecond() == value);
+	}
+};
+namespace std {
+	template<typename F, typename S>
+	struct hash<FSPair<F, S> >
+	{
+		size_t operator()(const FSPair<F, S> &p)const {
+			auto hash1 = hash<F>()(p.getFirst());
+			auto hash2 = hash<S>()(p.getValue());
 			return ((hash1 << 2) + 0x9e3779b9) ^ (hash2);
 		}
 	};
 }
-template<typename K, typename V>
-class MappingPair : public Pair<K, V> {
-
-public:
-	MappingPair() = default;
-	~MappingPair() = default;
-	MappingPair(K _k, V _v) :Pair(_k, _v) {};
-};

@@ -7,10 +7,7 @@ public:
 	virtual bool operator==(const Node &n)const {
 		return true;
 	}
-	//for hash function
-/*	virtual bool operator()(const Node &n) {
-		return true;
-	}*/
+
 	virtual size_t nodeIdHash()const { return 0; }
 };
 namespace std
