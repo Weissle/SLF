@@ -50,7 +50,7 @@ private:
 	}
 //	NodeCPointer selectNodeToCalCanditate(const unordered_set<KVPair<NodeCPointer, int>> &nodeSet);
 	NodeCPointer selectNodeToCalCanditate(const unordered_set<NodeCPointer> &nodeSet);
-	bool twoNodeMayMatch(NodeCPointer n1, NodeCPointer n2);
+	bool twoNodeMayMatch(NodeCPointer queryNode, NodeCPointer targetNode);
 public:
 	StateVF2(const Graph& _t, const Graph& _q) :targetGraph(_t), queryGraph(_q) {
 		mapping.resize(0);
@@ -120,7 +120,8 @@ inline NodeCPointer StateVF2::selectNodeToCalCanditate(const unordered_set<NodeC
 {
 	return NodeCPointer();
 }
-inline bool StateVF2::twoNodeMayMatch(NodeCPointer n1, NodeCPointer n2)
+inline bool StateVF2::twoNodeMayMatch(NodeCPointer queryNode, NodeCPointer targetNode)
 {
+	if (Node::isSameTypeNode(*queryNode, *targetNode) && targetNode >= queryNode)return true;
 	return false;
 }
