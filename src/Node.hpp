@@ -8,6 +8,10 @@ using namespace std;
 template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
 class Node {
 	NodeIDType id;
+
+public:
+	typedef typename NodeIDType NodeIDType;
+	typedef typename NodeLabelType NodeLabelType;
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
 public:
 	Node() = default;
@@ -65,8 +69,11 @@ namespace std
 
 template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
 class NodeVF2 :Node<NodeIDType, EdgeType, NodeLabelType> {
+public:
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
-
+	typedef typename NodeIDType NodeIDType;
+	typedef typename NodeLabelType NodeLabelType;
+	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
 private:
 
 	NodeLabelType label;
@@ -75,8 +82,8 @@ private:
 public:
 	NodeVF2() = default;
 	~NodeVF2() = default;
-	NodeVF2(const NodeIDType _id,const NodeLabelType _label) :NodeType(_id), label(_label) {
-	}
+	NodeVF2(const NodeIDType _id ) :NodeType(_id) {}
+	NodeVF2(const NodeIDType _id, const NodeLabelType _label) :NodeType(_id), label(_label) {}
 	NodeVF2(const NodeIDType _id,const NodeLabelType _label,const size_t edgeNum) :NodeType(_id), label(_label) {
 		inEdges.reserve(edgeNum);
 		outEdges.reserve(edgeNum);
@@ -101,13 +108,13 @@ public:
 	}
 	virtual bool existSameTypeEdgeToNode(const NodeType &n, const EdgeType& e)const {
 		for (const auto &it : outEdges) {
-			if (it.getTargetNode() == n.getID() && it.isSametypeEdge(e)) return true;
+			if (it.getTargetNodeID() == n.getID() && it.isSametypeEdge(e)) return true;
 		}
 		return false;
 	}
 	virtual bool existSameTypeEdgeFromNode(const NodeType &n, const EdgeType& e)const {
 		for (const auto &it : inEdges) {
-			if (it.getSourceNode() == n.getID() && it.isSametypeEdge(e)) return true;
+			if (it.getSourceNodeID() == n.getID() && it.isSametypeEdge(e)) return true;
 		}
 		return false;
 	}

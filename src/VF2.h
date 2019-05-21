@@ -4,12 +4,15 @@
 #include"State.hpp"
 #include<vector>
 using namespace std;
-template<typename GraphType, typename StateType>
+template<typename GraphType>
 class VF2 {
-	//	typedef Graph<NodeIDType, EdgeLabelType> GraphType;
-	//	typedef State<NodeIDType> StateType;
-	GraphType targetGraph, queryGraph;
-	vector<StateType> mappings;
+	typedef typename GraphType::NodeType NodeType;
+	typedef typename GraphType::EdgeType EdgeType;
+	typedef typename StateVF2<NodeType, EdgeType> StateType;
+	typedef typename StateType::MapType MapType;
+
+	const GraphType targetGraph, queryGraph;
+	vector<MapType> mappings;
 	bool onlyNeedOneSolution = true;
 	bool goDeeper(StateType &s)
 	{
@@ -29,17 +32,20 @@ class VF2 {
 public:
 	VF2() = default;
 	~VF2() = default;
-	VF2(GraphType &_targetGraph, GraphType &_queryGraph, bool _onlyNeedOneSolution = true)
+	VF2(const GraphType &_targetGraph,const GraphType &_queryGraph, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution) {};
-	virtual void ToDoAfterFindASolution(StateType s) {
-		mappings.push_back(s);
+	virtual void ToDoAfterFindASolution(const StateType &s) {
+		mappings.push_back(s.getMap());
 	}
 	void run()
 	{
-		State initialState = StateVF2(targetGraph, queryGraph);
-		goDeeper(initialState);
+		//StateVF2<NodeType, EdgeType>
+		//StateVF2<NodeType, EdgeType> initialState= StateVF2<NodeType, EdgeType>(targetGraph, queryGraph);
+		//StateType initialState(   //(targetGraph, queryGraph);
+//		StateVF2<NodeType, EdgeType> initialState(const Graph<NodeType, EdgeType> (), queryGraph);
+//		goDeeper(initialState);
 	}
-	vector<StateType> getAnswer() {
+	vector<MapType> getAnswer() {
 		return mappings;
 	}
 };

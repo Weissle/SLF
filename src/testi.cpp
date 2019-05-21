@@ -17,8 +17,11 @@ public:
 	}
 };
 int main() {
-	A<> a1(5), a2;
 	
+	unordered_set<int> s;
+	s.insert(5);
+	cout << (s.find(4) == s.end()) << endl;
+//	int a = a;
 	return 0;
 }
 

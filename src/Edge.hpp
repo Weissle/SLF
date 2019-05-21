@@ -2,12 +2,14 @@
 #include<typeinfo>
 template<typename NodeIDType, typename EdgeLabelType>
 class Edge {
-	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
+public:
+	typedef typename EdgeLabelType EdgeLabelType;
+	typedef typename Edge<NodeIDType, EdgeLabelType> EdgeType;
 public:
 	Edge() = default;
 	~Edge() = default;
-	virtual const NodeIDType& getSourceNode() const { return NodeIDType(); }
-	virtual const NodeIDType& getTargetNode()const { return NodeIDType(); }
+	virtual const NodeIDType& getSourceNodeID() const { return NodeIDType(); }
+	virtual const NodeIDType& getTargetNodeID()const { return NodeIDType(); }
 	virtual bool isSameTypeEdge(const EdgeType &n) const { return true; }
 	virtual const EdgeLabelType&  getLabel()const {
 		throw "this edge have no label";
@@ -24,6 +26,8 @@ class EdgeVF2 : Edge<NodeIDType,EdgeLabelType> {
 
 public:
 	enum NODE_RECORD_TYPE { SOURCE, TARGET, BOTH };
+	typedef typename EdgeLabelType EdgeLabelType;
+	typedef typename Edge<NodeIDType, EdgeLabelType> EdgeType;
 private:
 	NodeIDType source, target;
 	NODE_RECORD_TYPE recodeType;
@@ -33,11 +37,11 @@ public:
 
 	EdgeVF2() = default;
 	~EdgeVF2() = default;
-	virtual const NodeIDType& getSourceNode() const {
+	virtual const NodeIDType& getSourceNodeID() const {
 		if (recodeType == NODE_RECORD_TYPE::TARGET) throw "this is a edge record target node!!";
 		return source;
 	}
-	virtual const NodeIDType& getTargetNode()const
+	virtual const NodeIDType& getTargetNodeID()const
 	{
 		if (recodeType == NODE_RECORD_TYPE::SOURCE)throw "this is a edge record source node!!";
 		return target;
@@ -58,12 +62,12 @@ public:
 		else throw "throw in Edge.hpp EdgeVF2 class";
 		if (typeid(EdgeLabelType) != typeid(void)) throw "Edge.hpp EdgeVF2 should have a label";
 	}
-	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _node,const EdgeLabelType _label) :recodeType(_recodeType),label(_label) {
+/*	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _node,const EdgeLabelType _label) :recodeType(_recodeType),label(_label) {
 		if (_recodeType == NODE_RECORD_TYPE::BOTH) throw "not enough paramete for edge";
 		else if (_recodeType == NODE_RECORD_TYPE::SOURCE) source = _node;
 		else if (_recodeType == NODE_RECORD_TYPE::TARGET) target = _node;
 		else throw "throw in Edge.hpp EdgeVF2 class";
-	}
+	}*/
 	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _source, const NodeIDType _target) :
 		recodeType(_recodeType), source(_source), target(_target) {
 	}

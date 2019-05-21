@@ -5,10 +5,15 @@
 #include<unordered_map>
 using namespace std;
 
-template<typename NodeIDType, typename EdgeLabelType, typename NodeLabelType>
+template<typename NodeType, typename EdgeType>
 class Graph {
-	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
-	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
+public:
+	typedef typename NodeType NodeType;
+	typedef typename EdgeType EdgeType;
+	typedef typename NodeType::NodeIDType NodeIDType;
+	typedef typename NodeType::NodeLabelType NodeLabelType;
+	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
+
 	typedef const Node<NodeIDType, EdgeType, NodeLabelType>* NodeCPointer;
 public:
 	Graph() = default;
@@ -19,22 +24,27 @@ public:
 		return 0;
 	};
 	virtual vector<NodeType> const & getAllNodes()const { return vector<NodeType>(); }
-	virtual NodeCPointer getNodePointer(const NodeIDType &nodeID) {
-		return new NodeCPointer();
+	virtual NodeType* getNodePointer(const NodeIDType &nodeID) const{
+		return NodeCPointer();
 	}
 };
 
-template<typename NodeIDType, typename EdgeLabelType, typename NodeLabelType>
-class GraphVF2 :Graph<NodeIDType, EdgeLabelType, NodeLabelType>
+template<typename NodeType, typename EdgeType>
+class GraphVF2 :Graph<NodeType, EdgeType>
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
-private:
-	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
-	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
+	typedef typename NodeType NodeType;
+	typedef typename EdgeType EdgeType;
+	typedef typename NodeType::NodeIDType NodeIDType;
+	typedef typename NodeType::NodeLabelType NodeLabelType;
+	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
+
 	typedef const Node<NodeIDType, EdgeType, NodeLabelType>* NodeCPointer;
+private:
+
 	vector<NodeType> nodes;
-	unordered_map<NodeIDType, NodeCPointer> index;
+	unordered_map<NodeIDType, NodeType*> index;
 	GRAPH_TYPE graphType;
 	size_t graphsize;
 	size_t calUOS_reserveSize(size_t need) {
@@ -69,23 +79,25 @@ public:
 		}
 	}
 	virtual void addEdge(const NodeIDType source, const NodeIDType target) {
-		const auto &sourceNodePointer = index[source];
-		const auto &targetNodePointer = index[target];
+		auto &sourceNodePointer = index[source];
+		auto &targetNodePointer = index[target];
 		const EdgeType tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeVF2::NODE_RECORD_TYPE::BOTH, source, target);
-		sourceNodePointer->addOutEdge(target->getID(), tempEdge);
-		targetNodePointer->addInEdge(source->getID(), tempEdge);
+		sourceNodePointer->addOutEdge(tempEdge);
+		targetNodePointer->addInEdge(tempEdge);
 		if (GRAPH_TYPE::BIDIRECTION == graphType) {
 			const EdgeType tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeVF2::NODE_RECORD_TYPE::BOTH, target, source);
-			sourceNodePointer->addInEdge(target->getID(), tempEdge);
-			targetNodePointer->addOutEdge(source->getID(), tempEdge);
+			sourceNodePointer->addInEdge(tempEdge);
+			targetNodePointer->addOutEdge(tempEdge);
 		}
 	}
 	virtual size_t graphSize() const {
 		return graphsize;
 	};
 	virtual vector<NodeType> const & getAllNodes()const { return nodes; }
-	virtual NodeCPointer getNodePointer(const NodeIDType &nodeID) {
+	virtual NodeType* getNodePointer (const NodeIDType &nodeID) const {
+	//	return NodeCPointer();
 		return index[nodeID];
+	//	index.find(nodeID)->second;
 	}
 
 };
