@@ -22,7 +22,7 @@ public:
 
 //edge and two node
 template<typename NodeIDType, typename EdgeLabelType>
-class EdgeVF2 : Edge<NodeIDType,EdgeLabelType> {
+class EdgeVF2 :public Edge<NodeIDType,EdgeLabelType> {
 
 public:
 	enum NODE_RECORD_TYPE { SOURCE, TARGET, BOTH };
@@ -52,8 +52,7 @@ public:
 		return label;
 	}
 	virtual bool isSameTypeEdge(const EdgeType &n) const { 
-		if (typeid(EdgeLabelType) != typeid(void)) return true;
-		else return label == n.getLabel();
+		return label == n.getLabel();
 	}
 	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _node) :recodeType(_recodeType) {
 		if (_recodeType == NODE_RECORD_TYPE::BOTH) throw "not enough paramete for edge";

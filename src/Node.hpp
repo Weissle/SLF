@@ -68,7 +68,7 @@ namespace std
 }
 
 template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
-class NodeVF2 :Node<NodeIDType, EdgeType, NodeLabelType> {
+class NodeVF2 :public Node<NodeIDType, EdgeType, NodeLabelType> {
 public:
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
 	typedef typename NodeIDType NodeIDType;
@@ -101,20 +101,20 @@ public:
 		return label == n.getLabel();
 	}
 	virtual bool operator>=(const NodeType &n) const {
-		return inEdges.size() >= n.getInEdgesNum && outEdges.size() >= n.getOutEdgesNum();;
+		return ((inEdges.size() >= n.getInEdgesNum()) && (outEdges.size() >= n.getOutEdgesNum()));;
 	}
 	virtual bool operator<=(const NodeType &n)const {
 		return n >= *this;
 	}
 	virtual bool existSameTypeEdgeToNode(const NodeType &n, const EdgeType& e)const {
 		for (const auto &it : outEdges) {
-			if (it.getTargetNodeID() == n.getID() && it.isSametypeEdge(e)) return true;
+			if (it.getTargetNodeID() == n.getID() && it.isSameTypeEdge(e)) return true;
 		}
 		return false;
 	}
 	virtual bool existSameTypeEdgeFromNode(const NodeType &n, const EdgeType& e)const {
 		for (const auto &it : inEdges) {
-			if (it.getSourceNodeID() == n.getID() && it.isSametypeEdge(e)) return true;
+			if (it.getSourceNodeID() == n.getID() && it.isSameTypeEdge(e)) return true;
 		}
 		return false;
 	}
@@ -122,7 +122,7 @@ public:
 	virtual const vector<EdgeType>& getInEdges() const { return inEdges; }
 	virtual size_t getOutEdgesNum() const { return outEdges.size(); }
 	virtual size_t getInEdgesNum() const { return inEdges.size(); }
-	virtual size_t nodeIdHash()const { return hash<NodeIDType>()(id); }
-	virtual void addInEdge(const EdgeType &e) { inEdges.insert(e); }
-	virtual void addOutEdge(const EdgeType &e) { outEdges.insert(e); }
+	virtual size_t nodeIdHash()const { return hash<NodeIDType>()(this->getID()); }
+	virtual void addInEdge(const EdgeType &e) { inEdges.push_back(e); }
+	virtual void addOutEdge(const EdgeType &e) { outEdges.push_back(e); }
 };
