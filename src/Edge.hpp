@@ -1,49 +1,75 @@
 #pragma once
-
-template<typename NodeIDType>
+#include<typeinfo>
+template<typename NodeIDType, typename EdgeLabelType>
 class Edge {
+	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
 public:
 	Edge() = default;
 	~Edge() = default;
 	virtual const NodeIDType& getSourceNode() const { return NodeIDType(); }
 	virtual const NodeIDType& getTargetNode()const { return NodeIDType(); }
-	virtual bool isSameTypeEdge(const Edge<NodeIDType> &n) const { return true; }
-	virtual bool operator==(const Edge<NodeIDType> &e) {
-		return true;
+	virtual bool isSameTypeEdge(const EdgeType &n) const { return true; }
+	virtual const EdgeLabelType&  getLabel()const {
+		throw "this edge have no label";
+		return EdgeLabelType();
 	}
+	/*	virtual bool operator==(const Edge<NodeIDType> &e) {
+			return true;
+		}*/
 };
 
-template<typename NodeIDType>
-class SourceEdge : Edge<NodeIDType> {
-	NodeIDType source;
+//edge and two node
+template<typename NodeIDType, typename EdgeLabelType>
+class EdgeVF2 : Edge<NodeIDType,EdgeLabelType> {
 
 public:
-	SourceEdge(NodeIDType _source):source(_source){}
-	SourceEdge() = default;
-	~SourceEdge() = default;
-	virtual const NodeIDType& getSourceNode() const { return source; }
-	virtual const NodeIDType& getTargetNode()const 
-	{ 
-		throw "this is source edge!!";
-		return NodeIDType();
-	}
-};
-template<typename NodeIDType>
-class TargetEdge : Edge<NodeIDType> {
-	NodeIDType target;
-
+	enum NODE_RECORD_TYPE { SOURCE, TARGET, BOTH };
+private:
+	NodeIDType source, target;
+	NODE_RECORD_TYPE recodeType;
+	EdgeLabelType label;
 public:
-	TargetEdge(NodeIDType _target) :target(_target) {}
-	TargetEdge() = default;
-	~TargetEdge() = default;
-	virtual const NodeIDType& getSourceNode() const 
-	{ 
-		throw "this is targer edge !!";
-		return NodeIDType();
+
+
+	EdgeVF2() = default;
+	~EdgeVF2() = default;
+	virtual const NodeIDType& getSourceNode() const {
+		if (recodeType == NODE_RECORD_TYPE::TARGET) throw "this is a edge record target node!!";
+		return source;
 	}
 	virtual const NodeIDType& getTargetNode()const
 	{
-		
+		if (recodeType == NODE_RECORD_TYPE::SOURCE)throw "this is a edge record source node!!";
 		return target;
 	}
+	virtual const EdgeLabelType&  getLabel()const
+	{
+		if (typeid(EdgeLabelType) != typeid(void)) throw "Edge have no label";
+		return label;
+	}
+	virtual bool isSameTypeEdge(const EdgeType &n) const { 
+		if (typeid(EdgeLabelType) != typeid(void)) return true;
+		else return label == n.getLabel();
+	}
+	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _node) :recodeType(_recodeType) {
+		if (_recodeType == NODE_RECORD_TYPE::BOTH) throw "not enough paramete for edge";
+		else if (_recodeType == NODE_RECORD_TYPE::SOURCE) source = _node;
+		else if (_recodeType == NODE_RECORD_TYPE::TARGET) target = _node;
+		else throw "throw in Edge.hpp EdgeVF2 class";
+		if (typeid(EdgeLabelType) != typeid(void)) throw "Edge.hpp EdgeVF2 should have a label";
+	}
+	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _node,const EdgeLabelType _label) :recodeType(_recodeType),label(_label) {
+		if (_recodeType == NODE_RECORD_TYPE::BOTH) throw "not enough paramete for edge";
+		else if (_recodeType == NODE_RECORD_TYPE::SOURCE) source = _node;
+		else if (_recodeType == NODE_RECORD_TYPE::TARGET) target = _node;
+		else throw "throw in Edge.hpp EdgeVF2 class";
+	}
+	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _source, const NodeIDType _target) :
+		recodeType(_recodeType), source(_source), target(_target) {
+	}
+	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _source, const NodeIDType _target, const EdgeLabelType _label) :
+		recodeType(_recodeType), source(_source), target(_target),label(_label) {
+		if (typeid(EdgeLabelType) != typeid(void)) throw "Edge.hpp EdgeVF2 should have a label";
+	}
 };
+

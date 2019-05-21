@@ -10,9 +10,10 @@
 using namespace std;
 
 
-template<typename NodeIDType>
+template<typename NodeIDType, typename EdgeLabelType, typename NodeLabelType>
 class  State {
-	typedef const Node<NodeIDType, Edge<NodeIDType>>*   NodeCPointer;
+	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
+	typedef const Node<NodeIDType, EdgeType, NodeLabelType>*   NodeCPointer;
 	typedef FSPair<NodeCPointer, NodeCPointer> MappingPair;
 public:
 	State() = default;
@@ -30,17 +31,18 @@ public:
 
 
 
-template<typename NodeIDType>
-class StateVF2 : public State<NodeIDType> {
-	typedef const Node<NodeIDType,Edge<NodeIDType>>*   NodeCPointer;
+template<typename NodeIDType, typename EdgeLabelType, typename NodeLabelType>
+class StateVF2 : public State<NodeIDType, EdgeLabelType, NodeLabelType> {
+	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
+	typedef const Node<NodeIDType, EdgeType, NodeLabelType>*   NodeCPointer;
 	typedef KVPair<NodeCPointer, NodeCPointer> MappingPair;
 private:
 	//private member;
-	
+
 	unordered_set<MappingPair> mapping; //from query to target
-	const Graph<NodeIDType> &targetGraph, &queryGraph;
+	const Graph<NodeIDType, EdgeLabelType, NodeLabelType> &targetGraph, &queryGraph;
 	unordered_set<NodeCPointer> targetGraphUnmap, targetMappingIn, targetMappingOut,
-								 queryGraphUnmap,  queryMappingIn,  queryMappingOut;
+		queryGraphUnmap, queryMappingIn, queryMappingOut;
 	unordered_map<NodeCPointer, int> targetMappingInDepth, targetMappingOutDepth, queryMappingInDepth, queryMappingOutDepth;
 	uint32_t searchDepth;
 
@@ -57,7 +59,7 @@ private:
 
 	NodeCPointer selectNodeToCalCanditates(const unordered_set<NodeCPointer> &nodeSet)
 	{
-
+		return *nodeSet.begin();
 	}
 	//same label and target node edges' number should more than query node's.
 	bool twoNodesMayMatch(NodeCPointer queryNode, NodeCPointer targetNode)
@@ -65,7 +67,10 @@ private:
 		if (Node::isSameTypeNode(*queryNode, *targetNode) && targetNode >= queryNode)return true;
 		return false;
 	}
-	bool sourceRule(const MappingPair &cp) 
+
+	//sourceRule targetRule now is only usable to subgraph isomorphism but not induce s~~ i~;
+
+	bool sourceRule(const MappingPair &cp)
 	{
 		const auto &queryNode = cp.first();
 		const auto &targetNode = cp.second();
@@ -102,7 +107,7 @@ private:
 		{
 			const auto &tempNodeID = tempEdge.getSourceNode();
 			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
-			if (queryGraphUnmap.find(tempNode) != queryGraphUnmap.end() )
+			if (queryGraphUnmap.find(tempNode) != queryGraphUnmap.end())
 			{
 				if (queryMappingIn.find(tempNode) != queryMappingIn.end()) ++queryInCount;
 				else ++queryNotTCount;
@@ -155,8 +160,8 @@ private:
 	}
 public:
 	StateVF2(const Graph& _t, const Graph& _q) :targetGraph(_t), queryGraph(_q) {
-	//	mapping.
-	//	mapping.resize(0);
+		//	mapping.
+		//	mapping.resize(0);
 		mapping.reserve(calUOS_reserveSize(queryGraph.graphSize()));
 		targetMappingIn.reserve(calUOS_reserveSize(targetGraph.graphSize()));
 		targetMappingOut.reserve(calUOS_reserveSize(targetGraph.graphSize()));
@@ -217,7 +222,7 @@ public:
 	virtual void addCanditatePairToMapping(const MappingPair &cp)
 	{
 		mapping.insert(cp);
-		
+
 		const auto targetNode = cp.getSecond();
 		const auto queryNode = cp.getFirst();
 
@@ -231,7 +236,7 @@ public:
 		searchDepth++;
 
 		for (const auto &tempEdge : targetNode->getInEdges()) {
-			
+
 			auto tempNodePointer = targetGraph.getNodePointer(tempEdge.getSourceNode());
 			// was not be mapped
 			if (targetGraphUnmap.find(tempNodePointer) != targetGraphUnmap.end()) {
@@ -264,9 +269,9 @@ public:
 		return;
 	}
 	virtual void deleteCanditatePairToMapping(const MappingPair &cp)
-	{		
+	{
 		try {
-	//		if (mapping.top() != cp) throw("State.hpp deleteCanditatePairToMapping()");
+			//		if (mapping.top() != cp) throw("State.hpp deleteCanditatePairToMapping()");
 			mapping.erase(cp);
 			auto queryNode = cp.getFirst();
 			auto targetNode = cp.getSecond();
@@ -306,7 +311,7 @@ public:
 
 		}
 		return;
-		
+
 	}
 	virtual bool isCoverQueryGraph() {
 		if (queryGraph.graphSize() == mapping.size())return true;
