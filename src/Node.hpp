@@ -21,6 +21,9 @@ public:
 	virtual bool operator==(const NodeType &n)const {
 		return id == n.getID();
 	}
+	virtual void setLabel(const NodeLabelType _label) {
+		return;
+	}
 	//same label
 	virtual const NodeIDType& getID()const {
 		return id;
@@ -95,6 +98,9 @@ public:
 	virtual const NodeLabelType& getLabel()const {
 	
 		return label;
+	}
+	virtual void setLabel(const NodeLabelType _label) {
+		this->label = _label;
 	}
 	virtual bool isSameType(const NodeType &n)const {
 	

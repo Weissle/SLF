@@ -23,6 +23,9 @@ public:
 	virtual size_t graphSize() const {
 		return 0;
 	};
+	virtual void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
+		return;
+	}
 	virtual vector<NodeType> const & getAllNodes()const { return vector<NodeType>(); }
 	virtual NodeType* getNodePointer(const NodeIDType &nodeID) const{
 		return nullptr;
@@ -66,6 +69,11 @@ public:
 			NodeIDType id = it.getID();
 			index[id] = &it;
 		}
+	}
+	virtual void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
+		auto tempNode = index[_id];
+		tempNode->setLabel(_label);
+		return;
 	}
 	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) {
 		const auto &sourceNodePointer = index[source];
