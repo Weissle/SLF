@@ -20,7 +20,7 @@ int main() {
 	
 	unordered_set<int> s;
 	s.insert(5);
-	cout << (s.find(4) == s.end()) << endl;
+	cout << *s.find(5) << endl;
 //	int a = a;
 	return 0;
 }

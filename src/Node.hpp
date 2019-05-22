@@ -70,19 +70,19 @@ namespace std
 template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
 class NodeVF2 :public Node<NodeIDType, EdgeType, NodeLabelType> {
 public:
-	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
+	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
 	typedef typename NodeIDType NodeIDType;
 	typedef typename NodeLabelType NodeLabelType;
-	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
+	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
 private:
 
-	NodeLabelType label;
+	NodeLabelType label = NodeLabelType();
 	vector<EdgeType> inEdges, outEdges;
 
 public:
 	NodeVF2() = default;
 	~NodeVF2() = default;
-	NodeVF2(const NodeIDType _id ) :NodeType(_id) {}
+	NodeVF2(const NodeIDType _id ) :Node<NodeIDType,EdgeType,NodeLabelType>(_id) {}
 	NodeVF2(const NodeIDType _id, const NodeLabelType _label) :NodeType(_id), label(_label) {}
 	NodeVF2(const NodeIDType _id,const NodeLabelType _label,const size_t edgeNum) :NodeType(_id), label(_label) {
 		inEdges.reserve(edgeNum);
@@ -93,11 +93,11 @@ public:
 		swap(outEdges, _outEdges);
 	}
 	virtual const NodeLabelType& getLabel()const {
-		if (typeid(NodeLabelType) == typeid(void))"NodeLabelType is Label";
+	
 		return label;
 	}
 	virtual bool isSameType(const NodeType &n)const {
-		if (typeid(NodeLabelType) == typeid(void)) return true;
+	
 		return label == n.getLabel();
 	}
 	virtual bool operator>=(const NodeType &n) const {

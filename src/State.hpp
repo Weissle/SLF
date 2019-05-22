@@ -20,7 +20,7 @@ public:
 	typedef Graph<NodeType, EdgeType> GraphType;
 	typedef const NodeType*   NodeCPointer;
 	typedef KVPair<NodeCPointer, NodeCPointer> MapPair;
-	typedef unordered_set<MapPair> MapType;
+	typedef unordered_map<NodeCPointer,NodeCPointer> MapType;
 public:
 	State() = default;
 	~State() = default;
@@ -39,6 +39,7 @@ public:
 		}
 		return MapType();
 	}
+
 };
 
 
@@ -53,7 +54,8 @@ public:
 	typedef Graph<NodeType, EdgeType> GraphType;
 	typedef const NodeType*   NodeCPointer;
 	typedef KVPair<NodeCPointer, NodeCPointer> MapPair;
-	typedef unordered_set<MapPair> MapType;
+//	typedef unordered_set<MapPair> MapType;
+	typedef unordered_map<NodeCPointer,NodeCPointer> MapType;
 private:
 	//private member;
 
@@ -80,9 +82,9 @@ private:
 		return *nodeSet.begin();
 	}
 	//same label and target node edges' number should more than query node's.
-	bool twoNodesMayMatch(NodeCPointer queryNode, NodeCPointer targetNode)
+	bool twoNodesMayMatch(NodeCPointer queryNodePointer, NodeCPointer targetNodePointer)
 	{
-		if (NodeType::isSameTypeNode(*queryNode, *targetNode) && targetNode >= queryNode)return true;
+		if (queryNodePointer->isSameType(*targetNodePointer) && *targetNodePointer >= *queryNodePointer)return true;
 		return false;
 	}
 
@@ -90,29 +92,36 @@ private:
 
 	bool sourceRule(const MapPair &cp)
 	{
-		const auto &queryNode = cp.getKey();
-		const auto &targetNode = cp.getValue();
+		const auto &querySourceNode = cp.getKey();
+		const auto &targetSourceNode = cp.getValue();
 
-		for (const auto &tempEdge : queryNode->getOutEdges()) {
-			const auto &tempNodeID = tempEdge.getTargetNodeID();
-			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
-			if (queryGraphUnmap.find(tempNode) == queryGraphUnmap.end()) {
-				if (targetNode->existSameTypeEdgeToNode(*tempNode, tempEdge) == false) return false;
+		for (const auto &tempEdge : querySourceNode->getOutEdges()) {
+			//from queryNode to tempNode
+			const auto &queryTargetNodeID = tempEdge.getTargetNodeID();
+			
+			const auto &queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
+			//this tempnode have been mapped
+			auto temp1=queryGraphUnmap.find(queryTargetNodePointer);
+			auto temp2 = queryGraphUnmap.end();
+			if (queryGraphUnmap.find(queryTargetNodePointer) == queryGraphUnmap.end()) {
+		//		const auto &targetTargetNodePointer = mapping.find(queryTargetNodePointer).getValue();
+				const auto &targetTargetNodePointer = mapping[queryTargetNodePointer];
+				if (targetSourceNode->existSameTypeEdgeToNode(*targetTargetNodePointer, tempEdge) == false) return false;
 			}
 		}
 		return true;
 	}
 	bool targetRule(const MapPair &cp)
 	{
-		const auto &queryNode = cp.getKey();
-		const auto &targetNode = cp.getValue();
+		const auto &queryTargetNode = cp.getKey();
+		const auto &targetTargetNode = cp.getValue();
 
-		for (const auto &tempEdge : queryNode->getInEdges()) {
-			const auto &tempNodeID = tempEdge.getSourceNodeID();
-			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
-			if (queryGraphUnmap.find(tempNode) == queryGraphUnmap.end()) {
-	//			if (targetNode->existSameTypeEdgeFromNode(queryGraphUnmap.find(tempNode)getSecond(), tempEdge) == false) return false;
-				if (targetNode->existSameTypeEdgeFromNode(*tempNode, tempEdge) == false) return false;
+		for (const auto &tempEdge : queryTargetNode->getInEdges()) {
+			const auto &querySourceNodeID = tempEdge.getSourceNodeID();
+			const auto &querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
+			if (queryGraphUnmap.find(querySourceNodePointer) == queryGraphUnmap.end()) {
+				const auto &targetSourceNodePointer = mapping[querySourceNodePointer];
+				if (targetTargetNode->existSameTypeEdgeFromNode(*targetSourceNodePointer, tempEdge) == false) return false;
 			}
 		}
 		return true;
@@ -136,7 +145,7 @@ private:
 		for (const auto &tempEdge : targetNode->getInEdges())
 		{
 			const auto &tempNodeID = tempEdge.getSourceNodeID();
-			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
+			const auto &tempNode = targetGraph.getNodePointer(tempNodeID);
 			if (targetGraphUnmap.find(tempNode) != targetGraphUnmap.end())
 			{
 				if (targetMappingIn.find(tempNode) != targetMappingIn.end()) ++targetInCount;
@@ -163,10 +172,10 @@ private:
 				else ++queryNotTCount;
 			}
 		}
-		for (const auto &tempEdge : targetNode->getInEdges())
+		for (const auto &tempEdge : targetNode->getOutEdges())
 		{
 			const auto &tempNodeID = tempEdge.getTargetNodeID();
-			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
+			const auto &tempNode = targetGraph.getNodePointer(tempNodeID);
 			if (targetGraphUnmap.find(tempNode) != targetGraphUnmap.end())
 			{
 				if (targetMappingOut.find(tempNode) != targetMappingOut.end()) ++targetOutCount;
@@ -200,8 +209,11 @@ public:
 
 		searchDepth = 0;
 
-		for (auto &tempNodePointer : targetGraph.getAllNodes()) targetGraphUnmap.insert(&tempNodePointer);
-		for (auto &tempNodePointer : queryGraph.getAllNodes()) queryGraphUnmap.insert(&tempNodePointer);
+		for (auto &tempNode : targetGraph.getAllNodes()) targetGraphUnmap.insert(&tempNode);
+		for (auto &tempNode : queryGraph.getAllNodes()) {
+			auto temp = &tempNode;
+			queryGraphUnmap.insert(&tempNode);
+		}
 	};
 	StateVF2() = default;
 	~StateVF2() = default;
@@ -238,13 +250,14 @@ public:
 	}
 	virtual bool checkCanditatePairIsAddable(const MapPair &cp)
 	{
-		return (sourceRule(cp) && targetRule(cp) && inRule(cp) && outRule(cp));
+		bool answer = (sourceRule(cp) && targetRule(cp) && inRule(cp) && outRule(cp));
+		return answer;
 
 	}
 	virtual void addCanditatePairToMapping(const MapPair &cp)
 	{
-		mapping.insert(cp);
-
+//		mapping.insert(cp);
+		mapping[cp.getKey()] = cp.getValue();
 		const auto targetNode = cp.getValue();
 		const auto queryNode = cp.getKey();
 
@@ -291,39 +304,56 @@ public:
 	}
 	virtual void deleteCanditatePairToMapping(const MapPair &cp)
 	{
+		auto deletePairFunction = [](unordered_map<NodeCPointer, int> &m, vector<NodeCPointer> &v) {
+			for (const auto &it:v) {
+				m.erase(it);
+			}
+			v.empty();
+		};
 		try {
 			//		if (mapping.top() != cp) throw("State.hpp deleteCanditatePairToMapping()");
-			mapping.erase(cp);
+			mapping.erase(cp.getKey());
 			auto queryNode = cp.getKey();
 			auto targetNode = cp.getValue();
 
 			targetGraphUnmap.insert(targetNode);
 			queryGraphUnmap.insert(queryNode);
 
+			vector<NodeCPointer> deleteList;
 			for (const auto& tempPair : queryMappingInDepth) {
 				if (tempPair.second == searchDepth) {
 					queryMappingIn.erase(tempPair.first);
-					queryMappingInDepth.erase(tempPair.first);
+			//		queryMappingInDepth.erase(tempPair.first);
+					deleteList.push_back(tempPair.first);
 				}
 			}
+			deletePairFunction(queryMappingInDepth, deleteList);
+
 			for (const auto& tempPair : queryMappingOutDepth) {
 				if (tempPair.second == searchDepth) {
 					queryMappingOut.erase(tempPair.first);
-					queryMappingOutDepth.erase(tempPair.first);
+		//			queryMappingOutDepth.erase(tempPair.first);
+					deleteList.push_back(tempPair.first);
 				}
 			}
+			deletePairFunction(queryMappingOutDepth, deleteList);
 			for (const auto& tempPair : targetMappingInDepth) {
 				if (tempPair.second == searchDepth) {
 					targetMappingIn.erase(tempPair.first);
-					targetMappingInDepth.erase(tempPair.first);
+		//			targetMappingInDepth.erase(tempPair.first);
+					deleteList.push_back(tempPair.first);
 				}
 			}
+			deletePairFunction(targetMappingInDepth, deleteList);
+
 			for (const auto& tempPair : targetMappingOutDepth) {
 				if (tempPair.second == searchDepth) {
 					targetMappingOut.erase(tempPair.first);
-					targetMappingOutDepth.erase(tempPair.first);
+		//			targetMappingOutDepth.erase(tempPair.first);
+					deleteList.push_back(tempPair.first);
 				}
 			}
+			deletePairFunction(targetMappingOutDepth, deleteList);
 			searchDepth--;
 		}
 		catch (char *err)

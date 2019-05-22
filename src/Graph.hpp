@@ -14,7 +14,7 @@ public:
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef const Node<NodeIDType, EdgeType, NodeLabelType>* NodeCPointer;
+	typedef const NodeType* NodeCPointer;
 public:
 	Graph() = default;
 	~Graph() = default;
@@ -30,7 +30,7 @@ public:
 };
 
 template<typename NodeType, typename EdgeType>
-class GraphVF2 :Graph<NodeType, EdgeType>
+class GraphVF2 :public Graph<NodeType, EdgeType>
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
@@ -40,7 +40,7 @@ public:
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef const Node<NodeIDType, EdgeType, NodeLabelType>* NodeCPointer;
+	typedef const NodeType* NodeCPointer;
 private:
 
 	vector<NodeType> nodes;
@@ -62,6 +62,7 @@ public:
 		graphsize = nodes.size();
 		index.reserve(calUOS_reserveSize(nodes.size()));
 		for (auto &it : nodes) {
+			auto temp = &it;
 			NodeIDType id = it.getID();
 			index[id] = &it;
 		}

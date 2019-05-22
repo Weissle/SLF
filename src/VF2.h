@@ -11,13 +11,13 @@ class VF2 {
 	typedef typename StateVF2<NodeType, EdgeType> StateType;
 	typedef typename StateType::MapType MapType;
 
-	const GraphType targetGraph, queryGraph;
+	const GraphType &targetGraph, &queryGraph;
 	vector<MapType> mappings;
 	bool onlyNeedOneSolution = true;
 	bool goDeeper(StateType &s)
 	{
 		if (s.isCoverQueryGraph()) {
-			if (this->onlyNeedOneSolution == false) this->ToDoAfterFindASolution();
+			this->ToDoAfterFindASolution(s);
 			return true;
 		}
 		for (const auto &tempCanditatePair : s.calCandidatePairs()) {
@@ -40,12 +40,12 @@ public:
 	void run()
 	{
 		//StateVF2<NodeType, EdgeType>
-		//StateVF2<NodeType, EdgeType> initialState= StateVF2<NodeType, EdgeType>(targetGraph, queryGraph);
+		StateVF2<NodeType, EdgeType> initialState= StateVF2<NodeType, EdgeType>(targetGraph, queryGraph);
 		//StateType initialState(   //(targetGraph, queryGraph);
 //		StateVF2<NodeType, EdgeType> initialState(const Graph<NodeType, EdgeType> (), queryGraph);
-//		goDeeper(initialState);
+		goDeeper(initialState);
 	}
-	vector<MapType> getAnswer() {
+	vector<MapType> getAnswer()const {
 		return mappings;
 	}
 };

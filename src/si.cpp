@@ -14,22 +14,27 @@ int main() {
 	vector<NodeType> queryNodes{ NodeType(1),NodeType(2) };
 	GraphType queryGraph(queryNodes);
 	queryGraph.addEdge(1, 2);
-
+	queryGraph.addEdge(2, 1);
 	vector<NodeType> targetNodes{ NodeType(1),NodeType(2),NodeType(3),NodeType(4) };
 	GraphType targetGraph(targetNodes);
 	targetGraph.addEdge(3, 4);
-
-	VF2<GraphType> vf2(targetGraph, queryGraph);
+	targetGraph.addEdge(4, 3);
+	targetGraph.addEdge(3, 1);
+	targetGraph.addEdge(1, 3);
+	targetGraph.addEdge(2, 4);
+	VF2<GraphType> vf2(targetGraph, queryGraph,false);
 	vf2.run();
 	int sc = 0;
 	for (auto oneSolution : vf2.getAnswer()) {
-		cout << "Solution : " << sc << endl;
+		cout << "Solution : " << sc++ << endl;
+		typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
 		for (auto it : oneSolution) {
-			cout << it.getKey() << " " << it.getValue() << endl;
+			cout << it.first->getID() << " " << it.second->getID() << endl;
+	//		cout << it.getKey() << " " << it.getValue() << endl;
 		}
 	}
 
-
+	system("pause");
 
 	return 0;
 }
