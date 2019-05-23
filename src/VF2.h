@@ -3,6 +3,7 @@
 #include"Node.hpp"
 #include"State.hpp"
 #include<vector>
+#include<iostream>
 using namespace std;
 template<typename GraphType>
 class VF2 {
@@ -37,6 +38,15 @@ public:
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph) {};
 	virtual void ToDoAfterFindASolution(const StateType &s) {
 		mappings.push_back(s.getMap());
+	/*	for (auto it : s.getMap()) {
+			assert(it.first != nullptr && it.second != nullptr && "Map exist nullptr");
+			cout << '(' << it.first->getID() << "," << it.second->getID() << ')' << endl;
+		}*/
+/*		cout << "AUX MAPPING" << endl;
+		for (auto it : s.getAuxMap()) {
+			assert(it.first != nullptr && it.second != nullptr && "AuxMap exist nullptr");
+			cout << '(' << it.first->getID() << "," << it.second->getID() << ')' << endl;
+		}*/
 	}
 	void run()
 	{

@@ -5,6 +5,7 @@
 #include"VF2.h"
 #include"GraphReader.hpp"
 #include"argh.h"
+#include<time.h>
 #include<iostream>
 using namespace std;
 int main(int argc,char * argv[]) {
@@ -38,6 +39,8 @@ int main(int argc,char * argv[]) {
 
 	VF2<GraphType> vf2(*targetGraph, *queryGraph, true, false);
 //	VF2<GraphType> vf2(targetGraph, queryGraph, false);
+
+	auto t1 = clock();
 	vf2.run();
 	int sc = 0;
 	for (auto oneSolution : vf2.getAnswer()) {
@@ -48,7 +51,8 @@ int main(int argc,char * argv[]) {
 	//		cout << it.getKey() << " " << it.getValue() << endl;
 		}
 	}
-
+	auto t2 = clock();
+	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 //	system("pause");
 
 	return 0;

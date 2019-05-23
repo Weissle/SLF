@@ -50,20 +50,20 @@ private:
 	unordered_map<NodeIDType, NodeType*> index;
 	GRAPH_TYPE graphType;
 	size_t graphsize;
-	size_t calUOS_reserveSize(size_t need) {
-		size_t i = 16;
-		while (i < need) i = i << 1;
-		if (i * 0.9 > need) return i;
-		else return i << 1;
-	}
 public:
 	GraphVF2() = default;
 	~GraphVF2() = default;
 	GraphVF2(vector<NodeType> &_nodes, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) 
 		:nodes(_nodes), graphType(_graphType) 
 	{
+		auto calASizeForHash = [](const size_t need) {
+			size_t i = 16;
+			while (i < need) i = i << 1;
+			if (i * 0.9 > need) return i;
+			else return i << 1;
+		};
 		graphsize = nodes.size();
-		index.reserve(calUOS_reserveSize(nodes.size()));
+		index.reserve(calASizeForHash(nodes.size()));
 		for (auto &it : nodes) {
 			auto temp = &it;
 			NodeIDType id = it.getID();

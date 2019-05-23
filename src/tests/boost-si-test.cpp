@@ -10,6 +10,7 @@
 #include <boost/graph/vf2_sub_graph_iso.hpp>
 #include <string>
 #include <fstream>
+#include <time.h>
 using namespace boost;
 using namespace std;
 
@@ -72,11 +73,14 @@ int main() {
 	f.close();
 
 	// Create callback to print mappings
+	auto t1 = clock();
 	vf2_print_callback<graph_type, graph_type> callback(graph1, graph2);
-
+	vf2_subgraph_iso(graph1, graph2, callback);
+	auto t2 = clock();
+	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	// Print out all subgraph isomorphism mappings between graph1 and graph2.
 	// Vertices and edges are assumed to be always equivalent.
-	vf2_subgraph_iso(graph1, graph2, callback);
+	
 
 	return 0;
 }
