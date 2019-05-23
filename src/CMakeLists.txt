@@ -11,5 +11,4 @@ add_executable(si si.cpp Edge.hpp Graph.hpp
 				Pair.hpp GraphReader.hpp
 				argh.h)
 
-add_executable(testi testi.cpp)
-set_target_properties(testi PROPERTIES FOLDER "Test")
+add_subdirectory(tests)

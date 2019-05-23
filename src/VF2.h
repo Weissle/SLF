@@ -14,6 +14,7 @@ class VF2 {
 	const GraphType &targetGraph, &queryGraph;
 	vector<MapType> mappings;
 	bool onlyNeedOneSolution = true;
+	bool induceGraph = true;
 	bool goDeeper(StateType &s)
 	{
 		if (s.isCoverQueryGraph()) {
@@ -32,15 +33,15 @@ class VF2 {
 public:
 	VF2() = default;
 	~VF2() = default;
-	VF2(const GraphType &_targetGraph,const GraphType &_queryGraph, bool _onlyNeedOneSolution = true)
-		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution) {};
+	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
+		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph) {};
 	virtual void ToDoAfterFindASolution(const StateType &s) {
 		mappings.push_back(s.getMap());
 	}
 	void run()
 	{
 		//StateVF2<NodeType, EdgeType>
-		StateVF2<NodeType, EdgeType> initialState= StateVF2<NodeType, EdgeType>(targetGraph, queryGraph);
+		StateVF2<NodeType, EdgeType> initialState = StateVF2<NodeType, EdgeType>(targetGraph, queryGraph, induceGraph);
 		//StateType initialState(   //(targetGraph, queryGraph);
 //		StateVF2<NodeType, EdgeType> initialState(const Graph<NodeType, EdgeType> (), queryGraph);
 		goDeeper(initialState);

@@ -20,11 +20,11 @@ int main(int argc,char * argv[]) {
 	cmdl({ "-target-graph","-tg" }) >> targetGraphPath;
 	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
 
-	/*
+	
 	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath), 
 			*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
-*/
-	vector<NodeType> queryNodes{ NodeType(1),NodeType(2) };
+
+/*	vector<NodeType> queryNodes{ NodeType(1),NodeType(2) };
 	GraphType queryGraph(queryNodes);
 	queryGraph.addEdge(1, 2);
 	queryGraph.addEdge(2, 1);
@@ -33,18 +33,18 @@ int main(int argc,char * argv[]) {
 	targetGraph.addEdge(3, 4);
 	targetGraph.addEdge(4, 3);
 	targetGraph.addEdge(2, 1);
-	targetGraph.addEdge(1, 2);
+	targetGraph.addEdge(1, 2);*/
 //	targetGraph.addEdge(2, 4);
 
-//	VF2<GraphType> vf2(*targetGraph, *queryGraph, false);
-	VF2<GraphType> vf2(targetGraph, queryGraph, false);
+	VF2<GraphType> vf2(*targetGraph, *queryGraph, true, false);
+//	VF2<GraphType> vf2(targetGraph, queryGraph, false);
 	vf2.run();
 	int sc = 0;
 	for (auto oneSolution : vf2.getAnswer()) {
 		cout << "Solution : " << sc++ << endl;
 		typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
 		for (auto it : oneSolution) {
-			cout << it.first->getID() << " " << it.second->getID() << endl;
+			cout << '(' <<it.first->getID() << "," << it.second->getID()<<')' << endl;
 	//		cout << it.getKey() << " " << it.getValue() << endl;
 		}
 	}

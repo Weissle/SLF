@@ -20,7 +20,7 @@ public:
 	typedef Graph<NodeType, EdgeType> GraphType;
 	typedef const NodeType*   NodeCPointer;
 	typedef KVPair<NodeCPointer, NodeCPointer> MapPair;
-	typedef unordered_map<NodeCPointer,NodeCPointer> MapType;
+	typedef unordered_map<NodeCPointer, NodeCPointer> MapType;
 public:
 	State() = default;
 	~State() = default;
@@ -54,8 +54,8 @@ public:
 	typedef Graph<NodeType, EdgeType> GraphType;
 	typedef const NodeType*   NodeCPointer;
 	typedef KVPair<NodeCPointer, NodeCPointer> MapPair;
-//	typedef unordered_set<MapPair> MapType;
-	typedef unordered_map<NodeCPointer,NodeCPointer> MapType;
+	//	typedef unordered_set<MapPair> MapType;
+	typedef unordered_map<NodeCPointer, NodeCPointer> MapType;
 private:
 	//private member;
 
@@ -65,7 +65,7 @@ private:
 		queryGraphUnmap, queryMappingIn, queryMappingOut;
 	unordered_map<NodeCPointer, int> targetMappingInDepth, targetMappingOutDepth, queryMappingInDepth, queryMappingOutDepth;
 	uint32_t searchDepth;
-
+	bool induceGraph = true;
 
 private:
 
@@ -89,42 +89,73 @@ private:
 	}
 
 	//sourceRule targetRule now is only usable to subgraph isomorphism but not induce s~~ i~;
+	bool sourceRuleInduceSubgraph(const MapPair &cp,const int need) {
+		const auto &targetSourceNode = cp.getValue();
+		int have = 0;
+		for (const auto &it : targetSourceNode->getOutEdges()) {
+			const auto targetTargetNodeID = it.getTargetNodeID();
+			const auto targetTargetNodePointer = targetGraph.getNodePointer(targetTargetNodeID);
+			if (targetGraphUnmap.find(targetTargetNodePointer) == targetGraphUnmap.end()) {
+				//in the mapping
+				++have;
+			}
+		}
+		return have == need;
 
+	}
 	bool sourceRule(const MapPair &cp)
 	{
 		const auto &querySourceNode = cp.getKey();
 		const auto &targetSourceNode = cp.getValue();
-
+		int nodeToMappingNum = 0;
 		for (const auto &tempEdge : querySourceNode->getOutEdges()) {
 			//from queryNode to tempNode
 			const auto &queryTargetNodeID = tempEdge.getTargetNodeID();
-			
+
 			const auto &queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
 			//this tempnode have been mapped
-			auto temp1=queryGraphUnmap.find(queryTargetNodePointer);
+			auto temp1 = queryGraphUnmap.find(queryTargetNodePointer);
 			auto temp2 = queryGraphUnmap.end();
 			if (queryGraphUnmap.find(queryTargetNodePointer) == queryGraphUnmap.end()) {
-		//		const auto &targetTargetNodePointer = mapping.find(queryTargetNodePointer).getValue();
+				//		const auto &targetTargetNodePointer = mapping.find(queryTargetNodePointer).getValue();
 				const auto &targetTargetNodePointer = mapping[queryTargetNodePointer];
 				if (targetSourceNode->existSameTypeEdgeToNode(*targetTargetNodePointer, tempEdge) == false) return false;
+				++nodeToMappingNum;
 			}
 		}
-		return true;
+		if (induceGraph) return sourceRuleInduceSubgraph(cp, nodeToMappingNum);
+		else return true;
+	}
+	bool targetRuleInduceSubgraph(const MapPair &cp, const int need) {
+		const auto &targetSourceNode = cp.getValue();
+		int have = 0;
+		for (const auto &it : targetSourceNode->getInEdges()) {
+			const auto targetSourceNodeID = it.getSourceNodeID();
+			const auto targetSourceNodePointer = targetGraph.getNodePointer(targetSourceNodeID);
+			if (targetGraphUnmap.find(targetSourceNodePointer) == targetGraphUnmap.end()) {
+				//in the mapping
+				++have;
+			}
+		}
+		return have == need;
+
 	}
 	bool targetRule(const MapPair &cp)
 	{
 		const auto &queryTargetNode = cp.getKey();
 		const auto &targetTargetNode = cp.getValue();
-
+		int nodeToMappingNum = 0;
 		for (const auto &tempEdge : queryTargetNode->getInEdges()) {
 			const auto &querySourceNodeID = tempEdge.getSourceNodeID();
 			const auto &querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
 			if (queryGraphUnmap.find(querySourceNodePointer) == queryGraphUnmap.end()) {
+				nodeToMappingNum++;
 				const auto &targetSourceNodePointer = mapping[querySourceNodePointer];
 				if (targetTargetNode->existSameTypeEdgeFromNode(*targetSourceNodePointer, tempEdge) == false) return false;
 			}
 		}
-		return true;
+		if (induceGraph) return targetRuleInduceSubgraph(cp, nodeToMappingNum);
+		else return true;
 	}
 	bool inRule(const MapPair &cp)
 	{
@@ -152,7 +183,7 @@ private:
 				else ++targetNotTCount;
 			}
 		}
-		if (queryInCount > targetInCount || queryNotTCount > targetNotTCount) return false;
+		if (queryInCount > targetInCount /*|| queryNotTCount > targetNotTCount*/) return false;
 		else return true;
 	}
 
@@ -182,7 +213,7 @@ private:
 				else ++targetNotTCount;
 			}
 		}
-		if (queryOutCount > targetOutCount || queryNotTCount > targetNotTCount) return false;
+		if (queryOutCount > targetOutCount/* || queryNotTCount > targetNotTCount*/) return false;
 		else return true;
 	}
 	bool notInOrOutRule(const MapPair &cp)
@@ -190,7 +221,7 @@ private:
 
 	}
 public:
-	StateVF2(const GraphType& _t, const GraphType& _q) :State<NodeType, EdgeType>(), targetGraph(_t), queryGraph(_q) {
+	StateVF2(const GraphType& _t, const GraphType& _q, bool _induceGraph) :State<NodeType, EdgeType>(), targetGraph(_t), queryGraph(_q), induceGraph(_induceGraph) {
 		//	mapping.
 		//	mapping.resize(0);
 		mapping.reserve(calUOS_reserveSize(queryGraph.graphSize()));
@@ -256,7 +287,7 @@ public:
 	}
 	virtual void addCanditatePairToMapping(const MapPair &cp)
 	{
-//		mapping.insert(cp);
+		//		mapping.insert(cp);
 		mapping[cp.getKey()] = cp.getValue();
 		const auto targetNode = cp.getValue();
 		const auto queryNode = cp.getKey();
@@ -305,7 +336,7 @@ public:
 	virtual void deleteCanditatePairToMapping(const MapPair &cp)
 	{
 		auto deletePairFunction = [](unordered_map<NodeCPointer, int> &m, vector<NodeCPointer> &v) {
-			for (const auto &it:v) {
+			for (const auto &it : v) {
 				m.erase(it);
 			}
 			v.empty();
@@ -323,7 +354,7 @@ public:
 			for (const auto& tempPair : queryMappingInDepth) {
 				if (tempPair.second == searchDepth) {
 					queryMappingIn.erase(tempPair.first);
-			//		queryMappingInDepth.erase(tempPair.first);
+					//		queryMappingInDepth.erase(tempPair.first);
 					deleteList.push_back(tempPair.first);
 				}
 			}
@@ -332,7 +363,7 @@ public:
 			for (const auto& tempPair : queryMappingOutDepth) {
 				if (tempPair.second == searchDepth) {
 					queryMappingOut.erase(tempPair.first);
-		//			queryMappingOutDepth.erase(tempPair.first);
+					//			queryMappingOutDepth.erase(tempPair.first);
 					deleteList.push_back(tempPair.first);
 				}
 			}
@@ -340,7 +371,7 @@ public:
 			for (const auto& tempPair : targetMappingInDepth) {
 				if (tempPair.second == searchDepth) {
 					targetMappingIn.erase(tempPair.first);
-		//			targetMappingInDepth.erase(tempPair.first);
+					//			targetMappingInDepth.erase(tempPair.first);
 					deleteList.push_back(tempPair.first);
 				}
 			}
@@ -349,7 +380,7 @@ public:
 			for (const auto& tempPair : targetMappingOutDepth) {
 				if (tempPair.second == searchDepth) {
 					targetMappingOut.erase(tempPair.first);
-		//			targetMappingOutDepth.erase(tempPair.first);
+					//			targetMappingOutDepth.erase(tempPair.first);
 					deleteList.push_back(tempPair.first);
 				}
 			}
