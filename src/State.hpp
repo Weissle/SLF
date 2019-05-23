@@ -200,35 +200,35 @@ private:
 
 	bool inRule(const MapPair &cp)
 	{
-		const auto &queryNodePointer = cp.getKey();
-		const auto &targetNodePointer = cp.getValue();
+		const auto &queryTargetNodePointer = cp.getKey();
+		const auto &targetTargetNodePointer = cp.getValue();
 		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0;
 		size_t qtemp = 0, ttemp = 0;
-		for (const auto &tempEdge : queryNodePointer->getInEdges())
+		for (const auto &tempEdge : queryTargetNodePointer->getInEdges())
 		{
-			const auto &tempNodeID = tempEdge.getSourceNodeID();
-			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
-			if (queryGraphUnmap.find(tempNode) != queryGraphUnmap.end())
+			const auto &querySourceNodeID = tempEdge.getSourceNodeID();
+			const auto &querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
+			if (queryGraphUnmap.find(querySourceNodePointer) != queryGraphUnmap.end())
 			{
-				if (queryMappingIn.find(tempNode) != queryMappingIn.end()) ++queryInCount;
+				if (queryMappingIn.find(querySourceNodePointer) != queryMappingIn.end()) ++queryInCount;
 				else ++queryNotTCount;
 			}
 			else ++qtemp;
 
 		}
-		for (const auto &tempEdge : targetNodePointer->getInEdges())
+		for (const auto &tempEdge : targetTargetNodePointer->getInEdges())
 		{
-			const auto &tempNodeID = tempEdge.getSourceNodeID();
-			const auto &tempNode = targetGraph.getNodePointer(tempNodeID);
-			if (targetGraphUnmap.find(tempNode) != targetGraphUnmap.end())
+			const auto &targetSourceNodeID = tempEdge.getSourceNodeID();
+			const auto &targetSourceNodePointer = targetGraph.getNodePointer(targetSourceNodeID);
+			if (targetGraphUnmap.find(targetSourceNodePointer) != targetGraphUnmap.end())
 			{
-				if (targetMappingIn.find(tempNode) != targetMappingIn.end()) ++targetInCount;
+				if (targetMappingIn.find(targetSourceNodePointer) != targetMappingIn.end()) ++targetInCount;
 				else ++targetNotTCount;
 			}
 			else ++ttemp;
 		}
-		/*cout << "ic : " << queryInCount << " ntc : " << queryNotTCount << " temp : " << qtemp << " edgenum : " << queryNodePointer->getInEdgesNum() << endl;
-		cout << "ic : " << targetInCount << " ntc : " << targetNotTCount << " temp : " << ttemp << " edgenum : " << targetNodePointer->getInEdgesNum() << endl;*/
+		/*cout << "ic : " << queryInCount << " ntc : " << queryNotTCount << " temp : " << qtemp << " edgenum : " << queryTargetNodePointer->getInEdgesNum() << endl;
+		cout << "ic : " << targetInCount << " ntc : " << targetNotTCount << " temp : " << ttemp << " edgenum : " << targetTargetNodePointer->getInEdgesNum() << endl;*/
 		if (queryInCount > targetInCount /*|| queryNotTCount > targetNotTCount*/) return false;
 		else return true;
 	}
@@ -240,22 +240,22 @@ private:
 		size_t qtemp = 0, ttemp = 0;
 		for (const auto &tempEdge : queryNodePointer->getOutEdges())
 		{
-			const auto &tempNodeID = tempEdge.getTargetNodeID();
-			const auto &tempNode = queryGraph.getNodePointer(tempNodeID);
-			if (queryGraphUnmap.find(tempNode) != queryGraphUnmap.end())
+			const auto &queryTargetNodeID = tempEdge.getTargetNodeID();
+			const auto & queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
+			if (queryGraphUnmap.find(queryTargetNodePointer) != queryGraphUnmap.end())
 			{
-				if (queryMappingOut.find(tempNode) != queryMappingOut.end()) ++queryOutCount;
+				if (queryMappingOut.find(queryTargetNodePointer) != queryMappingOut.end()) ++queryOutCount;
 				else ++queryNotTCount;
 			}
 			else ++qtemp;
 		}
 		for (const auto &tempEdge : targetNodePointer->getOutEdges())
 		{
-			const auto &tempNodeID = tempEdge.getTargetNodeID();
-			const auto &tempNode = targetGraph.getNodePointer(tempNodeID);
-			if (targetGraphUnmap.find(tempNode) != targetGraphUnmap.end())
+			const auto &targetTargetNodeID = tempEdge.getTargetNodeID();
+			const auto & targetTargetNodePointer = targetGraph.getNodePointer(targetTargetNodeID);
+			if (targetGraphUnmap.find(targetTargetNodePointer) != targetGraphUnmap.end())
 			{
-				if (targetMappingOut.find(tempNode) != targetMappingOut.end()) ++targetOutCount;
+				if (targetMappingOut.find(targetTargetNodePointer) != targetMappingOut.end()) ++targetOutCount;
 				else ++targetNotTCount;
 			}
 			else ++ttemp;
@@ -348,8 +348,8 @@ public:
 	}
 	virtual bool checkCanditatePairIsAddable(const MapPair &cp)
 	{
-//		bool answer = (sourceRule(cp) && targetRule(cp));/* && inRule(cp) && outRule(cp));*/
-		bool answer = sourceRule(cp) && targetRule(cp) && inRule(cp);
+		bool answer = (sourceRule(cp) && targetRule(cp));/* && inRule(cp) && outRule(cp));*/
+//		bool answer = sourceRule(cp) && targetRule(cp) && inRule(cp);
 //		bool answer = sourceRule(cp) && targetRule(cp) && outRule(cp);
 //		bool answer = sourceRule(cp) && targetRule(cp) && inRule(cp) && outRule(cp);
 		return answer;
