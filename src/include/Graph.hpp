@@ -30,6 +30,7 @@ public:
 	virtual NodeType* getNodePointer(const NodeIDType &nodeID) const{
 		return nullptr;
 	}
+	virtual bool checkAddressRight() const{ return true; }
 };
 
 template<typename NodeType, typename EdgeType>
@@ -107,6 +108,11 @@ public:
 	//	return NodeCPointer();
 	//	return index[nodeID];
 		return index.find(nodeID)->second;
+	}
+
+	virtual bool checkAddressRight() const { 
+		const auto node0ID = nodes[0].getID();
+		return (&nodes[0] == index.find(node0ID)->second); 
 	}
 
 };
