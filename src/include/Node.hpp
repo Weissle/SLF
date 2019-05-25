@@ -28,6 +28,13 @@ public:
 	virtual const NodeIDType& getID()const {
 		return id;
 	}
+	static NodeIDType getNodeID(const NodeType &node) {
+		return node.getID();
+	}
+	
+	static NodeIDType getNodeID(const NodeType *node) {
+		return node->getID();
+	}
 	virtual const NodeLabelType& getLabel()const {
 		throw "Node.hpp this Node class should not have label";
 		return NodeLabelType();
@@ -76,7 +83,7 @@ public:
 	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
 	typedef typename NodeIDType NodeIDType;
 	typedef typename NodeLabelType NodeLabelType;
-	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
+
 private:
 
 	NodeLabelType label = NodeLabelType();
@@ -132,3 +139,4 @@ public:
 	virtual void addInEdge(const EdgeType &e) { inEdges.push_back(e); }
 	virtual void addOutEdge(const EdgeType &e) { outEdges.push_back(e); }
 };
+

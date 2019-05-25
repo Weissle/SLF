@@ -18,7 +18,7 @@ bool ASSF(string qp, string tg) {
 
 	const GraphType* queryGraph = LADReader<GraphType>::readGraph(qp),
 		*targetGraph = LADReader<GraphType>::readGraph(tg);
-	cout << queryGraph->checkAddressRight() << " " << queryGraph->checkAddressRight() << endl;
+//	cout << queryGraph->checkAddressRight() << " " << queryGraph->checkAddressRight() << endl;
 
 	VF2<GraphType> vf2(*targetGraph, *queryGraph, true, false);
 	//	VF2<GraphType> vf2(targetGraph, queryGraph, false);
@@ -57,7 +57,7 @@ int main(int argc, char * argv[]) {
 	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
 	
 
-	/*	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
+		const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
 				*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
 
 		VF2<GraphType> vf2(*targetGraph, *queryGraph, true, false);
@@ -70,17 +70,17 @@ int main(int argc, char * argv[]) {
 			cout << "Solution : " << sc++ << endl;
 			typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
 			for (auto it : oneSolution) {
-				cout << '(' <<it.first->getID() << "," << it.second->getID()<<')' << endl;
+				cout << '(' <<it.first << "," << it.second<<')' << endl;
 		//		cout << it.getKey() << " " << it.getValue() << endl;
 			}
 		}
 		auto t2 = clock();
 		cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	//	system("pause");
-	*/
+	
 	int count = 0;
-	while (count < 5 && ASSF(queryGraphPath, targetGraphPath))count++;
-	cout << (double)(t) / (5 * CLOCKS_PER_SEC);
+/*	while (count < 5 && ASSF(queryGraphPath, targetGraphPath))count++;
+	cout << (double)(t) / (5 * CLOCKS_PER_SEC);*/
 	return 0;
 }
 

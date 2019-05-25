@@ -2,6 +2,7 @@
 #include<vector>
 #include"Node.hpp"
 #include"Edge.hpp"
+#include<assert.h>
 #include<unordered_map>
 using namespace std;
 
@@ -27,10 +28,13 @@ public:
 		return;
 	}
 	virtual vector<NodeType> const & getAllNodes()const { return vector<NodeType>(); }
-	virtual NodeType* getNodePointer(const NodeIDType &nodeID) const{
+	virtual const NodeType* getNodePointer(const NodeIDType &nodeID) const {
 		return nullptr;
 	}
-	virtual bool checkAddressRight() const{ return true; }
+	virtual const NodeType & getNode(const NodeIDType &nodeID) const {
+		return NodeType();
+	}
+
 };
 
 template<typename NodeType, typename EdgeType>
@@ -43,19 +47,19 @@ public:
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-
-	typedef const NodeType* NodeCPointer;
+	//	typedef const NodeType* NodeCPointer;
 private:
 
 	vector<NodeType> nodes;
-	unordered_map<NodeIDType, NodeType*> index;
+	//	unordered_map<NodeIDType, NodeType*> index;
+	unordered_map<NodeIDType, size_t> index;
 	GRAPH_TYPE graphType;
 	size_t graphsize;
 public:
 	GraphVF2() = default;
 	~GraphVF2() = default;
-	GraphVF2(vector<NodeType> &_nodes, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) 
-		:nodes(_nodes), graphType(_graphType) 
+	GraphVF2(vector<NodeType> &_nodes, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION)
+		:nodes(_nodes), graphType(_graphType)
 	{
 		auto calASizeForHash = [](const size_t need) {
 			size_t i = 16;
@@ -65,54 +69,51 @@ public:
 		};
 		graphsize = nodes.size();
 		index.reserve(calASizeForHash(nodes.size()));
-		for (auto &it : nodes) {
-			auto temp = &it;
-			NodeIDType id = it.getID();
-			index[id] = &it;
+		for (auto i = 0; i < nodes.size(); ++i) {
+			index[nodes[i].getID()] = i;
 		}
+		/*	for (auto &it : nodes) {
+				auto temp = &it;
+				NodeIDType id = it.getID();
+				index[id] = &it;
+			}*/
 	}
 	virtual void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
-		auto tempNode = index[_id];
-		tempNode->setLabel(_label);
+		auto &tempNode = nodes[index[_id]];
+		//	tempNode->setLabel(_label);
+		tempNode.setLabel(_label);
 		return;
 	}
 	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) {
-		const auto &sourceNodePointer = index[source];
-		const auto &targetNodePointer = index[target];
-		const EdgeType tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeVF2<NodeIDType, EdgeLabelType>::NODE_RECORD_TYPE::BOTH, source, target, edgeLabel);
-		sourceNodePointer->addOutEdge( tempEdge);
-		targetNodePointer->addInEdge(tempEdge);
+		auto &sourceNode = nodes[index[source]];
+		auto &targetNode = nodes[index[target]];
+		const EdgeType tempEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::BOTH, source, target, edgeLabel);
+		sourceNode.addOutEdge(tempEdge);
+		targetNode.addInEdge(tempEdge);
 		if (GRAPH_TYPE::BIDIRECTION == graphType) {
-			const EdgeType tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeVF2<NodeIDType, EdgeLabelType>::NODE_RECORD_TYPE::BOTH, target, source, edgeLabel);
-			sourceNodePointer->addInEdge(tempEdge);
-			targetNodePointer->addOutEdge(tempEdge);
+			const EdgeType tempEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::BOTH, target, source, edgeLabel);
+			sourceNode.addInEdge(tempEdge);
+			targetNode.addOutEdge(tempEdge);
 		}
 	}
 	virtual void addEdge(const NodeIDType source, const NodeIDType target) {
-		auto &sourceNodePointer = index[source];
-		auto &targetNodePointer = index[target];
-		const EdgeType tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeVF2<NodeIDType, EdgeLabelType>::NODE_RECORD_TYPE::BOTH, source, target);
-		sourceNodePointer->addOutEdge(tempEdge);
-		targetNodePointer->addInEdge(tempEdge);
-		if (GRAPH_TYPE::BIDIRECTION == graphType) {
-			const EdgeType tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeVF2<NodeIDType, EdgeLabelType>::NODE_RECORD_TYPE::BOTH, target, source);
-			sourceNodePointer->addInEdge(tempEdge);
-			targetNodePointer->addOutEdge(tempEdge);
-		}
+		addEdge(source, target, EdgeLabelType());
 	}
 	virtual size_t graphSize() const {
 		return graphsize;
 	};
 	virtual vector<NodeType> const & getAllNodes()const { return nodes; }
-	virtual NodeType* getNodePointer (const NodeIDType &nodeID) const {
-	//	return NodeCPointer();
-	//	return index[nodeID];
-		return index.find(nodeID)->second;
+	virtual const NodeType* getNodePointer(const NodeIDType &nodeID) const {
+		const auto tempIndexPair = index.find(nodeID);
+		assert((tempIndexPair != index.end()) && "this node id not exist!");
+		const auto nodeIndex = tempIndexPair->second;
+		return &(nodes[nodeIndex]);
 	}
-
-	virtual bool checkAddressRight() const { 
-		const auto node0ID = nodes[0].getID();
-		return (&nodes[0] == index.find(node0ID)->second); 
+	virtual const NodeType & getNode(const NodeIDType &nodeID) const {
+		const auto tempIndexPair = index.find(nodeID);
+		assert((tempIndexPair != index.end()) && "this node id not exist!");
+		const auto nodeIndex = tempIndexPair->second;
+		return nodes[nodeIndex];
 	}
 
 };

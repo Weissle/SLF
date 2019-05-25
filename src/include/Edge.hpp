@@ -72,7 +72,7 @@ public:
 	}
 	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _source, const NodeIDType _target, const EdgeLabelType _label) :
 		recodeType(_recodeType), source(_source), target(_target), label(_label) {
-		if (typeid(EdgeLabelType) != typeid(void)) throw "Edge.hpp EdgeVF2 should have a label";
+	//	if (typeid(EdgeLabelType) != typeid(void)) throw "Edge.hpp EdgeVF2 should have a label";
 	}
 };
 

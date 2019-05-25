@@ -51,10 +51,7 @@ public:
 	}
 	void run()
 	{
-		//StateVF2<NodeType, EdgeType>
-		StateVF2<NodeType, EdgeType> initialState = StateVF2<NodeType, EdgeType>(targetGraph, queryGraph, induceGraph);
-		//StateType initialState(   //(targetGraph, queryGraph);
-//		StateVF2<NodeType, EdgeType> initialState(const Graph<NodeType, EdgeType> (), queryGraph);
+		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);
 		goDeeper(initialState);
 	}
 	vector<MapType> getAnswer()const {
