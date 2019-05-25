@@ -138,7 +138,7 @@ private:
 			//	if (targetGraphUnmap.find(targetTargetNodePointer) == targetGraphUnmap.end()) {
 			if (setNotContainNodePointer(targetGraphUnmap, targetTargetNodeID)) {
 				const auto tempMappingPair = mappingAux.find(targetTargetNodeID);
-				if (tempMappingPair != mapping.end())continue;
+				if (tempMappingPair != mappingAux.end())continue;
 				const auto &queryTargetNodeID = tempMappingPair->second;
 				const auto &queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
 				assert(queryTargetNodePointer != nullptr && "map a nullptr ? means this node mappes nothing but is regarded have been mapped. ");
@@ -206,7 +206,7 @@ private:
 			//		if (targetGraphUnmap.find(targetSourceNodePointer) == targetGraphUnmap.end()) {
 			if (setNotContainNodePointer(targetGraphUnmap, targetSourceNodeID)) {
 				const auto tempMappingPair = mappingAux.find(targetSourceNodeID);
-				if (tempMappingPair != mapping.end())continue;
+				if (tempMappingPair != mappingAux.end())continue;
 				const auto &querySourceNodeID = tempMappingPair->second;
 				const auto &querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
 				//			assert(querySourceNodePointer != nullptr && "map a nullptr ? means this node mappes nothing but is regarded have been mapped. ");
