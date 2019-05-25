@@ -5,12 +5,14 @@
 #include<vector>
 #include<iostream>
 using namespace std;
-template<typename GraphType>
+template<typename StateType>
 class VF2 {
-	typedef typename GraphType::NodeType NodeType;
-	typedef typename GraphType::EdgeType EdgeType;
-	typedef typename StateVF2<NodeType, EdgeType> StateType;
+	typedef typename StateType::GraphType GraphType;
+	typedef typename StateType::NodeType NodeType;
+	typedef typename StateType::EdgeType EdgeType;
+	
 	typedef typename StateType::MapType MapType;
+
 
 	const GraphType &targetGraph, &queryGraph;
 	vector<MapType> mappings;
@@ -36,7 +38,7 @@ public:
 	~VF2() = default;
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph) {};
-	virtual void ToDoAfterFindASolution(const StateType &s) {
+	void ToDoAfterFindASolution(const StateType &s) {
 		mappings.push_back(s.getMap());
 //		cout << mappings.size() << endl;
 	/*	for (auto it : s.getMap()) {
@@ -52,7 +54,7 @@ public:
 	void run()
 	{
 		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);
-		goDeeper(initialState);
+		if(queryGraph.graphSize()<=targetGraph.graphSize()) goDeeper(initialState);
 	}
 	vector<MapType> getAnswer()const {
 		return mappings;

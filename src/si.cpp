@@ -8,19 +8,19 @@
 #include<time.h>
 #include<iostream>
 using namespace std;
-static long t = 0;
+static long t = 0;/*
 bool ASSF(string qp, string tg) {
 
 	typedef int NodeIDType;
 	typedef EdgeVF2<NodeIDType, int> EdgeType;
 	typedef NodeVF2<int, EdgeType, int> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
-
+	typedef StateVF2<GraphType> StateType;
 	const GraphType* queryGraph = LADReader<GraphType>::readGraph(qp),
 		*targetGraph = LADReader<GraphType>::readGraph(tg);
 //	cout << queryGraph->checkAddressRight() << " " << queryGraph->checkAddressRight() << endl;
 
-	VF2<GraphType> vf2(*targetGraph, *queryGraph, true, false);
+	VF2<StateType> vf2(*targetGraph, *queryGraph, true, false);
 	//	VF2<GraphType> vf2(targetGraph, queryGraph, false);
 	auto t1 = clock();
 	vf2.run();
@@ -39,16 +39,16 @@ bool ASSF(string qp, string tg) {
 			cout << '(' << it.first->getID() << "," << it.second->getID() << ')' << endl;
 			//		cout << it.getKey() << " " << it.getValue() << endl;
 		}
-	}*/
+	}
 
 	return true;
-}
+}*/
 int main(int argc, char * argv[]) {
 	typedef int NodeIDType;
 	typedef EdgeVF2<NodeIDType, int> EdgeType;
 	typedef NodeVF2<int, EdgeType, int> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
-
+	typedef StateVF2<GraphType> StateType;
 
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg" });
 	cmdl.parse(argc, argv);
@@ -60,7 +60,7 @@ int main(int argc, char * argv[]) {
 		const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
 				*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
 
-		VF2<GraphType> vf2(*targetGraph, *queryGraph, true, false);
+		VF2<StateType> vf2(*targetGraph, *queryGraph, true, false);
 	//	VF2<GraphType> vf2(targetGraph, queryGraph, false);
 
 		auto t1 = clock();
