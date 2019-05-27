@@ -8,7 +8,8 @@
 #include<time.h>
 #include<iostream>
 using namespace std;
-static long t = 0;/*
+static long t = 0;
+/*
 bool ASSF(string qp, string tg) {
 
 	typedef int NodeIDType;
@@ -66,17 +67,19 @@ int main(int argc, char * argv[]) {
 		auto t1 = clock();
 		vf2.run();
 		int sc = 0;
+//		const auto ss = vf2.getAnswer();
+
 		for (auto oneSolution : vf2.getAnswer()) {
 			cout << "Solution : " << sc++ << endl;
 			typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
 			for (auto it : oneSolution) {
-				cout << '(' <<it.first << "," << it.second<<')' << endl;
-		//		cout << it.getKey() << " " << it.getValue() << endl;
+				cout << '(' <<it.first << "," << it.second<<") " ;
+
 			}
 		}
 		auto t2 = clock();
 		cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
-	//	system("pause");
+
 	
 	int count = 0;
 /*	while (count < 5 && ASSF(queryGraphPath, targetGraphPath))count++;

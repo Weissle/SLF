@@ -19,6 +19,7 @@ public:
 public:
 	Graph() = default;
 	~Graph() = default;
+
 	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) = 0;
 	virtual void addEdge(const NodeIDType source, const NodeIDType target) = 0;
 	virtual size_t graphSize() const = 0;
@@ -74,13 +75,15 @@ public:
 		auto &sourceNode = nodes[index[source]];
 		auto &targetNode = nodes[index[target]];
 		//	EdgeVF2<NodeIDType,EdgeLabelType> 
-		const EdgeVF2<NodeIDType, EdgeLabelType>  tempEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeType::NODE_RECORD_TYPE::BOTH, source, target, edgeLabel);
-		sourceNode.addOutEdge(tempEdge);
-		targetNode.addInEdge(tempEdge);
+		const EdgeVF2<NodeIDType, EdgeLabelType>  sourceEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeType::NODE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
+		const EdgeVF2<NodeIDType, EdgeLabelType>  targetEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeType::NODE_RECORD_TYPE::TARGET, source, target, edgeLabel);
+		sourceNode.addOutEdge(targetEdge);
+		targetNode.addInEdge(sourceEdge);
 		if (GRAPH_TYPE::BIDIRECTION == graphType) {
-			const EdgeType tempEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::BOTH, target, source, edgeLabel);
-			sourceNode.addInEdge(tempEdge);
-			targetNode.addOutEdge(tempEdge);
+			const EdgeType sourceEdge1 = EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, target, source, edgeLabel);
+			const EdgeType targetEdge1 = EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, target, source, edgeLabel);
+			sourceNode.addInEdge(sourceEdge1);
+			targetNode.addOutEdge(targetEdge1);
 		}
 	}
 	void addEdge(const NodeIDType source, const NodeIDType target) {
