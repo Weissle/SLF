@@ -30,6 +30,7 @@ class VF2 {
 		}
 #ifdef TIME_COUNT
 		++hitTime;
+	//	if((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
 		auto t1 = clock();
 		const auto canditarePairs = s.calCandidatePairs();
 		auto t2 = clock();
@@ -49,7 +50,7 @@ class VF2 {
 			}
 			cout << endl;
 //			cout << "error on this : " << it.first << " ," << it.second << endl;
-		}*/
+		}
 /*
 		for (const auto &tempCanditatePair : canditarePairs) {
 			const auto queryNodeID = tempCanditatePair.getKey();
@@ -80,7 +81,7 @@ class VF2 {
 			t1 = clock();
 
 			bool suitable = s.checkCanditatePairIsAddable(tempCanditatePair);
-			if (midGraph[queryNodeID] == targetNodeID && suitable == false) {
+		/*	if (midGraph[queryNodeID] == targetNodeID && suitable == false) {
 				bool isOnrightway = true;
 				for (auto it : s.getMap(false)) {
 
@@ -96,8 +97,9 @@ class VF2 {
 					}
 					cout << endl;
 					cout << "error on this : " << queryNodeID << " ," << targetNodeID << endl;
+					system("pause");
 				}
-			}
+			}*/
 			t2 = clock();
 			check += t2 - t1;
 			if(suitable){
@@ -150,12 +152,8 @@ public:
 //			assert(it.first != nullptr && it.second != nullptr && "Map exist nullptr");
 			cout << '(' << it.first << "," << it.second << ')' << " ";
 		}
-		cout << endl;
-/*		cout << "AUX MAPPING" << endl;
-		for (auto it : s.getAuxMap()) {
-			assert(it.first != nullptr && it.second != nullptr && "AuxMap exist nullptr");
-			cout << '(' << it.first->getID() << "," << it.second->getID() << ')' << endl;
-		}*/
+		cout << endl;*/
+
 	}
 	void run()
 	{

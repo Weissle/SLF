@@ -75,6 +75,7 @@ public:
 		return label == n.getLabel();
 	}
 	  bool operator>=(const NodeBaseType &n) const {
+		 
 		return ((inEdges.size() >= n.getInEdgesNum()) && (outEdges.size() >= n.getOutEdgesNum()));;
 	}
 	  bool operator<=(const NodeBaseType &n)const {

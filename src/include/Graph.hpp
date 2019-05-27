@@ -56,7 +56,7 @@ public:
 		auto calASizeForHash = [](const size_t need) {
 			size_t i = 16;
 			while (i < need) i = i << 1;
-			if (i * 0.8 > need) return i;
+			if (i * 0.6 > need) return i;
 			else return i << 1;
 		};
 		graphsize = nodes.size();
@@ -74,9 +74,9 @@ public:
 	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) {
 		auto &sourceNode = nodes[index[source]];
 		auto &targetNode = nodes[index[target]];
-		//	EdgeVF2<NodeIDType,EdgeLabelType> 
-		const EdgeVF2<NodeIDType, EdgeLabelType>  sourceEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeType::NODE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
-		const EdgeVF2<NodeIDType, EdgeLabelType>  targetEdge = EdgeVF2<NodeIDType, EdgeLabelType>(EdgeType::NODE_RECORD_TYPE::TARGET, source, target, edgeLabel);
+
+		const EdgeType  sourceEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
+		const EdgeType  targetEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, source, target, edgeLabel);
 		sourceNode.addOutEdge(targetEdge);
 		targetNode.addInEdge(sourceEdge);
 		if (GRAPH_TYPE::BIDIRECTION == graphType) {

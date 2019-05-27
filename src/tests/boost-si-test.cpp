@@ -23,20 +23,7 @@ int main() {
 	// Build graph1
 	int num_vertices1 = 8;
 	int num_vertices2 = 9;
-/*	graph_type graph1(num_vertices1);
-	add_edge(0, 6, graph1); add_edge(0, 7, graph1);
-	add_edge(1, 5, graph1); add_edge(1, 7, graph1);
-	add_edge(2, 4, graph1); add_edge(2, 5, graph1); add_edge(2, 6, graph1);
-	add_edge(3, 4, graph1);
 
-	// Build graph2
-
-	graph_type graph2(num_vertices2);
-	add_edge(0, 6, graph2); add_edge(0, 8, graph2);
-	add_edge(1, 5, graph2); add_edge(1, 7, graph2);
-	add_edge(2, 4, graph2); add_edge(2, 7, graph2); add_edge(2, 8, graph2);
-	add_edge(3, 4, graph2); add_edge(3, 5, graph2); add_edge(3, 6, graph2);
-*/
 	
 
 	fstream f;
