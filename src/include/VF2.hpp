@@ -7,7 +7,7 @@
 #include<time.h>
 #include<map>
 #include<fstream>
-#define TIME_COUN
+#define TIME_COUNT
 using namespace std;
 template<typename StateType>
 class VF2 {
@@ -28,9 +28,9 @@ class VF2 {
 			this->ToDoAfterFindASolution(s);
 			return true;
 		}
-		++hitTime;
-		if ((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
 #ifdef TIME_COUNT
+		++hitTime;
+	//	if((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
 		auto t1 = clock();
 		const auto canditarePairs = s.calCandidatePairs();
 		auto t2 = clock();
@@ -134,19 +134,25 @@ public:
 	~VF2() = default;
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph) {
-		fstream f;
+	/*	fstream f;
 		f.open("D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\midgraph.graph",ios_base::in);
 		for (int i = 0; i < queryGraph.graphSize(); ++i) {
 			int a;
 			int b;
 			f >> a >> b;
 			midGraph[b] = a;
-		}
+		}*/
 	
 	};
 	void ToDoAfterFindASolution(const StateType &s) {
-		mappings.push_back(s.getMap());
-/*		cout << "Solution : " << mappings.size() << endl;
+		static size_t Solution = 1;
+		cout << "Solution : " << Solution++ << endl;
+		for (auto it : s.getMap()) {
+			cout << '(' << it.first << "," << it.second << ')' << " ";
+		}
+		cout << endl;
+//		mappings.push_back(s.getMap());
+	/*	cout << "Solution : " << mappings.size() << endl;
 		for (auto it : s.getMap()) {
 			cout << '(' << it.first << "," << it.second << ')' << " ";
 		}
@@ -157,13 +163,14 @@ public:
 	{
 		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);
 		if(queryGraph.graphSize()<=targetGraph.graphSize()) goDeeper(initialState);
-	}
-	vector<MapType> getAnswer()const {
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
 		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
 		cout << "hit times " << hitTime << endl;
+	}
+	vector<MapType> getAnswer()const {
+		
 		return mappings;
 	}
 };
