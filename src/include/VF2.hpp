@@ -7,7 +7,7 @@
 #include<time.h>
 #include<map>
 #include<fstream>
-#define TIME_COUNT
+#define TIME_COUN
 using namespace std;
 template<typename StateType>
 class VF2 {
@@ -28,9 +28,9 @@ class VF2 {
 			this->ToDoAfterFindASolution(s);
 			return true;
 		}
-#ifdef TIME_COUNT
 		++hitTime;
-	//	if((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
+		if ((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
+#ifdef TIME_COUNT
 		auto t1 = clock();
 		const auto canditarePairs = s.calCandidatePairs();
 		auto t2 = clock();
@@ -146,11 +146,11 @@ public:
 	};
 	void ToDoAfterFindASolution(const StateType &s) {
 		mappings.push_back(s.getMap());
-		cout << "Solution : " << mappings.size() << endl;
+/*		cout << "Solution : " << mappings.size() << endl;
 		for (auto it : s.getMap()) {
 			cout << '(' << it.first << "," << it.second << ')' << " ";
 		}
-		cout << endl;
+		cout << endl;*/
 
 	}
 	void run()
