@@ -35,14 +35,14 @@ int main(int argc, char * argv[]) {
 		int sc = 0;
 //		const auto ss = vf2.getAnswer();
 
-		for (auto oneSolution : vf2.getAnswer()) {
+	/*	for (auto oneSolution : vf2.getAnswer()) {
 			cout << "Solution : " << sc++ << endl;
 			typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
 			for (auto it : oneSolution) {
 				cout << '(' <<it.first << "," << it.second<<") " ;
 			}
 			cout << endl;
-		}
+		}*/
 		auto t2 = clock();
 		cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	return 0;

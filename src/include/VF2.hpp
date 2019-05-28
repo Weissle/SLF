@@ -146,13 +146,11 @@ public:
 	};
 	void ToDoAfterFindASolution(const StateType &s) {
 		mappings.push_back(s.getMap());
-//		cout << mappings.size() << endl;
-/*		cout << "Solution : " << mappings.size() << endl;
+		cout << "Solution : " << mappings.size() << endl;
 		for (auto it : s.getMap()) {
-//			assert(it.first != nullptr && it.second != nullptr && "Map exist nullptr");
 			cout << '(' << it.first << "," << it.second << ')' << " ";
 		}
-		cout << endl;*/
+		cout << endl;
 
 	}
 	void run()
