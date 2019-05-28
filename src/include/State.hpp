@@ -62,7 +62,7 @@ public:
 private:
 
 	MapType mapping, mappingAux; //from query to target
-	const GraphType& targetGraph, & queryGraph;
+	const GraphType& targetGraph, &queryGraph;
 	NodeSetType targetGraphUnmap, targetMappingIn, targetMappingOut, targetMappingBoth,
 		queryGraphUnmap, queryMappingIn, queryMappingOut, queryMappingBoth;
 	size_t targetMappingInSize = 0, targetMappingOutSize = 0, queryMappingInSize = 0,
@@ -321,14 +321,14 @@ private:
 	{
 
 	}
-#define FUN1
+#define FUN
 
 	void seleteMatchOrder() {
 
 		NodeSetType nodeNotInMatchSet = queryGraphUnmap;
 		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
 		unordered_map<NodeIDType, char> map;
-		const auto calNodeMatchPoint = [=](const NodeType & node) {
+		const auto calNodeMatchPoint = [](const NodeType & node) {
 			double p1 = node.getInEdgesNum() + node.getOutEdgesNum();
 #ifdef FUN1
 			for (const auto& tempEdge : node.getInEdges()) if (nodeNotInMatchSet.find(tempEdge.getSourceNodeID()) == nodeNotInMatchSet.end()) p1 += 1;
@@ -336,7 +336,8 @@ private:
 #endif
 			return p1;
 		};
-		const auto seleteAGoodNodeToMatch = [=]() {
+			const auto seleteAGoodNodeToMatch = [&]() {
+//		const auto seleteAGoodNodeToMatch = [](const GraphType &queryGraph, NodeSetType &nodeNotInMatchSet) {
 			double nodePoint = -1;
 			NodeCPointer answer;
 			for (const auto& tempNodeID : nodeNotInMatchSet) {
@@ -361,11 +362,11 @@ private:
 
 
 		while (nodeNotInMatchSet.empty() == false) {
-			const auto nodePointPair = seleteAGoodNodeToMatch();
-			nodeNotInMatchSet.erase(nodePointPair.getKey()->getID());
-			order.push(seleteAGoodNodeToMatch());
+			const auto nodePointPair = seleteAGoodNodeToMatch(/*queryGraph, nodeNotInMatchSet*/);
+			//			nodeNotInMatchSet.erase(nodePointPair.getKey()->getID());
+			order.push(nodePointPair);
 			while (order.empty() == false) {
-
+	//			for (auto &i : matchSequence)cout << i << " "; cout << endl;
 				const auto nodePair = order.top();
 				order.pop();
 				const auto& nodePointer = nodePair.getKey();
@@ -386,6 +387,12 @@ private:
 						nodeNotInMatchSet.erase(tempEdge.getTargetNodeID());
 						NodeMatchPointPair tempPair(targetNodePointer, calNodeMatchPoint(*targetNodePointer));
 						order.push(tempPair);
+					}
+				}
+				if (nodeNotInMatchSet.empty()) {
+					while (order.empty()==false) {
+						matchSequence.push_back(order.top().getKey()->getID());
+						order.pop();
 					}
 				}
 			}
@@ -500,7 +507,7 @@ public:
 		queryGraphUnmap.erase(queryNodeID);
 
 
-		const auto calSetSizeAfterErase = [=](NodeSetType & inSet, NodeSetType & outSet, NodeSetType & bothSet, const NodeIDType & nodeID,
+		const auto calSetSizeAfterErase = [](NodeSetType & inSet, NodeSetType & outSet, NodeSetType & bothSet, const NodeIDType & nodeID,
 			size_t & inSize, size_t & outSize, size_t & bothSize)
 		{
 			static size_t findTime = 0;
