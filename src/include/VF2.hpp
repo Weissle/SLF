@@ -146,11 +146,11 @@ public:
 	};
 	void ToDoAfterFindASolution(const StateType &s) {
 		mappings.push_back(s.getMap());
-		cout << "Solution : " << mappings.size() << endl;
+	/*	cout << "Solution : " << mappings.size() << endl;
 		for (auto it : s.getMap()) {
 			cout << '(' << it.first << "," << it.second << ')' << " ";
 		}
-		cout << endl;
+		cout << endl;*/
 
 	}
 	void run()

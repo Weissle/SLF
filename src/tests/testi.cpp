@@ -6,7 +6,7 @@
 #include<random>
 #include<time.h>
 using namespace std;
-
+/*
 template<typename L=void>
 class A {
 	int a;
@@ -72,6 +72,20 @@ int main() {
 	t();
 	for (auto i = 0; i < times; ++i)a=p[rand()%count];
 	t();
+
+
+	return 0;
+}*/
+
+int main() {
+	unordered_map<int, int> m;
+	cout << m[1] << endl;
+	m[1]++;
+	cout << m[1] << endl;
+	m[2]++;
+	cout << m[2] << endl;
+	m[1]++;
+	cout << m[1] << endl;
 
 
 	return 0;

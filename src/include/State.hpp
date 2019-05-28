@@ -70,6 +70,9 @@ private:
 
 	unordered_map<NodeIDType, size_t> targetMappingInDepth, targetMappingOutDepth,
 		queryMappingInDepth, queryMappingOutDepth;
+
+	unordered_map<NodeIDType, size_t> targetMappingInRefTimes, targetMappingOutRefTimes,
+		queryMappingInRefTimes, queryMappingOutRefTimes;
 	size_t searchDepth;
 
 	vector<NodeIDType> matchSequence;
@@ -108,29 +111,7 @@ private:
 
 	}
 
-	bool sourceRuleInduceSubgraph(const MapPair & cp, const int need)const {
-		const auto& querySourceNodeID = cp.getKey();
-		const auto& targetSourceNodeID = cp.getValue();
 
-		const auto& querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
-		const auto& targetSourceNodePointer = targetGraph.getNodePointer(targetSourceNodeID);
-
-
-
-		for (const auto& tempEdge : targetSourceNodePointer->getOutEdges()) {
-			const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
-
-			if (setNotContainNodeID(targetGraphUnmap, targetTargetNodeID)) {
-				const auto tempMappingPair = mappingAux.find(targetTargetNodeID);
-				assert((tempMappingPair != mappingAux.end()) && "mapping not exist the map about this node");
-				const auto & queryTargetNodeID = tempMappingPair->second;
-				const auto & queryTargetNode = queryGraph.getNode(queryTargetNodeID);
-				if (querySourceNodePointer->existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
-			}
-		}
-		return true;
-
-	}
 	bool sourceRule(const MapPair & cp) const
 	{
 		const auto& querySourceNodeID = cp.getKey();
@@ -138,7 +119,31 @@ private:
 
 		const auto& querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
 		const auto& targetSourceNodePointer = targetGraph.getNodePointer(targetSourceNodeID);
-		int nodeToMappingNum = 0;
+
+		const auto queryRefPair = queryMappingOutRefTimes.find(querySourceNodeID);
+		const auto targetRefPair = targetMappingOutRefTimes.find(targetSourceNodeID);
+		const auto queryNodeOutRefTimes = (queryRefPair == queryMappingOutRefTimes.end()) ? 0 : queryRefPair->second;
+		const auto targetNodeOutRefTimes = (targetRefPair == targetMappingOutRefTimes.end()) ? 0 : targetRefPair->second;
+
+		/*	const auto queryNodeOutRefTimes = queryMappingOutRefTimes.find(querySourceNodeID)->second;
+			const auto targetNodeOutRefTimes = targetMappingOutRefTimes.find(targetSourceNodeID)->second;*/
+		if (induceGraph && queryNodeOutRefTimes != targetNodeOutRefTimes) return false;
+		else if (queryNodeOutRefTimes > targetNodeOutRefTimes) return false;
+
+		if (induceGraph) {
+			for (const auto& tempEdge : targetSourceNodePointer->getOutEdges()) {
+				const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
+
+				if (setNotContainNodeID(targetGraphUnmap, targetTargetNodeID)) {
+					const auto tempMappingPair = mappingAux.find(targetTargetNodeID);
+					assert((tempMappingPair != mappingAux.end()) && "mapping not exist the map about this node");
+					const auto & queryTargetNodeID = tempMappingPair->second;
+					const auto & queryTargetNode = queryGraph.getNode(queryTargetNodeID);
+					if (querySourceNodePointer->existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
+				}
+			}
+		}
+
 		for (const auto& tempEdge : querySourceNodePointer->getOutEdges()) {
 			const auto& queryTargetNodeID = tempEdge.getTargetNodeID();
 			const auto& queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
@@ -149,35 +154,12 @@ private:
 				const auto & targetTargetNodeID = tempMappingPair->second;
 				const auto & targetTargetNodePointer = targetGraph.getNodePointer(targetTargetNodeID);
 				if (targetSourceNodePointer->existSameTypeEdgeToNode(*targetTargetNodePointer, tempEdge) == false) return false;
-				++nodeToMappingNum;
 			}
 		}
-		if (induceGraph) return sourceRuleInduceSubgraph(cp, nodeToMappingNum);
-		else return true;
-	}
-	bool targetRuleInduceSubgraph(const MapPair & cp, const int need)const {
-		const auto& queryTargetNodeID = cp.getKey();
-		const auto& targetTargetNodeID = cp.getValue();
-
-		const auto& queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
-		const auto& targetTargetNodePointer = targetGraph.getNodePointer(targetTargetNodeID);
-
-
-		for (const auto& tempEdge : targetTargetNodePointer->getInEdges()) {
-			const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
-
-
-			if (setNotContainNodeID(targetGraphUnmap, targetSourceNodeID)) {
-				const auto tempMappingPair = mappingAux.find(targetSourceNodeID);
-
-				assert((tempMappingPair != mappingAux.end()) && "mapping not exist the map about this node");
-				const auto & querySourceNodeID = tempMappingPair->second;
-				const auto & querySourceNode = queryGraph.getNode(querySourceNodeID);
-				if (queryTargetNodePointer->existSameTypeEdgeFromNode(querySourceNode, tempEdge) == false) return false;
-			}
-		}
+		//		if (induceGraph) return sourceRuleInduceSubgraph(cp, nodeToMappingNum);
 		return true;
 	}
+
 	bool targetRule(const MapPair & cp)const
 	{
 		const auto& queryTargetNodeID = cp.getKey();
@@ -186,13 +168,35 @@ private:
 		const auto& queryTargetNodePointer = queryGraph.getNodePointer(queryTargetNodeID);
 		const auto& targetTargetNodePointer = targetGraph.getNodePointer(targetTargetNodeID);
 
-		int nodeToMappingNum = 0;
+
+		const auto queryRefPair = queryMappingInRefTimes.find(queryTargetNodeID);
+		const auto targetRefPair = targetMappingInRefTimes.find(targetTargetNodeID);
+		const auto queryNodeInRefTimes = (queryRefPair == queryMappingInRefTimes.end()) ? 0 : queryRefPair->second;
+		const auto targetNodeInRefTimes = (targetRefPair == targetMappingInRefTimes.end()) ? 0 : targetRefPair->second;
+		if (induceGraph && queryNodeInRefTimes != targetNodeInRefTimes) return false;
+		else if (queryNodeInRefTimes > targetNodeInRefTimes) return false;
+		if (induceGraph) {
+
+			if (queryNodeInRefTimes != targetNodeInRefTimes)return false;
+			for (const auto& tempEdge : targetTargetNodePointer->getInEdges()) {
+				const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
+
+				if (setNotContainNodeID(targetGraphUnmap, targetSourceNodeID)) {
+					const auto tempMappingPair = mappingAux.find(targetSourceNodeID);
+
+					assert((tempMappingPair != mappingAux.end()) && "mapping not exist the map about this node");
+					const auto & querySourceNodeID = tempMappingPair->second;
+					const auto & querySourceNode = queryGraph.getNode(querySourceNodeID);
+					if (queryTargetNodePointer->existSameTypeEdgeFromNode(querySourceNode, tempEdge) == false) return false;
+				}
+			}
+		}
+
 		for (const auto& tempEdge : queryTargetNodePointer->getInEdges()) {
 			const auto& querySourceNodeID = tempEdge.getSourceNodeID();
 			const auto& querySourceNodePointer = queryGraph.getNodePointer(querySourceNodeID);
 
 			if (setNotContainNodeID(queryGraphUnmap, querySourceNodeID)) {
-				nodeToMappingNum++;
 				const auto tempMappingPair = mapping.find(querySourceNodeID);
 
 				assert((tempMappingPair != mapping.end()) && "mapping not exist the map about this node");
@@ -202,8 +206,8 @@ private:
 				if (targetTargetNodePointer->existSameTypeEdgeFromNode(*targetSourceNodePointer, tempEdge) == false) return false;
 			}
 		}
-		if (induceGraph) return targetRuleInduceSubgraph(cp, nodeToMappingNum);
-		else return true;
+
+		return true;
 	}
 
 	bool inRule(const MapPair & cp)const
@@ -321,6 +325,78 @@ private:
 	{
 
 	}
+	bool inOutRefRule()const {
+		//ref times  -- node number
+		unordered_map<int, int>  queryInRef, queryOutRef, targetInRef, targetOutRef,
+			queryBothInRef, targetBothInRef, queryBothOutRef, targetBothOutRef;
+		queryInRef.reserve(queryMappingInSize << 1);
+		queryOutRef.reserve(queryMappingOutSize << 1);
+		targetInRef.reserve(targetMappingInSize << 1);
+		targetOutRef.reserve(targetMappingOutSize << 1);
+		queryBothInRef.reserve(queryBothInOutSize << 1);
+		targetBothInRef.reserve(targetBothInOutSize << 1);
+		queryBothOutRef.reserve(queryBothInOutSize << 1);
+		targetBothOutRef.reserve(targetBothInOutSize << 1);
+		const auto getRefTimes = [](const unordered_map<NodeIDType, size_t> &m, const NodeIDType &nodeID) {
+			const auto &tempPair = m.find(nodeID);
+			assert(tempPair != m.end() && " this node in in/out/both Set but ref times is zero ?");
+			return tempPair->second;
+		};
+		const auto cmpRefMap = [](unordered_map<int, int> &querym, unordered_map<int, int> &targetm) {
+			for (const auto pair : querym) {
+				if (targetm[pair.first] < pair.second) return false;
+			}
+			return true;
+		};
+
+
+		for (const auto &nodeID : queryMappingOut) {
+			if (setContainNodeID(queryMappingBoth, nodeID)) {
+				const auto refTimes = getRefTimes(queryMappingOutRefTimes, nodeID);
+				queryBothOutRef[refTimes]++;
+			}
+			else {
+				const auto refTimes = getRefTimes(queryMappingOutRefTimes, nodeID);
+				queryOutRef[refTimes]++;
+			}
+		}
+
+		for (const auto &nodeID : targetMappingOut) {
+			if (setContainNodeID(targetMappingBoth, nodeID)) {
+				const auto refTimes = getRefTimes(targetMappingOutRefTimes, nodeID);
+				targetBothOutRef[refTimes]++;
+			}
+			else {
+				const auto refTimes = getRefTimes(targetMappingOutRefTimes, nodeID);
+				targetOutRef[refTimes]++;
+			}
+		}
+		if (cmpRefMap(queryOutRef, targetOutRef) == false/* || cmpRefMap(queryBothOutRef, targetBothOutRef)*/)return false;
+	/*
+		for (const auto &nodeID : queryMappingIn) {
+			if (setContainNodeID(queryMappingBoth, nodeID))continue;
+			else {
+				const auto refTimes = getRefTimes(queryMappingInRefTimes, nodeID);
+				queryInRef[refTimes]++;
+			}
+		}
+
+		for (const auto &nodeID : targetMappingIn) {
+			if (setContainNodeID(targetMappingBoth, nodeID))continue;
+			else {
+				const auto refTimes = getRefTimes(targetMappingInRefTimes, nodeID);
+				targetInRef[refTimes]++;
+			}
+		}
+		if (cmpRefMap(queryInRef, targetInRef) == false)return false;*/
+
+
+
+
+
+
+		return true;
+	}
 #define FUN
 
 	void seleteMatchOrder() {
@@ -335,9 +411,9 @@ private:
 			for (const auto& tempEdge : node.getOutEdges()) if (nodeNotInMatchSet.find(tempEdge.getTargetNodeID()) == nodeNotInMatchSet.end()) p1 += 1;
 #endif
 			return p1;
-		};
-			const auto seleteAGoodNodeToMatch = [&]() {
-//		const auto seleteAGoodNodeToMatch = [](const GraphType &queryGraph, NodeSetType &nodeNotInMatchSet) {
+	};
+		const auto seleteAGoodNodeToMatch = [&]() {
+			//		const auto seleteAGoodNodeToMatch = [](const GraphType &queryGraph, NodeSetType &nodeNotInMatchSet) {
 			double nodePoint = -1;
 			NodeCPointer answer;
 			for (const auto& tempNodeID : nodeNotInMatchSet) {
@@ -366,7 +442,7 @@ private:
 			//			nodeNotInMatchSet.erase(nodePointPair.getKey()->getID());
 			order.push(nodePointPair);
 			while (order.empty() == false) {
-	//			for (auto &i : matchSequence)cout << i << " "; cout << endl;
+				//			for (auto &i : matchSequence)cout << i << " "; cout << endl;
 				const auto nodePair = order.top();
 				order.pop();
 				const auto& nodePointer = nodePair.getKey();
@@ -390,7 +466,7 @@ private:
 					}
 				}
 				if (nodeNotInMatchSet.empty()) {
-					while (order.empty()==false) {
+					while (order.empty() == false) {
 						matchSequence.push_back(order.top().getKey()->getID());
 						order.pop();
 					}
@@ -403,7 +479,7 @@ private:
 			}*/
 
 
-	}
+}
 
 public:
 	StateVF2(const GraphType & _t, const GraphType & _q, bool _induceGraph) :targetGraph(_t), queryGraph(_q), induceGraph(_induceGraph) {
@@ -411,7 +487,7 @@ public:
 		auto calASizeForHash = [](const size_t need) {
 			size_t i = 16;
 			while (i < need) i = i << 1;
-			if (i * 0.6 > need) return i;
+			if (i * 0.8 > need) return i;
 			else return i << 1;
 		};
 		const int queryHashSize = calASizeForHash(queryGraph.graphSize());
@@ -432,6 +508,13 @@ public:
 		targetMappingOutDepth.reserve(targetHashSize);
 		queryMappingInDepth.reserve(queryHashSize);
 		queryMappingOutDepth.reserve(queryHashSize);
+
+
+		targetMappingInRefTimes.reserve(targetHashSize);
+		targetMappingOutRefTimes.reserve(targetHashSize);
+		queryMappingInRefTimes.reserve(queryHashSize);
+		queryMappingOutRefTimes.reserve(queryHashSize);
+
 
 		searchDepth = 0;
 		for (auto& tempNode : targetGraph.getAllNodes())
@@ -491,7 +574,7 @@ public:
 			//		bool answer = sourceRule(cp) && targetRule(cp) && inRule(cp);
 			//		bool answer = sourceRule(cp) && targetRule(cp) && outRule(cp);
 
-		bool answer = sourceRule(cp) && targetRule(cp) && inRule(cp) && outRule(cp);
+		bool answer = sourceRule(cp) && targetRule(cp) && inRule(cp) && outRule(cp) && inOutRefRule();
 		return answer;
 
 	}
@@ -546,9 +629,11 @@ public:
 
 		for (const auto& tempEdge : targetNodePointer->getInEdges()) {
 			const auto& sourceNodeID = tempEdge.getSourceNodeID();
+			targetMappingInRefTimes[sourceNodeID]++;
 			// was not be mapped
 			if (setContainNodeID(targetGraphUnmap, sourceNodeID)) {
 				targetMappingIn.insert(sourceNodeID);
+
 				if (targetMappingInDepth[sourceNodeID] == 0) {
 					targetMappingInDepth[sourceNodeID] = searchDepth;
 					++targetMappingInSize;
@@ -558,8 +643,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNodePointer->getOutEdges()) {
 			const auto& targetNodeID = tempEdge.getTargetNodeID();
+			targetMappingOutRefTimes[targetNodeID]++;
 			if (setContainNodeID(targetGraphUnmap, targetNodeID)) {
 				targetMappingOut.insert(targetNodeID);
+
 				if (targetMappingOutDepth[targetNodeID] == 0) {
 					targetMappingOutDepth[targetNodeID] = searchDepth;
 					++targetMappingOutSize;
@@ -569,9 +656,10 @@ public:
 		}
 		for (const auto& tempEdge : queryNodePointer->getOutEdges()) {
 			const auto& targetNodeID = tempEdge.getTargetNodeID();
-
+			queryMappingOutRefTimes[targetNodeID]++;
 			if (setContainNodeID(queryGraphUnmap, targetNodeID)) {
 				queryMappingOut.insert(targetNodeID);
+
 				if (queryMappingOutDepth[targetNodeID] == 0) {
 					queryMappingOutDepth[targetNodeID] = searchDepth;
 					++queryMappingOutSize;
@@ -581,8 +669,10 @@ public:
 		}
 		for (const auto& tempEdge : queryNodePointer->getInEdges()) {
 			const auto& sourceNodeID = tempEdge.getSourceNodeID();
+			queryMappingInRefTimes[sourceNodeID]++;
 			if (setContainNodeID(queryGraphUnmap, sourceNodeID)) {
 				queryMappingIn.insert(sourceNodeID);
+
 				if (queryMappingInDepth[sourceNodeID] == 0) {
 					queryMappingInDepth[sourceNodeID] = searchDepth;
 					++queryMappingInSize;
@@ -600,9 +690,28 @@ public:
 		mappingAux.erase(cp.getValue());
 		const auto& queryNodeID = cp.getKey();
 		const auto& targetNodeID = cp.getValue();
+		const auto& queryNode = queryGraph.getNode(queryNodeID);
+		const auto& targetNode = targetGraph.getNode(targetNodeID);
 
 		targetGraphUnmap.insert(targetNodeID);
 		queryGraphUnmap.insert(queryNodeID);
+
+		for (const auto &tempEdge : queryNode.getInEdges()) {
+			const auto& nodeID = tempEdge.getSourceNodeID();
+			queryMappingInRefTimes[nodeID]--;
+		}
+		for (const auto &tempEdge : queryNode.getOutEdges()) {
+			const auto& nodeID = tempEdge.getTargetNodeID();
+			queryMappingOutRefTimes[nodeID]--;
+		}
+		for (const auto &tempEdge : targetNode.getInEdges()) {
+			const auto& nodeID = tempEdge.getSourceNodeID();
+			targetMappingInRefTimes[nodeID]--;
+		}
+		for (const auto &tempEdge : targetNode.getOutEdges()) {
+			const auto& nodeID = tempEdge.getTargetNodeID();
+			targetMappingOutRefTimes[nodeID]--;
+		}
 
 		for (const auto& tempPair : queryMappingInDepth) {
 			if (tempPair.second == searchDepth) {
