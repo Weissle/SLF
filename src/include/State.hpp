@@ -310,6 +310,9 @@ private:
 	}
 
 	bool inOutRefRule()const {
+		//there is a similar cut rule for non-induce subgraph , but it is not on the schedule for now .
+		if (!induceGraph)return true;
+
 		//ref times  -- node number
 
 		unordered_map<int, int>  queryInRef, queryOutRef, targetInRef, targetOutRef,
