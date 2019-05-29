@@ -33,8 +33,11 @@ class VF2 {
 	//	if((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
 		auto t1 = clock();
 		const auto canditarePairs = s.calCandidatePairs();
-		canditatePairCount += canditarePairs.size();
 		auto t2 = clock();
+		cal += t2 - t1;
+		if (canditarePairs.empty())return false;
+	//	cout << canditarePairs.size() << ' ';
+		canditatePairCount += canditarePairs.size();
 
 	/*	bool isOnrightway = true;
 		for (auto it : s.getMap(false)) {
@@ -74,7 +77,7 @@ class VF2 {
 			}
 			cout << endl;
 		}*/
-		cal += t2 - t1;
+
 		for (const auto &tempCanditatePair : canditarePairs){
 			const auto queryNodeID = tempCanditatePair.getKey();
 			const auto targetNodeID = tempCanditatePair.getValue();

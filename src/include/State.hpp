@@ -518,19 +518,17 @@ public:
 		const bool queryNodeInIn = setContainNodeID(queryMappingIn, queryNodeToMatchID);
 		const bool queryNodeInOut = setContainNodeID(queryMappingOut, queryNodeToMatchID);
 		const NodeSetType * tempNodeSetPointer;
-		if (queryNodeInIn && queryNodeInOut) tempNodeSetPointer = (queryMappingInSize > queryMappingOutSize) ? &targetMappingOut : &targetMappingIn;
+		if (queryNodeInIn && queryNodeInOut) tempNodeSetPointer = &targetMappingBoth;
 		else if (queryNodeInIn) tempNodeSetPointer = &targetMappingIn;
 		else if (queryNodeInOut)tempNodeSetPointer = &targetMappingOut;
 		else tempNodeSetPointer = &targetGraphUnmap;
 
 		const auto getRefTimes = [](const unordered_map<NodeIDType, size_t> &m, const NodeIDType &nodeID) {
-			return size_t(0);
 			const auto &tempPair = m.find(nodeID);
 			if (tempPair == m.end()) return size_t(0);
 			else return tempPair->second;
 		};
 		const auto getNodeDepth = [](const unordered_map<NodeIDType, size_t> &m, const NodeIDType &nodeID) {
-			return size_t(0);
 			const auto &tempPair = m.find(nodeID);
 			if (tempPair == m.end()) return size_t(0);
 			else return tempPair->second;
@@ -544,10 +542,10 @@ public:
 		const auto & targetNodeToMatchSet = *tempNodeSetPointer;
 		for (const auto& targetNodeToMatchID : targetNodeToMatchSet) {
 			if (twoNodesMayMatch(queryNodeToMatchID, targetNodeToMatchID) == false)continue;
-			const bool targetNodeInIn = setContainNodeID(targetMappingIn, targetNodeToMatchID);
+/*			const bool targetNodeInIn = setContainNodeID(targetMappingIn, targetNodeToMatchID);
 			if (targetNodeInIn != queryNodeInIn) continue;
 			const bool targetNodeInOut = setContainNodeID(targetMappingOut, targetNodeToMatchID);
-			if (targetNodeInOut != queryNodeInOut)continue;
+			if (targetNodeInOut != queryNodeInOut)continue;*/
 
 
 			const auto targetNodeInRefTimes = getRefTimes(targetMappingInRefTimes, targetNodeToMatchID);
