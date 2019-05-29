@@ -33,8 +33,9 @@ class VF2 {
 	//	if((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
 		auto t1 = clock();
 		const auto canditarePairs = s.calCandidatePairs();
+		canditatePairCount += canditarePairs.size();
 		auto t2 = clock();
-		bool existAA = false;
+
 	/*	bool isOnrightway = true;
 		for (auto it : s.getMap(false)) {
 		
@@ -136,6 +137,7 @@ class VF2 {
 		//		mappings.push_back(s.getMap());
 	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
+	long long canditatePairCount = 0;
 public:
 
 	VF2() = default;
@@ -162,6 +164,7 @@ public:
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
 		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
 		cout << "hit times " << hitTime << endl;
+		cout << "canditate Pair Count " << canditatePairCount << endl;
 	}
 	vector<MapType> getAnswer()const {
 		

@@ -524,12 +524,22 @@ public:
 		else tempNodeSetPointer = &targetGraphUnmap;
 
 		const auto getRefTimes = [](const unordered_map<NodeIDType, size_t> &m, const NodeIDType &nodeID) {
+			return size_t(0);
 			const auto &tempPair = m.find(nodeID);
 			if (tempPair == m.end()) return size_t(0);
 			else return tempPair->second;
 		};
+		const auto getNodeDepth = [](const unordered_map<NodeIDType, size_t> &m, const NodeIDType &nodeID) {
+			return size_t(0);
+			const auto &tempPair = m.find(nodeID);
+			if (tempPair == m.end()) return size_t(0);
+			else return tempPair->second;
+		};
+
 		const auto queryNodeInRefTimes = getRefTimes(queryMappingInRefTimes, queryNodeToMatchID);
 		const auto queryNodeOutRefTimes = getRefTimes(queryMappingOutRefTimes, queryNodeToMatchID);
+		const auto queryNodeInDepth = getNodeDepth(queryMappingInDepth, queryNodeToMatchID);
+		const auto queryNodeOutDepth = getNodeDepth(queryMappingOutDepth, queryNodeToMatchID);
 		answer.reserve(targetMappingInSize + targetMappingOutSize);
 		const auto & targetNodeToMatchSet = *tempNodeSetPointer;
 		for (const auto& targetNodeToMatchID : targetNodeToMatchSet) {
@@ -552,8 +562,11 @@ public:
 				if (queryNodeOutRefTimes != targetNodeOutRefTimes) continue;
 			}
 			else if (queryNodeOutRefTimes > targetNodeOutRefTimes) continue;
-		
-
+			
+			const auto targetNodeInDepth = getNodeDepth(targetMappingInDepth, targetNodeToMatchID);
+			if (queryNodeInDepth != targetNodeInDepth)continue;
+			const auto targetNodeOutDepth = getNodeDepth(targetMappingOutDepth, targetNodeToMatchID);
+			if (queryNodeOutDepth != targetNodeOutDepth)continue;
 			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
 
 		}
