@@ -67,7 +67,6 @@ public:
 	}
 	void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
 		auto &tempNode = nodes[index[_id]];
-		//	tempNode->setLabel(_label);
 		tempNode.setLabel(_label);
 		return;
 	}

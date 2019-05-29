@@ -126,7 +126,15 @@ class VF2 {
 #endif
 		return false;
 	}
-
+	void ToDoAfterFindASolution(const StateType &s) {
+		static size_t Solution = 1;
+		cout << "Solution : " << Solution++ << endl;
+		for (auto it : s.getMap()) {
+			cout << '(' << it.first << "," << it.second << ')' << " ";
+		}
+		cout << endl;
+		//		mappings.push_back(s.getMap());
+	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
 public:
 
@@ -144,21 +152,7 @@ public:
 		}*/
 	
 	};
-	void ToDoAfterFindASolution(const StateType &s) {
-		static size_t Solution = 1;
-		cout << "Solution : " << Solution++ << endl;
-		for (auto it : s.getMap()) {
-			cout << '(' << it.first << "," << it.second << ')' << " ";
-		}
-		cout << endl;
-//		mappings.push_back(s.getMap());
-	/*	cout << "Solution : " << mappings.size() << endl;
-		for (auto it : s.getMap()) {
-			cout << '(' << it.first << "," << it.second << ')' << " ";
-		}
-		cout << endl;*/
-
-	}
+	
 	void run()
 	{
 		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);

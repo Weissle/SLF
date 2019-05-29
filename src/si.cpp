@@ -20,30 +20,32 @@ int main(int argc, char * argv[]) {
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg" });
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath;
+	bool induceGraph = true, onlyNeedOneSolution = false;
 	cmdl({ "-target-graph","-tg" }) >> targetGraphPath;
 	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
-	
+	induceGraph = cmdl[{"-induce-graph", "-induce"}];
+	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-		const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
-				*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
+	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
+		*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
 
-		VF2<StateType> vf2(*targetGraph, *queryGraph, true, false);
+	VF2<StateType> vf2(*targetGraph, *queryGraph, induceGraph, onlyNeedOneSolution);
 	//	VF2<GraphType> vf2(targetGraph, queryGraph, false);
 
-		auto t1 = clock();
-		vf2.run();
-		/*
-		int sc = 0;
-		for (auto oneSolution : vf2.getAnswer()) {
-			cout << "Solution : " << sc++ << endl;
-			typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
-			for (auto it : oneSolution) {
-				cout << '(' <<it.first << "," << it.second<<") " ;
-			}
-			cout << endl;
-		}*/
-		auto t2 = clock();
-		cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
+	auto t1 = clock();
+	vf2.run();
+	/*
+	int sc = 0;
+	for (auto oneSolution : vf2.getAnswer()) {
+		cout << "Solution : " << sc++ << endl;
+		typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
+		for (auto it : oneSolution) {
+			cout << '(' <<it.first << "," << it.second<<") " ;
+		}
+		cout << endl;
+	}*/
+	auto t2 = clock();
+	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	return 0;
 }
 

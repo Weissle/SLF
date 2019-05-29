@@ -98,11 +98,13 @@ private:
 	bool setNotContainNodeID(const NodeSetType & s, const NodeIDType & nodeID)const {
 		return (s.find(nodeID) == s.end());
 	}
+
+	//because the match order is immutable , search depth decides which node to be matched;
 	NodeIDType selectNodeToCalCanditates()const
 	{
 		return matchSequence[searchDepth];
 	}
-	//same label and target node edges' number should more than query node's.
+	//same label and target node edges' number should cover query node's.
 	bool twoNodesMayMatch(NodeIDType queryNodeID, NodeIDType targetNodeID)const
 	{
 		const auto& queryNode = queryGraph.getNode(queryNodeID);
@@ -111,6 +113,7 @@ private:
 
 	}
 
+	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair & cp) const
 	{
 		const auto& querySourceNodeID = cp.getKey();
@@ -193,6 +196,7 @@ private:
 		return true;
 	}
 
+	//cut rule
 	bool inRule(const MapPair & cp)const
 	{
 		const auto& queryTargetNodeID = cp.getKey();

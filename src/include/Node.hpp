@@ -16,15 +16,20 @@ public:
 	Node() = default;
 	~Node() = default;
 	Node(const NodeIDType _id) :id(_id) {}
-	//should id equal
+	
 	virtual const NodeLabelType& getLabel()const = 0;
 	virtual void setLabel(const NodeLabelType _label) = 0;
-	virtual bool operator==(const NodeType &n)const {
+
+/*	virtual bool operator==(const NodeType &n)const {
 		return id == n.getID();
-	}
+	}*/
+	//same label
 	virtual bool isSameType(const NodeType &n)const = 0;
+	// >= operator :this node's edges should cover the second node's edges;
+	// <= operator :similar to >= operator
 	virtual bool operator>=(const NodeType &n) const = 0;
 	virtual bool operator<=(const NodeType &n)const = 0;
+
 	virtual bool existSameTypeEdgeToNode(const NodeType &n, const EdgeType& e)const = 0;
 	virtual bool existSameTypeEdgeFromNode(const NodeType &n, const EdgeType& e)const = 0;
 	virtual const vector<EdgeType>& getOutEdges() const = 0;
@@ -34,6 +39,7 @@ public:
 	virtual const NodeIDType& getID()const {
 		return id;
 	}
+	// 
 	virtual size_t nodeIdHash()const = 0;
 	virtual void addInEdge(const EdgeType &e) = 0;
 	virtual void addOutEdge(const EdgeType &e) = 0;
@@ -68,14 +74,13 @@ public:
 	  void setLabel(const NodeLabelType _label) {
 		this->label = _label;
 	}
-	  bool operator==(const NodeBaseType &n)const {
+/*	  bool operator==(const NodeBaseType &n)const {
 		  return this->getID() == n.getID();
-	  }
+	  }*/
 	  bool isSameType(const NodeBaseType &n)const {	
 		return label == n.getLabel();
 	}
 	  bool operator>=(const NodeBaseType &n) const {
-		 
 		return ((inEdges.size() >= n.getInEdgesNum()) && (outEdges.size() >= n.getOutEdgesNum()));;
 	}
 	  bool operator<=(const NodeBaseType &n)const {
