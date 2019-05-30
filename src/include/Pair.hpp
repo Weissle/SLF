@@ -13,6 +13,12 @@ public:
 	inline bool operator==(const KVPair<K, V> &p) const {
 		return p.getKey() == key;
 	}
+	bool operator<(const KVPair &p)const {
+		return key < p.getKey();
+	}
+	bool operator>(const KVPair &p)const {
+		return key > p.getKey();
+	}
 };
 namespace std {
 	template<typename K, typename V>
