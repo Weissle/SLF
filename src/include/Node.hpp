@@ -1,6 +1,5 @@
 #pragma once
 #include"Edge.hpp"
-#include<xhash>
 #include<typeinfo>
 #include<vector>
 

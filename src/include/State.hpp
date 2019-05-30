@@ -610,9 +610,6 @@ private:
 			}
 
 		}
-		for (const auto &tempNodeID : matchSequence) {
-			cout << tempNodeID << " : " << calNodeMatchPoint(queryGraph.getNode(tempNodeID)) << endl;;
-		}
 	}
 #elif defined(RULE_3)
 

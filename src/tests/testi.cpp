@@ -2,7 +2,6 @@
 #include<unordered_set>
 #include<unordered_map>
 #include<algorithm>
-#include<xhash>
 #include<random>
 #include<time.h>
 using namespace std;
