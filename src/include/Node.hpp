@@ -8,8 +8,8 @@ template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
 class Node {
 	NodeIDType id;
 public:
-	typedef typename NodeIDType NodeIDType;
-	typedef typename NodeLabelType NodeLabelType;
+	typedef NodeIDType NodeIDType;
+	typedef NodeLabelType NodeLabelType;
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
 public:
 	Node() = default;
@@ -49,8 +49,8 @@ class NodeVF2 :public Node<NodeIDType, EdgeType, NodeLabelType> {
 public:
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeBaseType;
 	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
-	typedef typename NodeIDType NodeIDType;
-	typedef typename NodeLabelType NodeLabelType;
+	typedef NodeIDType NodeIDType;
+	typedef NodeLabelType NodeLabelType;
 
 private:
 

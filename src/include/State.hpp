@@ -44,7 +44,7 @@ public:
 template<typename GraphType>
 class StateVF2 : public State<GraphType> {
 public:
-	typedef typename GraphType GraphType;
+	typedef GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 

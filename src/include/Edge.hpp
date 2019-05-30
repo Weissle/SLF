@@ -3,8 +3,8 @@
 template<typename NodeIDType, typename EdgeLabelType>
 class Edge {
 public:
-	typedef typename EdgeLabelType EdgeLabelType;
-	typedef typename Edge<NodeIDType, EdgeLabelType> EdgeType;
+	typedef EdgeLabelType EdgeLabelType;
+	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
 public:
 	Edge() = default;
 	~Edge() = default;
@@ -25,9 +25,9 @@ public:
 	//BOTH edge allows to get both source and target  nodes id
 	//using this to avoid logical error , ofc all edges can be set to BOTH type; 
 	enum NODE_RECORD_TYPE { SOURCE, TARGET, BOTH };
-	typedef typename EdgeLabelType EdgeLabelType;
-	typedef typename EdgeVF2<NodeIDType, EdgeLabelType> EdgeType;
-	typedef typename Edge<NodeIDType, EdgeLabelType> EdgeBaseType;
+	typedef EdgeLabelType EdgeLabelType;
+	typedef EdgeVF2<NodeIDType, EdgeLabelType> EdgeType;
+	typedef Edge<NodeIDType, EdgeLabelType> EdgeBaseType;
 private:
 	NodeIDType source, target;
 	NODE_RECORD_TYPE recodeType;
