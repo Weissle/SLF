@@ -9,8 +9,9 @@
 #include<fstream>
 #define TIME_COUNT
 using namespace std;
-template<typename StateType>
+template<typename StateType,typename _AnswerReceiver>
 class VF2 {
+	typedef _AnswerReceiver AnswerReceiver;
 	typedef typename StateType::GraphType GraphType;
 	typedef typename StateType::NodeType NodeType;
 	typedef typename StateType::EdgeType EdgeType;
@@ -19,7 +20,7 @@ class VF2 {
 	typedef typename StateType::MapPair MapPair;
 	map<int, int> midGraph;
 	const GraphType &targetGraph, &queryGraph;
-	vector<MapType> mappings;
+	AnswerReceiver &answerReceiver;
 	bool onlyNeedOneSolution = true;
 	bool induceGraph = true;
 	bool goDeeper(StateType &s)
@@ -131,13 +132,7 @@ class VF2 {
 		return false;
 	}
 	void ToDoAfterFindASolution(const StateType &s) {
-		static size_t Solution = 1;
-		cout << "Solution : " << Solution++ << endl;
-		for (auto it : s.getMap()) {
-			cout << '(' << it.first << "," << it.second << ')' << " ";
-		}
-		cout << endl;
-		//		mappings.push_back(s.getMap());
+		answerReceiver << s.getMap();
 	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
 	long long canditatePairCount = 0;
@@ -145,8 +140,9 @@ public:
 
 	VF2() = default;
 	~VF2() = default;
-	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
-		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph) {
+	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph,AnswerReceiver &_answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
+		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph),answerReceiver(_answerReceiver)
+	{
 	/*	fstream f;
 		f.open("D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\midgraph.graph",ios_base::in);
 		for (int i = 0; i < queryGraph.graphSize(); ++i) {
@@ -169,8 +165,5 @@ public:
 		cout << "hit times " << hitTime << endl;
 		cout << "canditate Pair Count " << canditatePairCount << endl;
 	}
-	vector<MapType> getAnswer()const {
-		
-		return mappings;
-	}
+
 };

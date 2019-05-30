@@ -7,6 +7,7 @@
 #include"argh.h"
 #include<time.h>
 #include<iostream>
+#include"AnswerReceiver.hpp"
 using namespace std;
 static long t = 0;
 
@@ -16,7 +17,7 @@ int main(int argc, char * argv[]) {
 	typedef NodeVF2<int, EdgeType, int> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 	typedef StateVF2<GraphType> StateType;
-
+	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg" });
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath;
@@ -29,21 +30,12 @@ int main(int argc, char * argv[]) {
 	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
 		*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
 
-	VF2<StateType> vf2(*targetGraph, *queryGraph, induceGraph, onlyNeedOneSolution);
-	//	VF2<GraphType> vf2(targetGraph, queryGraph, false);
+	AnswerReceiverType answerReceiver;
+	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
 
 	auto t1 = clock();
 	vf2.run();
-	/*
-	int sc = 0;
-	for (auto oneSolution : vf2.getAnswer()) {
-		cout << "Solution : " << sc++ << endl;
-		typedef unordered_map<const NodeType*, const NodeType*>::const_iterator itType;
-		for (auto it : oneSolution) {
-			cout << '(' <<it.first << "," << it.second<<") " ;
-		}
-		cout << endl;
-	}*/
+
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	return 0;
