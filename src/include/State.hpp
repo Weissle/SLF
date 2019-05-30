@@ -323,7 +323,7 @@ private:
 			assert(tempPair != m.end() && " this node in in/out/both Set but ref times is zero ?");
 			return tempPair->second;
 		};
-		const auto cmpRefMap = [](unordered_map<int, int> &querym, unordered_map<int, int> &targetm) {
+		const auto cmpRefMap = [](const unordered_map<int, int> &querym, unordered_map<int, int> &targetm) {
 			for (const auto pair : querym) {
 				if (targetm[pair.first] < pair.second) return false;
 			}
@@ -379,7 +379,7 @@ private:
 			(queryMappingOutSize - queryBothInOutSize <= targetMappingOutSize - targetBothInOutSize);
 		return answer;
 	}
-#define RULE_2
+#define RULE_1
 #ifdef RULE_1
 	void seleteMatchOrder() {
 		NodeSetType nodeNotInMatchSet = queryGraphUnmap;
