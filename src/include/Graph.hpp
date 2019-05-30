@@ -6,11 +6,11 @@
 #include<unordered_map>
 using namespace std;
 
-template<typename NodeType, typename EdgeType>
+template<typename _NodeType, typename _EdgeType>
 class Graph {
 public:
-	typedef NodeType NodeType;
-	typedef EdgeType EdgeType;
+	typedef _NodeType NodeType;
+	typedef _EdgeType EdgeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
@@ -30,13 +30,13 @@ public:
 
 };
 
-template<typename NodeType, typename EdgeType>
-class GraphVF2 :public Graph<NodeType, EdgeType>
+template<typename _NodeType, typename _EdgeType>
+class GraphVF2 :public Graph<_NodeType, _EdgeType>
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
-	typedef NodeType NodeType;
-	typedef EdgeType EdgeType;
+	typedef _NodeType NodeType;
+	typedef _EdgeType EdgeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;

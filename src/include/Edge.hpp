@@ -1,9 +1,10 @@
 #pragma once
 #include<typeinfo>
-template<typename NodeIDType, typename EdgeLabelType>
+template<typename _NodeIDType, typename _EdgeLabelType>
 class Edge {
 public:
-	typedef EdgeLabelType EdgeLabelType;
+	typedef _EdgeLabelType EdgeLabelType;
+	typedef _NodeIDType NodeIDType;
 	typedef Edge<NodeIDType, EdgeLabelType> EdgeType;
 public:
 	Edge() = default;
@@ -17,15 +18,16 @@ public:
 };
 
 
-template<typename NodeIDType, typename EdgeLabelType>
-class EdgeVF2 :public Edge<NodeIDType, EdgeLabelType> {
+template<typename _NodeIDType, typename _EdgeLabelType>
+class EdgeVF2 :public Edge<_NodeIDType, _EdgeLabelType> {
 
 public:
 	//SOURCE edge only allows to gain it's source node id . TARGET edge is similar to SOURCE edge;
 	//BOTH edge allows to get both source and target  nodes id
 	//using this to avoid logical error , ofc all edges can be set to BOTH type; 
 	enum NODE_RECORD_TYPE { SOURCE, TARGET, BOTH };
-	typedef EdgeLabelType EdgeLabelType;
+	typedef _NodeIDType NodeIDType;
+	typedef _EdgeLabelType EdgeLabelType;
 	typedef EdgeVF2<NodeIDType, EdgeLabelType> EdgeType;
 	typedef Edge<NodeIDType, EdgeLabelType> EdgeBaseType;
 private:

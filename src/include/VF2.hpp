@@ -55,7 +55,7 @@ class VF2 {
 			cout << endl;
 //			cout << "error on this : " << it.first << " ," << it.second << endl;
 		}
-/*
+
 		for (const auto &tempCanditatePair : canditarePairs) {
 			const auto queryNodeID = tempCanditatePair.getKey();
 			const auto targetNodeID = tempCanditatePair.getValue();

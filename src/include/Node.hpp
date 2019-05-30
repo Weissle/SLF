@@ -4,13 +4,16 @@
 #include<vector>
 
 using namespace std;
-template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
+template<typename _NodeIDType, typename _EdgeType, typename _NodeLabelType>
 class Node {
-	NodeIDType id;
 public:
-	typedef NodeIDType NodeIDType;
-	typedef NodeLabelType NodeLabelType;
+	typedef _NodeIDType NodeIDType;
+	typedef _NodeLabelType NodeLabelType;
+	typedef _EdgeType EdgeType;
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
+private:
+	NodeIDType id;
+
 public:
 	Node() = default;
 	~Node() = default;
@@ -44,13 +47,15 @@ public:
 	virtual void addOutEdge(const EdgeType &e) = 0;
 };
 
-template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
-class NodeVF2 :public Node<NodeIDType, EdgeType, NodeLabelType> {
+template<typename _NodeIDType, typename _EdgeType, typename _NodeLabelType>
+class NodeVF2 :public Node<_NodeIDType, _EdgeType, _NodeLabelType> {
 public:
+	typedef _NodeIDType NodeIDType;
+	typedef _NodeLabelType NodeLabelType;
+	typedef _EdgeType EdgeType;
 	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeBaseType;
 	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
-	typedef NodeIDType NodeIDType;
-	typedef NodeLabelType NodeLabelType;
+	
 
 private:
 
@@ -106,11 +111,11 @@ public:
 	  void addOutEdge(const EdgeType &e) { outEdges.push_back(e); }
 };
 
-template<typename NodeType, typename NodeIDType = NodeType::NodeIDType>
+template<typename NodeType, typename NodeIDType = typename NodeType::NodeIDType>
 static NodeIDType getNodeID(const NodeType &node) {
 	return node.getID();
 }
-template<typename NodeType, typename NodeIDType = NodeType::NodeIDType>
+template<typename NodeType, typename NodeIDType = typename NodeType::NodeIDType>
 static NodeIDType getNodeID(const NodeType *node) {
 	return node->getID();
 }
@@ -123,7 +128,7 @@ namespace std
 	template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
 	struct hash<Node<NodeIDType, EdgeType, NodeLabelType>>
 	{
-		size_t operator() (const Node  &n) const {
+		size_t operator() (const Node<NodeIDType, EdgeType, NodeLabelType>  &n) const {
 			return n.nodeIdHash();
 		}
 	};

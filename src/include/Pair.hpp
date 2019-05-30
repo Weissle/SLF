@@ -35,7 +35,7 @@ public:
 	~FSPair() = default;
 	FSPair(F _f, S _s) :first(_f),second(_s) {};
 	inline bool operator==(const FSPair<F, S> &p) const {
-		return (p.getFirst() == key && p.getSecond() == value);
+		return (p.getFirst() == first && p.getSecond() == second);
 	}
 };
 namespace std {

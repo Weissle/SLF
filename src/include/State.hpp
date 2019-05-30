@@ -41,10 +41,10 @@ public:
 };
 
 
-template<typename GraphType>
-class StateVF2 : public State<GraphType> {
+template<typename _GraphType>
+class StateVF2 : public State<_GraphType> {
 public:
-	typedef GraphType GraphType;
+	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 
@@ -52,10 +52,10 @@ public:
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef typename State<GraphType> StateBase;
+	typedef State<GraphType> StateBase;
 	typedef const NodeType* NodeCPointer;
-	typedef StateBase::MapPair MapPair;
-	typedef StateBase::MapType MapType;
+	typedef typename StateBase::MapPair MapPair;
+	typedef typename StateBase::MapType MapType;
 
 	typedef unordered_set<NodeIDType> NodeSetType;
 
