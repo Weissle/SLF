@@ -193,9 +193,10 @@ private:
 			const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
 
 			if (setNotContainNodeID(targetGraphUnmap, targetTargetNodeID)) {
+				if (induceGraph == false)continue;
 				const auto & queryTargetNodeID = getMapNodeID(mappingAux, targetTargetNodeID);
 				const auto & queryTargetNode = queryGraph.getNode(queryTargetNodeID);
-				if (induceGraph && querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
+				if (querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
 			}
 			else {
 				const auto targetTargetNodeDepth = getNodeDepth(targetMappingOutDepth, targetTargetNodeID);
@@ -277,7 +278,8 @@ private:
 		for (const auto& tempEdge : targetTargetNode.getInEdges()) {
 			const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
 
-			if (setNotContainNodeID(targetGraphUnmap, targetSourceNodeID)) {		
+			if (setNotContainNodeID(targetGraphUnmap, targetSourceNodeID)) {
+				if (induceGraph == false)continue;
 				const auto & querySourceNodeID = getMapNodeID(mappingAux, targetSourceNodeID);
 				const auto & querySourceNode = queryGraph.getNode(querySourceNodeID);
 				if (queryTargetNode.existSameTypeEdgeFromNode(querySourceNode, tempEdge) == false) return false;
@@ -543,10 +545,9 @@ private:
 		};
 		const auto seleteAGoodNodeToMatch = [&](const NodeSetType &s) {
 			double nodePoint = -1;
-			NodeCPointer answer;
+			NodeCPointer answer = nullptr;
 			const bool inAndOutSetNull = (inSet.empty() && outSet.empty());
 			for (const auto& tempNodeID : s) {
-				//		for (const auto& tempNodeID : nodeNotInMatchSet) {
 				if (inAndOutSetNull == false && (setNotContainNodeID(inSet, tempNodeID) && setNotContainNodeID(outSet, tempNodeID))) continue;
 				const auto& tempNode = queryGraph.getNode(tempNodeID);
 				const auto tempPoint = calNodeMatchPoint(tempNode);
@@ -566,7 +567,7 @@ private:
 		const auto cmp = [](const NodeMatchPointPair & a, const NodeMatchPointPair & b) {
 			return a.getValue() < b.getValue();
 		};
-		priority_queue<NodeMatchPointPair, vector<NodeMatchPointPair>, decltype(cmp)> order(cmp);
+
 
 
 
@@ -579,6 +580,7 @@ private:
 				nodePointPair = (inPair.getValue() > outPair.getValue()) ? inPair : outPair;
 			}
 			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
+			assert(nodePointPair.getKey() != nullptr && "error happened");
 			const auto &node = *nodePointPair.getKey();
 
 			const auto &nodeID = node.getID();
@@ -731,7 +733,7 @@ public:
 	bool checkCanditatePairIsAddable(const MapPair & cp)const
 	{
 
-		bool answer = sourceRule(cp) && targetRule(cp) ;
+		const bool answer = sourceRule(cp) && targetRule(cp) ;
 		return answer;
 
 	}
@@ -750,7 +752,6 @@ public:
 		const auto calSetSizeAfterErase = [](NodeSetType & inSet, NodeSetType & outSet, NodeSetType & bothSet, const NodeIDType & nodeID,
 			size_t & inSize, size_t & outSize, size_t & bothSize)
 		{
-			static size_t findTime = 0;
 			bool inInSet = (inSet.find(nodeID) != inSet.end());
 			bool inOutSet = (outSet.find(nodeID) != outSet.end());
 			if (inInSet) {
@@ -768,8 +769,10 @@ public:
 			return;
 		};
 
-		calSetSizeAfterErase(targetMappingIn, targetMappingOut, targetMappingBoth, targetNodeID, targetMappingInSize, targetMappingOutSize, targetBothInOutSize);
-		calSetSizeAfterErase(queryMappingIn, queryMappingOut, queryMappingBoth, queryNodeID, queryMappingInSize, queryMappingOutSize, queryBothInOutSize);
+		calSetSizeAfterErase(targetMappingIn, targetMappingOut, targetMappingBoth, 
+			targetNodeID, targetMappingInSize, targetMappingOutSize, targetBothInOutSize);
+		calSetSizeAfterErase(queryMappingIn, queryMappingOut, queryMappingBoth, 
+			queryNodeID, queryMappingInSize, queryMappingOutSize, queryBothInOutSize);
 
 
 		const auto& targetNodePointer = targetGraph.getNodePointer(targetNodeID);
@@ -791,9 +794,9 @@ public:
 			targetMappingInRefTimes[sourceNodeID]++;
 			// was not be mapped
 			if (setContainNodeID(targetGraphUnmap, sourceNodeID)) {
-				targetMappingIn.insert(sourceNodeID);
 
 				if (targetMappingInDepth[sourceNodeID] == 0) {
+					targetMappingIn.insert(sourceNodeID);
 					targetMappingInDepth[sourceNodeID] = searchDepth;
 					++targetMappingInSize;
 					++targetInAdd;
@@ -802,15 +805,17 @@ public:
 						--targetInAdd;
 					}
 				}
+
 			}
 		}
 		for (const auto& tempEdge : targetNodePointer->getOutEdges()) {
 			const auto& targetNodeID = tempEdge.getTargetNodeID();
 			targetMappingOutRefTimes[targetNodeID]++;
 			if (setContainNodeID(targetGraphUnmap, targetNodeID)) {
-				targetMappingOut.insert(targetNodeID);
+				
 
 				if (targetMappingOutDepth[targetNodeID] == 0) {
+					targetMappingOut.insert(targetNodeID);
 					targetMappingOutDepth[targetNodeID] = searchDepth;
 					++targetMappingOutSize;
 					++targetOutAdd;
@@ -825,9 +830,10 @@ public:
 			const auto& targetNodeID = tempEdge.getTargetNodeID();
 			queryMappingOutRefTimes[targetNodeID]++;
 			if (setContainNodeID(queryGraphUnmap, targetNodeID)) {
-				queryMappingOut.insert(targetNodeID);
+
 
 				if (queryMappingOutDepth[targetNodeID] == 0) {
+					queryMappingOut.insert(targetNodeID);
 					queryMappingOutDepth[targetNodeID] = searchDepth;
 					++queryMappingOutSize;
 					++queryOutAdd;
@@ -842,9 +848,10 @@ public:
 			const auto& sourceNodeID = tempEdge.getSourceNodeID();
 			queryMappingInRefTimes[sourceNodeID]++;
 			if (setContainNodeID(queryGraphUnmap, sourceNodeID)) {
-				queryMappingIn.insert(sourceNodeID);
+				
 
 				if (queryMappingInDepth[sourceNodeID] == 0) {
+					queryMappingIn.insert(sourceNodeID);
 					queryMappingInDepth[sourceNodeID] = searchDepth;
 					++queryMappingInSize;
 					++queryInAdd;
@@ -915,7 +922,7 @@ public:
 			}
 		}
 
-		if (queryMappingInDepth[queryNodeID] < searchDepth && queryMappingInDepth[queryNodeID]) {
+		if (queryMappingInDepth[queryNodeID]) {
 			++queryMappingInSize;
 			if (setContainNodeID(queryMappingOut, queryNodeID)) {
 				queryMappingBoth.insert(queryNodeID);
@@ -923,7 +930,7 @@ public:
 			}
 			queryMappingIn.insert(queryNodeID);
 		}
-		if (queryMappingOutDepth[queryNodeID] < searchDepth && queryMappingOutDepth[queryNodeID])
+		if (queryMappingOutDepth[queryNodeID])
 		{
 			++queryMappingOutSize;
 			if (setContainNodeID(queryMappingIn, queryNodeID)) {
@@ -958,10 +965,10 @@ public:
 				}
 				targetMappingOut.erase(tempPair.first);
 				targetMappingOutDepth[tempPair.first] = 0;
-				//	deleteList.push_back(tempPair.first);
+
 			}
 		}
-		if (targetMappingInDepth[targetNodeID] < searchDepth && targetMappingInDepth[targetNodeID]) {
+		if (targetMappingInDepth[targetNodeID]) {
 			targetMappingInSize++;
 			if (setContainNodeID(targetMappingOut, targetNodeID)) {
 				targetMappingBoth.insert(targetNodeID);
@@ -969,7 +976,7 @@ public:
 			}
 			targetMappingIn.insert(targetNodeID);
 		}
-		if (targetMappingOutDepth[targetNodeID] < searchDepth && targetMappingOutDepth[targetNodeID])
+		if (targetMappingOutDepth[targetNodeID])
 		{
 			targetMappingOutSize++;
 			if (setContainNodeID(targetMappingIn, targetNodeID)) {
