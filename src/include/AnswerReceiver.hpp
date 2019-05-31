@@ -13,6 +13,8 @@ public:
 	~AnswerReceiver() = default;
 	template<typename MapType>
 	void operator<<(const MapType &mapping) {
+		static size_t count = 1;
+		std::cout << "Solution : " << count++ << std::endl;
 		std::vector<MapPair> v;
 		v.reserve(mapping.size());
 		for (const auto p : mapping) {
