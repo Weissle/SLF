@@ -78,10 +78,10 @@ private:
 	vector<NodeIDType> matchSequence;
 	bool induceGraph = true;
 
-	void seePairID(const MapPair& cp)const {
+	inline void seePairID(const MapPair& cp)const {
 		cout << "Ready To Mapping" << "(" << cp.getKey() << "," << cp.getValue() << ")" << endl;
 	}
-	void seeMappingContent()const {
+	inline void seeMappingContent()const {
 		for (const auto it : mapping) {
 			if (it.second) {
 				const auto queryNodeID = it.first;
@@ -92,20 +92,20 @@ private:
 		}
 	}
 
-	bool setContainNodeID(const NodeSetType& s, const NodeIDType& nodeID) const {
+	inline bool setContainNodeID(const NodeSetType& s, const NodeIDType& nodeID) const {
 		return (s.find(nodeID) != s.end());
 	}
-	bool setNotContainNodeID(const NodeSetType & s, const NodeIDType & nodeID)const {
+	inline bool setNotContainNodeID(const NodeSetType & s, const NodeIDType & nodeID)const {
 		return (s.find(nodeID) == s.end());
 	}
 	bool stillConsistentAfterAdd = true;
 	//because the match order is immutable , search depth decides which node to be matched;
-	NodeIDType selectNodeToCalCanditates()const
+	inline NodeIDType selectNodeToCalCanditates()const
 	{
 		return matchSequence[searchDepth];
 	}
 	//same label and target node edges' number should cover query node's.
-	bool twoNodesMayMatch(NodeIDType queryNodeID, NodeIDType targetNodeID)const
+	inline bool twoNodesMayMatch(NodeIDType queryNodeID, NodeIDType targetNodeID)const
 	{
 		const auto& queryNode = queryGraph.getNode(queryNodeID);
 		const auto& targetNode = targetGraph.getNode(targetNodeID);
@@ -136,7 +136,7 @@ private:
 			return true;
 		}
 	};
-	
+
 	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair & cp) const
 	{
@@ -236,7 +236,7 @@ private:
 		const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
 		const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 
-		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0, 
+		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0,
 			queryOutCount = 0, targetOutCount = 0, queryBothCount = 0, targetBothCount = 0;
 
 		unordered_map<size_t, size_t> querySourceInDepth, querySourceOutDepth, querySourceBothDepth,
@@ -305,7 +305,7 @@ private:
 			}
 		}
 
-		if (queryNotTCount > targetNotTCount ) return false;
+		if (queryNotTCount > targetNotTCount) return false;
 		if (mapIsCovered(querySourceInDepth, targetSourceInDepth) == false || mapIsCovered(querySourceOutDepth, targetSourceOutDepth) == false
 			|| mapIsCovered(querySourceBothDepth, targetSourceBothDepth) == false)return false;
 
@@ -452,83 +452,7 @@ private:
 
 
 	}
-#elif defined(RULE_2)
-	void seleteMatchOrder() {
-		NodeSetType nodeNotInMatchSet = queryGraphUnmap, inSet, outSet, bothSet;
-		inSet.reserve(queryGraph.graphSize() << 1);
-		outSet.reserve(queryGraph.graphSize() << 1);
-		bothSet.reserve(queryGraph.graphSize() << 1);
-
-		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
-		//		unordered_map<NodeIDType, char> map;
-
-		const auto calNodeMatchPoint = [](const NodeType & node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum();
-			return p1;
-		};
-		const auto seleteAGoodNodeToMatch = [&](const NodeSetType &s) {
-			double nodePoint = -1;
-			NodeCPointer answer;
-			for (const auto& tempNodeID : s) {
-				const auto& tempNode = queryGraph.getNode(tempNodeID);
-				const auto tempPoint = calNodeMatchPoint(tempNode);
-				if (tempPoint > nodePoint) {
-					answer = &tempNode;
-					nodePoint = tempPoint;
-				}
-			}
-			return NodeMatchPointPair(answer, nodePoint);
-		};
-
-
-		matchSequence.reserve(queryGraph.graphSize() + 5);
-
-
-
-		const auto cmp = [](const NodeMatchPointPair & a, const NodeMatchPointPair & b) {
-			return a.getValue() < b.getValue();
-		};
-		priority_queue<NodeMatchPointPair, vector<NodeMatchPointPair>, decltype(cmp)> order(cmp);
-
-
-
-		while (nodeNotInMatchSet.empty() == false) {
-			NodeMatchPointPair nodePointPair;
-			if (bothSet.empty() == false) nodePointPair = seleteAGoodNodeToMatch(bothSet);
-			else if (inSet.empty() == false || outSet.empty() == false) {
-				const auto inPair = seleteAGoodNodeToMatch(inSet);
-				const auto outPair = seleteAGoodNodeToMatch(outSet);
-				nodePointPair = (inPair.getValue() > outPair.getValue()) ? inPair : outPair;
-			}
-			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
-			const auto &node = *nodePointPair.getKey();
-
-			const auto &nodeID = node.getID();
-			matchSequence.push_back(nodeID);
-			nodeNotInMatchSet.erase(nodeID);
-			inSet.erase(nodeID);
-			outSet.erase(nodeID);
-			bothSet.erase(nodeID);
-
-			for (const auto& tempEdge : node.getInEdges()) {
-				const auto sourceNodeID = tempEdge.getSourceNodeID();
-				if (setContainNodeID(nodeNotInMatchSet, sourceNodeID)) {
-					inSet.insert(sourceNodeID);
-					if (setContainNodeID(outSet, sourceNodeID)) bothSet.insert(sourceNodeID);
-				}
-			}
-			for (const auto& tempEdge : node.getOutEdges()) {
-				const auto targetNodeID = tempEdge.getTargetNodeID();
-				if (setContainNodeID(nodeNotInMatchSet, targetNodeID)) {
-					outSet.insert(targetNodeID);
-					if (setContainNodeID(inSet, targetNodeID))bothSet.insert(targetNodeID);
-				}
-			}
-
-		}
-	}
 #elif defined(RULE_3)
-
 	void seleteMatchOrder() {
 		NodeSetType nodeNotInMatchSet = queryGraphUnmap, inSet, outSet, bothSet;
 		inSet.reserve(queryGraph.graphSize() << 1);
@@ -670,8 +594,8 @@ public:
 	vector<MapPair> calCandidatePairs()const
 	{
 		vector<MapPair> answer;
-		if (stillConsistentAfterAdd == false) return answer;
-		if (inOutRefRule() == false)return answer;
+	//	if (stillConsistentAfterAdd == false) return answer;
+		//	if (inOutRefRule() == false)return answer;
 
 		const auto & queryNodeToMatchID = selectNodeToCalCanditates();
 		const bool queryNodeInIn = setContainNodeID(queryMappingIn, queryNodeToMatchID);
@@ -701,11 +625,6 @@ public:
 		const auto & targetNodeToMatchSet = *tempNodeSetPointer;
 		for (const auto& targetNodeToMatchID : targetNodeToMatchSet) {
 			if (twoNodesMayMatch(queryNodeToMatchID, targetNodeToMatchID) == false)continue;
-			/*			const bool targetNodeInIn = setContainNodeID(targetMappingIn, targetNodeToMatchID);
-						if (targetNodeInIn != queryNodeInIn) continue;
-						const bool targetNodeInOut = setContainNodeID(targetMappingOut, targetNodeToMatchID);
-						if (targetNodeInOut != queryNodeInOut)continue;*/
-
 
 			const auto targetNodeInRefTimes = getRefTimes(targetMappingInRefTimes, targetNodeToMatchID);
 			if (induceGraph) {
@@ -721,9 +640,11 @@ public:
 			else if (queryNodeOutRefTimes > targetNodeOutRefTimes) continue;
 
 			const auto targetNodeInDepth = getNodeDepth(targetMappingInDepth, targetNodeToMatchID);
-			if (queryNodeInDepth != targetNodeInDepth)continue;
+			if (induceGraph) { if (queryNodeInDepth != targetNodeInDepth)continue; }
+			else if (queryNodeInDepth < targetNodeInDepth)continue;
 			const auto targetNodeOutDepth = getNodeDepth(targetMappingOutDepth, targetNodeToMatchID);
-			if (queryNodeOutDepth != targetNodeOutDepth)continue;
+			if (induceGraph) { if (queryNodeOutDepth != targetNodeOutDepth)continue; }
+			else if (queryNodeOutDepth < targetNodeOutDepth)continue;
 			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
 
 		}
@@ -733,7 +654,7 @@ public:
 	bool checkCanditatePairIsAddable(const MapPair & cp)const
 	{
 
-		const bool answer = sourceRule(cp) && targetRule(cp) ;
+		const bool answer = sourceRule(cp) && targetRule(cp);
 		return answer;
 
 	}
@@ -769,9 +690,9 @@ public:
 			return;
 		};
 
-		calSetSizeAfterErase(targetMappingIn, targetMappingOut, targetMappingBoth, 
+		calSetSizeAfterErase(targetMappingIn, targetMappingOut, targetMappingBoth,
 			targetNodeID, targetMappingInSize, targetMappingOutSize, targetBothInOutSize);
-		calSetSizeAfterErase(queryMappingIn, queryMappingOut, queryMappingBoth, 
+		calSetSizeAfterErase(queryMappingIn, queryMappingOut, queryMappingBoth,
 			queryNodeID, queryMappingInSize, queryMappingOutSize, queryBothInOutSize);
 
 
@@ -789,6 +710,9 @@ public:
 		};
 		size_t targetInAdd = 0, targetOutAdd = 0, targetBothAdd = 0,
 			queryInAdd = 0, queryOutAdd = 0, queryBothAdd = 0;
+		unordered_set<NodeIDType> targetInAddSet;
+		targetInAddSet.reserve(targetNodePointer->getInEdgesNum() << 1);
+
 		for (const auto& tempEdge : targetNodePointer->getInEdges()) {
 			const auto& sourceNodeID = tempEdge.getSourceNodeID();
 			targetMappingInRefTimes[sourceNodeID]++;
@@ -800,6 +724,7 @@ public:
 					targetMappingInDepth[sourceNodeID] = searchDepth;
 					++targetMappingInSize;
 					++targetInAdd;
+					targetInAddSet.insert(sourceNodeID);
 					if (addOneIfExist(targetMappingOut, targetMappingBoth, sourceNodeID, targetBothInOutSize) == true) {
 						targetBothAdd++;
 						--targetInAdd;
@@ -812,7 +737,7 @@ public:
 			const auto& targetNodeID = tempEdge.getTargetNodeID();
 			targetMappingOutRefTimes[targetNodeID]++;
 			if (setContainNodeID(targetGraphUnmap, targetNodeID)) {
-				
+
 
 				if (targetMappingOutDepth[targetNodeID] == 0) {
 					targetMappingOut.insert(targetNodeID);
@@ -821,7 +746,29 @@ public:
 					++targetOutAdd;
 					if (addOneIfExist(targetMappingIn, targetMappingBoth, targetNodeID, targetBothInOutSize)) {
 						targetBothAdd++;
-						--targetOutAdd;
+						if (setContainNodeID(targetInAddSet, targetNodeID))--targetInAdd;
+					};
+				}
+			}
+		}
+		unordered_set<NodeIDType> queryInAddSet;
+		queryInAddSet.reserve(queryNodePointer->getInEdgesNum() << 1);
+		
+		for (const auto& tempEdge : queryNodePointer->getInEdges()) {
+			const auto& sourceNodeID = tempEdge.getSourceNodeID();
+			queryMappingInRefTimes[sourceNodeID]++;
+			if (setContainNodeID(queryGraphUnmap, sourceNodeID)) {
+
+
+				if (queryMappingInDepth[sourceNodeID] == 0) {
+					queryMappingIn.insert(sourceNodeID);
+					queryMappingInDepth[sourceNodeID] = searchDepth;
+					++queryMappingInSize;
+					++queryInAdd;
+					queryInAddSet.insert(sourceNodeID);
+					if (addOneIfExist(queryMappingOut, queryMappingBoth, sourceNodeID, queryBothInOutSize)) {
+						++queryBothAdd;
+						--queryInAdd;
 					};
 				}
 			}
@@ -831,7 +778,6 @@ public:
 			queryMappingOutRefTimes[targetNodeID]++;
 			if (setContainNodeID(queryGraphUnmap, targetNodeID)) {
 
-
 				if (queryMappingOutDepth[targetNodeID] == 0) {
 					queryMappingOut.insert(targetNodeID);
 					queryMappingOutDepth[targetNodeID] = searchDepth;
@@ -839,31 +785,15 @@ public:
 					++queryOutAdd;
 					if (addOneIfExist(queryMappingIn, queryMappingBoth, targetNodeID, queryBothInOutSize)) {
 						++queryBothAdd;
-						--queryOutAdd;
+						if (setContainNodeID(queryInAddSet, targetNodeID)) --queryInAdd;
 					};
 				}
 			}
 		}
-		for (const auto& tempEdge : queryNodePointer->getInEdges()) {
-			const auto& sourceNodeID = tempEdge.getSourceNodeID();
-			queryMappingInRefTimes[sourceNodeID]++;
-			if (setContainNodeID(queryGraphUnmap, sourceNodeID)) {
-				
-
-				if (queryMappingInDepth[sourceNodeID] == 0) {
-					queryMappingIn.insert(sourceNodeID);
-					queryMappingInDepth[sourceNodeID] = searchDepth;
-					++queryMappingInSize;
-					++queryInAdd;
-					if(addOneIfExist(queryMappingOut, queryMappingBoth, sourceNodeID, queryBothInOutSize)) {
-						++queryBothAdd;
-						--queryInAdd;
-					};
-				}
-			}
-		}
-		if (queryInAdd > targetInAdd || queryOutAdd > targetOutAdd || queryBothAdd > targetBothAdd) stillConsistentAfterAdd = false;
+	
+		if (induceGraph && (queryInAdd > targetInAdd || queryOutAdd > targetOutAdd || queryBothAdd > targetBothAdd))stillConsistentAfterAdd = false;
 		else stillConsistentAfterAdd = true;
+
 		return;
 	}
 	void deleteCanditatePairToMapping(const MapPair & cp)
