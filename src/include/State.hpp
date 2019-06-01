@@ -594,7 +594,7 @@ public:
 	vector<MapPair> calCandidatePairs()const
 	{
 		vector<MapPair> answer;
-	//	if (stillConsistentAfterAdd == false) return answer;
+		if (stillConsistentAfterAdd == false) return answer;
 		//	if (inOutRefRule() == false)return answer;
 
 		const auto & queryNodeToMatchID = selectNodeToCalCanditates();
