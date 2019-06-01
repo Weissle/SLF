@@ -595,7 +595,7 @@ public:
 	{
 		vector<MapPair> answer;
 		if (stillConsistentAfterAdd == false) return answer;
-		//	if (inOutRefRule() == false)return answer;
+		if (inOutRefRule() == false)return answer;
 
 		const auto & queryNodeToMatchID = selectNodeToCalCanditates();
 		const bool queryNodeInIn = setContainNodeID(queryMappingIn, queryNodeToMatchID);

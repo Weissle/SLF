@@ -1,6 +1,3 @@
-#include"Edge.hpp"
-#include"Graph.hpp"
-#include"Node.hpp"
 #include"State.hpp"
 #include"VF2.hpp"
 #include"GraphReader.hpp"
@@ -27,8 +24,8 @@ int main(int argc, char * argv[]) {
 	induceGraph = cmdl[{"-induce-graph", "-induce"}];
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
-		*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
+	const GraphType* queryGraph = ARGGraphNoLabel<GraphType>::readGraph(queryGraphPath),
+		*targetGraph = ARGGraphNoLabel<GraphType>::readGraph(targetGraphPath);
 
 	AnswerReceiverType answerReceiver;
 	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
