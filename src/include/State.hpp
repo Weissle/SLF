@@ -626,14 +626,14 @@ public:
 		for (const auto& targetNodeToMatchID : targetNodeToMatchSet) {
 			if (twoNodesMayMatch(queryNodeToMatchID, targetNodeToMatchID) == false)continue;
 
+			// it will be ditched because of sourceRule in next depth .
 			const auto targetNodeInRefTimes = getRefTimes(targetMappingInRefTimes, targetNodeToMatchID);
 			if (induceGraph) {
 				if (queryNodeInRefTimes != targetNodeInRefTimes) continue;
 			}
 			else if (queryNodeInRefTimes > targetNodeInRefTimes) continue;
-
+			// it will be ditched because of sourceRule in next depth .
 			const auto targetNodeOutRefTimes = getRefTimes(targetMappingOutRefTimes, targetNodeToMatchID);
-
 			if (induceGraph) {
 				if (queryNodeOutRefTimes != targetNodeOutRefTimes) continue;
 			}
@@ -645,6 +645,7 @@ public:
 			const auto targetNodeOutDepth = getNodeDepth(targetMappingOutDepth, targetNodeToMatchID);
 			if (induceGraph) { if (queryNodeOutDepth != targetNodeOutDepth)continue; }
 			else if (queryNodeOutDepth < targetNodeOutDepth)continue;
+			
 			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
 
 		}
