@@ -632,7 +632,7 @@ public:
 				if (queryNodeInRefTimes != targetNodeInRefTimes) continue;
 			}
 			else if (queryNodeInRefTimes > targetNodeInRefTimes) continue;
-			// it will be ditched because of sourceRule in next depth .
+			// it will be ditched because of targetRule in next depth .
 			const auto targetNodeOutRefTimes = getRefTimes(targetMappingOutRefTimes, targetNodeToMatchID);
 			if (induceGraph) {
 				if (queryNodeOutRefTimes != targetNodeOutRefTimes) continue;
