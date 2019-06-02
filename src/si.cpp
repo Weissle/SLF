@@ -24,8 +24,8 @@ int main(int argc, char * argv[]) {
 	induceGraph = cmdl[{"-induce-graph", "-induce"}];
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-	const GraphType* queryGraph = ARGGraphNoLabel<GraphType>::readGraph(queryGraphPath),
-		*targetGraph = ARGGraphNoLabel<GraphType>::readGraph(targetGraphPath);
+	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
+		*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
 
 	AnswerReceiverType answerReceiver;
 	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
@@ -35,6 +35,8 @@ int main(int argc, char * argv[]) {
 
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
+	delete queryGraph;
+	delete targetGraph;
 	return 0;
 }
 
