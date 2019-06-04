@@ -26,7 +26,8 @@ int main(int argc, char * argv[]) {
 
 	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
 		*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
-
+//		*targetGraph = STFGraphNoLabel<GraphType>::readGraph(targetGraphPath);
+	cout << "read graph finish" << endl;
 	AnswerReceiverType answerReceiver;
 	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
 

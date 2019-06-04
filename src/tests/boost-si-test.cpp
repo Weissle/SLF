@@ -26,9 +26,6 @@ int main() {
 
 	
 /*
-	fstream f;
-	f.open(queryGraphPath.c_str(), ios::ios_base::in);
-*/
 	FILE *f = fopen(queryGraphPath.c_str(), "rb");
 	assert(f != nullptr && "open file fail");
 	num_vertices1 = getwc(f);
@@ -55,8 +52,10 @@ int main() {
 			add_edge(source, target, graph2);
 		}
 	}
-	fclose(f);
-	/*
+	fclose(f);*/
+	fstream f;
+	f.open(queryGraphPath.c_str(), ios::ios_base::in);
+	f >> num_vertices1;
 	graph_type graph1(num_vertices1);
 	for (int i = 0; i < num_vertices1; ++i) {
 		int edgeNum;
@@ -85,7 +84,7 @@ int main() {
 		}
 	}
 	f.close();
-	*/
+	
 	// Create callback to print mappings
 	cout << num_vertices1 << " " << num_vertices2 << endl;
 	auto t1 = clock();

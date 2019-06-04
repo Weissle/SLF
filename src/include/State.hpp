@@ -74,7 +74,8 @@ private:
 	unordered_map<NodeIDType, size_t> targetMappingInRefTimes, targetMappingOutRefTimes,
 		queryMappingInRefTimes, queryMappingOutRefTimes;
 	size_t searchDepth;
-
+/*	vector<size_t> targetInRefTimesCla, targetOutRefTimesCla, targetBothRefTimesCla,
+		queryInRefTimesCla, queryOutRefTimesCla, queryBothRefTimesCla;*/
 	vector<NodeIDType> matchSequence;
 	bool induceGraph = true;
 
@@ -574,14 +575,25 @@ public:
 
 
 		searchDepth = 0;
+		size_t targetInMax=0, targetOutMax=0, queryInMax=0, queryOutMax=0;
 		for (auto& tempNode : targetGraph.getAllNodes())
 		{
+			targetInMax = max(targetInMax, tempNode.getInEdgesNum());
+			targetOutMax = max(targetOutMax, tempNode.getOutEdgesNum());
 			targetGraphUnmap.insert(getNodeID(tempNode));
 		}
 		for (auto& tempNode : queryGraph.getAllNodes())
 		{
+			queryInMax = max(queryInMax, tempNode.getInEdgesNum());
+			queryOutMax = max(queryOutMax, tempNode.getOutEdgesNum());
 			queryGraphUnmap.insert(getNodeID(tempNode));
 		}
+
+	/*	targetInRefTimesCla.resize(targetInMax + 5);
+		targetOutRefTimesCla.resize(targetOutMax + 5);
+		targetBothRefTimesCla.resize(max(targetInMax, targetOutMax));
+		queryInRefTimesCla, queryOutRefTimesCla, queryBothRefTimesCla;*/
+
 		seleteMatchOrder();
 
 
@@ -654,7 +666,8 @@ public:
 	}
 	bool checkCanditatePairIsAddable(const MapPair & cp)const
 	{
-
+	//	seeMappingContent();
+	//	seePairID(cp);
 		const bool answer = sourceRule(cp) && targetRule(cp);
 		return answer;
 

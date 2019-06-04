@@ -31,7 +31,7 @@ class VF2 {
 		}
 #ifdef TIME_COUNT
 		++hitTime;
-	//	if((int)hitTime % (int)1E4 == 0)cout << hitTime << endl;
+		if((int)hitTime % (int)1E5 == 0)cout << hitTime << endl;
 		auto t1 = clock();
 		const auto canditarePairs = s.calCandidatePairs();
 		auto t2 = clock();
@@ -156,6 +156,7 @@ public:
 	
 	void run()
 	{
+		cout << "start match" << endl;
 		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);
 		if(queryGraph.graphSize()<=targetGraph.graphSize()) goDeeper(initialState);
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
