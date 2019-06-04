@@ -30,6 +30,7 @@ public:
 		int nodeNum;
 		f >> nodeNum;
 		vector<NodeType> nodeList;
+		nodeList.reserve(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			nodeList.push_back(NodeType(i));
 		}
@@ -66,6 +67,7 @@ public:
 		nodeNum = getwc(f);
 
 		vector<NodeType> nodeList;
+		nodeList.reserve(nodeNum + 5);
 		for (int i = 0; i < nodeNum; ++i) {
 			nodeList.push_back(NodeType(i));
 		}
@@ -89,3 +91,79 @@ public:
 
 };
 
+template<class GraphType>
+class STFGraphNoLabel {
+	typedef typename GraphType::NodeType NodeType;
+public:
+	static GraphType* readGraph(string graphPath) {
+		fstream f;
+		f.open(graphPath.c_str(), ios_base::in);
+		//		auto f = openGraphFile(graphPath, ios_base::in);
+		if (f.is_open() == false) {
+			cout << graphPath << " open fail" << endl;
+			exit(0);
+		}
+		int nodeNum;
+		f >> nodeNum;
+	
+		vector<NodeType> nodeList;
+		nodeList.reserve(nodeNum);
+		int edgeNum;
+		f >> edgeNum;
+		for (int i = 0; i < nodeNum; ++i) {
+			nodeList.push_back(NodeType(i));
+		}
+		GraphType *graph = new GraphType(nodeList);
+
+
+		for (int i = 0; i < edgeNum; ++i) {
+			int source, target;
+			f >> source >> target;
+			graph->addEdge(source, target);	
+		}
+
+
+		f.close();
+		return graph;
+	}
+
+};
+
+template<class GraphType>
+class STFGraphLabel {
+	typedef typename GraphType::NodeType NodeType;
+public:
+	static GraphType* readGraph(string graphPath) {
+		fstream f;
+		f.open(graphPath.c_str(), ios_base::in);
+		//		auto f = openGraphFile(graphPath, ios_base::in);
+		if (f.is_open() == false) {
+			cout << graphPath << " open fail" << endl;
+			exit(0);
+		}
+		int nodeNum;
+		f >> nodeNum;
+
+		vector<NodeType> nodeList;
+		nodeList.reserve(nodeNum);
+		int edgeNum;
+		f >> edgeNum;
+		for (int i = 0; i < nodeNum; ++i) {
+			nodeList.push_back(NodeType(i));
+		}
+		GraphType *graph = new GraphType(nodeList);
+
+
+		for (int i = 0; i < edgeNum; ++i) {
+			int source, target;
+			int label;
+			f >> source >> target >> label;
+			graph->addEdge(source, target, label);
+		}
+
+
+		f.close();
+		return graph;
+	}
+
+};
