@@ -24,8 +24,10 @@ int main(int argc, char * argv[]) {
 	induceGraph = cmdl[{"-induce-graph", "-induce"}];
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-	const GraphType* queryGraph = LADReader<GraphType>::readGraph(queryGraphPath),
-		*targetGraph = LADReader<GraphType>::readGraph(targetGraphPath);
+	typedef ARGGraphNoLabel<GraphType> GraphReader;
+
+	const GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
+		*targetGraph = GraphReader::readGraph(targetGraphPath);
 //		*targetGraph = STFGraphNoLabel<GraphType>::readGraph(targetGraphPath);
 	cout << "read graph finish" << endl;
 	AnswerReceiverType answerReceiver;
