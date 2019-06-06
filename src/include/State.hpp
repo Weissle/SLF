@@ -846,49 +846,59 @@ public:
 		targetGraphUnmap.insert(targetNodeID);
 		queryGraphUnmap.insert(queryNodeID);
 
+
 		for (const auto& tempEdge : queryNode.getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 			queryMappingInRefTimes[nodeID]--;
+			if (queryMappingInDepth[nodeID] == searchDepth) {
+				--queryMappingInSize;
+				queryMappingIn.erase(nodeID);
+				if (setContainNodeID(queryMappingBoth, nodeID)) {
+					queryMappingBoth.erase(nodeID);
+					--queryBothInOutSize;
+				}
+				queryMappingInDepth[nodeID] = 0;
+			}
 		}
 		for (const auto& tempEdge : queryNode.getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
 			queryMappingOutRefTimes[nodeID]--;
+			if (queryMappingOutDepth[nodeID] == searchDepth) {
+				--queryMappingOutSize;
+				queryMappingOut.erase(nodeID);
+				if (setContainNodeID(queryMappingBoth, nodeID)) {
+					queryMappingBoth.erase(nodeID);
+					--queryBothInOutSize;
+				}
+				queryMappingOutDepth[nodeID] = 0;
+			}
 		}
 		for (const auto& tempEdge : targetNode.getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 			targetMappingInRefTimes[nodeID]--;
+			if (targetMappingInDepth[nodeID] == searchDepth) {
+				--targetMappingInSize;
+				targetMappingIn.erase(nodeID);
+				if (setContainNodeID(targetMappingBoth, nodeID)) {
+					targetMappingBoth.erase(nodeID);
+					--targetBothInOutSize;
+				}
+				targetMappingInDepth[nodeID] = 0;
+			}
 		}
 		for (const auto& tempEdge : targetNode.getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
 			targetMappingOutRefTimes[nodeID]--;
-		}
-
-		for (const auto& tempPair : queryMappingInDepth) {
-			if (tempPair.second == searchDepth) {
-				--queryMappingInSize;
-				queryMappingIn.erase(tempPair.first);
-				if (setContainNodeID(queryMappingOut, tempPair.first)) {
-					queryMappingBoth.erase(tempPair.first);
-					--queryBothInOutSize;
+			if (targetMappingOutDepth[nodeID] == searchDepth) {
+				--targetMappingOutSize;
+				targetMappingOut.erase(nodeID);
+				if (setContainNodeID(targetMappingBoth, nodeID)) {
+					targetMappingBoth.erase(nodeID);
+					--targetBothInOutSize;
 				}
-
-				queryMappingInDepth[tempPair.first] = 0;
-
+				targetMappingOutDepth[nodeID] = 0;
 			}
 		}
-		for (const auto& tempPair : queryMappingOutDepth) {
-			if (tempPair.second == searchDepth) {
-				--queryMappingOutSize;
-				if (setContainNodeID(queryMappingIn, tempPair.first)) {
-					--queryBothInOutSize;
-					queryMappingBoth.erase(tempPair.first);
-				}
-				queryMappingOut.erase(tempPair.first);
-				queryMappingOutDepth[tempPair.first] = 0;
-
-			}
-		}
-
 		if (queryMappingInDepth[queryNodeID]) {
 			++queryMappingInSize;
 			if (setContainNodeID(queryMappingOut, queryNodeID)) {
@@ -905,35 +915,6 @@ public:
 				++queryBothInOutSize;
 			}
 			queryMappingOut.insert(queryNodeID);
-		}
-
-
-		for (const auto& tempPair : targetMappingInDepth) {
-			if (tempPair.second == searchDepth) {
-				targetMappingInSize--;
-				if (setContainNodeID(targetMappingOut, tempPair.first)) {
-					targetMappingBoth.erase(tempPair.first);
-					--targetBothInOutSize;
-				}
-				targetMappingIn.erase(tempPair.first);
-				targetMappingInDepth[tempPair.first] = 0;
-
-			}
-		}
-
-
-		for (const auto& tempPair : targetMappingOutDepth) {
-			if (tempPair.second == searchDepth) {
-				targetMappingOutSize--;
-				if (setContainNodeID(targetMappingIn, tempPair.first))
-				{
-					targetMappingBoth.erase(tempPair.first);
-					--targetBothInOutSize;
-				}
-				targetMappingOut.erase(tempPair.first);
-				targetMappingOutDepth[tempPair.first] = 0;
-
-			}
 		}
 		if (targetMappingInDepth[targetNodeID]) {
 			targetMappingInSize++;
@@ -952,6 +933,7 @@ public:
 			}
 			targetMappingOut.insert(targetNodeID);
 		}
+
 		searchDepth--;
 
 		return;
