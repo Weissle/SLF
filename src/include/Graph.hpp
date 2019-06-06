@@ -71,6 +71,7 @@ public:
 		return;
 	}
 	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) {
+		assert(source != target && "not support self loop");
 		assert(index.find(source) != index.end() && index.find(target) != index.end() && "node id more than node num should be");
 		auto &sourceNode = nodes[index[source]];
 		auto &targetNode = nodes[index[target]];

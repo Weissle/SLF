@@ -725,8 +725,19 @@ public:
 		
 		const size_t targetMappingInSizeOld = targetMappingInSize, targetMappingOutSizeOld = targetMappingOutSize, targetBothInOutSizeOld = targetBothInOutSize,
 			queryMappingInSizeOld = queryMappingInSize, queryMappingOutSizeOld = queryMappingOutSize, queryBothInOutSizeOld = queryBothInOutSize;
-		unordered_set<NodeIDType> targetInAddSet;
-		targetInAddSet.reserve(targetNodePointer->getInEdgesNum() << 1);
+
+
+		// A  :  inSet  new     outSet  no
+		// B  :  inSet  new     outSet  old
+		// C  :  inSet  new     outSet  new
+		// D  :  inSet  old     outSet  new
+		// E  :  inSet  no      outSet  new
+		// so	inSet add = A+B+C
+		//		outSet add = C+D+E
+		//		BothSet add = B+C+D
+		
+		size_t queryA = 0, queryB = 0, queryC = 0, queryD = 0, queryE = 0,
+			targetA = 0, targetB = 0, targetC = 0, targetD = 0, targetE = 0;
 
 		for (const auto& tempEdge : targetNodePointer->getInEdges()) {
 			const auto& sourceNodeID = tempEdge.getSourceNodeID();
@@ -739,10 +750,11 @@ public:
 					targetMappingInDepth[sourceNodeID] = searchDepth;
 					++targetMappingInSize;
 					
-					targetInAddSet.insert(sourceNodeID);
-					if (addOneIfExist(targetMappingOut, targetMappingBoth, sourceNodeID, targetBothInOutSize) == true) {
 
+					if (addOneIfExist(targetMappingOut, targetMappingBoth, sourceNodeID, targetBothInOutSize) == true) {
+						targetB++;
 					}
+					
 				}
 
 			}
@@ -759,13 +771,13 @@ public:
 					++targetMappingOutSize;
 					
 					if (addOneIfExist(targetMappingIn, targetMappingBoth, targetNodeID, targetBothInOutSize)) {
-					
-					};
+						if (getNodeDepth(targetMappingInDepth, targetNodeID) == searchDepth) ++targetC;
+					}
+					else targetE++;
 				}
 			}
 		}
-		unordered_set<NodeIDType> queryInAddSet;
-		queryInAddSet.reserve(queryNodePointer->getInEdgesNum() << 1);
+
 
 		for (const auto& tempEdge : queryNodePointer->getInEdges()) {
 			const auto& sourceNodeID = tempEdge.getSourceNodeID();
@@ -778,10 +790,10 @@ public:
 					queryMappingInDepth[sourceNodeID] = searchDepth;
 					++queryMappingInSize;
 	
-					queryInAddSet.insert(sourceNodeID);
 					if (addOneIfExist(queryMappingOut, queryMappingBoth, sourceNodeID, queryBothInOutSize)) {
+						queryB++;
+					}
 					
-					};
 				}
 			}
 		}
@@ -796,20 +808,27 @@ public:
 					++queryMappingOutSize;
 
 					if (addOneIfExist(queryMappingIn, queryMappingBoth, targetNodeID, queryBothInOutSize)) {
-
-					};
+						if (getNodeDepth(queryMappingInDepth, targetNodeID) == searchDepth) ++queryC;
+					}
+					else queryE++;
 				}
 			}
 		}
 
-		size_t targetInAdd = targetMappingInSize - targetMappingInSizeOld,
+		const size_t targetInAdd = targetMappingInSize - targetMappingInSizeOld,
 			targetOutAdd = targetMappingOutSize - targetMappingOutSizeOld,
 			targetBothAdd = targetBothInOutSize - targetBothInOutSizeOld,
 			queryInAdd = queryMappingInSize - queryMappingInSizeOld,
 			queryOutAdd = queryMappingOutSize - queryMappingOutSizeOld,
 			queryBothAdd = queryBothInOutSize - queryBothInOutSizeOld;
 
-		if (induceGraph && (queryInAdd > targetInAdd || queryOutAdd > targetOutAdd || queryBothAdd > targetBothAdd))stillConsistentAfterAdd = false;
+		queryA = queryInAdd - queryB - queryC;
+		targetA = targetInAdd - targetB - targetC;
+	/*	queryD = queryOutAdd - queryC - queryE;
+		targetD = targetOutAdd - targetC - targetE;*/
+	//	if (induceGraph && (queryInAdd > targetInAdd || queryOutAdd > targetOutAdd  || queryBothAdd > targetBothAdd))stillConsistentAfterAdd = false;
+		if (induceGraph && (queryA > targetA || queryE > targetE || queryC > targetC))stillConsistentAfterAdd = false;
+	//	if (induceGraph && (queryA > targetA || queryE > targetE || queryC > targetC || queryB > targetB || queryD > targetD))stillConsistentAfterAdd = false;
 		else stillConsistentAfterAdd = true;
 
 		return;
