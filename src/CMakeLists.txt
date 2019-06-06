@@ -12,6 +12,8 @@ if(CC_COMPILER)
 SET(CMAKE_CXX_COMPILER ${CC_COMPILER})
 endif()
 
+message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
+message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
 
 add_subdirectory(tests)
 
@@ -23,7 +25,7 @@ add_executable(si si.cpp include/Edge.hpp include/Graph.hpp
 				include/argh.h)
 
 add_executable(sg sg.cpp include/SubgraphGenerator.hpp include/Graph.hpp
-			include/Node.hpp include/Edge.hpp include/GraphReader.hpp)
+			include/Node.hpp include/Edge.hpp include/GraphReader.hpp include/argh.h)
 
 
 

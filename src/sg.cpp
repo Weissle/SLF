@@ -1,7 +1,7 @@
 #include"GraphReader.hpp"
 #include"SubgraphGenerator.hpp"
-#include"include\argh.h"
 #include<string>
+#include"argh.h"
 using namespace std;
 
 template<class GraphType>
