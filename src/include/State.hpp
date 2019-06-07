@@ -824,8 +824,8 @@ public:
 
 		queryA = queryInAdd - queryB - queryC;
 		targetA = targetInAdd - targetB - targetC;
-	/*	queryD = queryOutAdd - queryC - queryE;
-		targetD = targetOutAdd - targetC - targetE;*/
+		queryD = queryOutAdd - queryC - queryE;
+		targetD = targetOutAdd - targetC - targetE;
 	//	if (induceGraph && (queryInAdd > targetInAdd || queryOutAdd > targetOutAdd  || queryBothAdd > targetBothAdd))stillConsistentAfterAdd = false;
 		if (induceGraph && (queryA > targetA || queryE > targetE || queryC > targetC))stillConsistentAfterAdd = false;
 	//	if (induceGraph && (queryA > targetA || queryE > targetE || queryC > targetC || queryB > targetB || queryD > targetD))stillConsistentAfterAdd = false;
