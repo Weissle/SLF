@@ -21,14 +21,15 @@ int main(int argc, char * argv[]) {
 	bool induceGraph = true, onlyNeedOneSolution = false;
 	cmdl({ "-target-graph","-tg" }) >> targetGraphPath;
 	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
-	induceGraph = cmdl[{"-induce-graph", "-induce"}];
+	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-	typedef ARGGraphNoLabel<GraphType> GraphReader;
+	typedef LADReader<GraphType> GraphReader;
+
 
 	const GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		*targetGraph = GraphReader::readGraph(targetGraphPath);
-//		*targetGraph = STFGraphNoLabel<GraphType>::readGraph(targetGraphPath);
+
 	cout << "read graph finish" << endl;
 	AnswerReceiverType answerReceiver;
 	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);

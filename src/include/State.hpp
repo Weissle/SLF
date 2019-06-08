@@ -346,14 +346,14 @@ private:
 
 	void seleteMatchOrder() {
 		NodeSetType nodeNotInMatchSet = queryGraphUnmap, inSet, outSet, bothSet;
-		inSet.reserve(queryGraph.graphSize() << 1);
-		outSet.reserve(queryGraph.graphSize() << 1);
-		bothSet.reserve(queryGraph.graphSize() << 1);
+		inSet.reserve(queryGraph.size() << 1);
+		outSet.reserve(queryGraph.size() << 1);
+		bothSet.reserve(queryGraph.size() << 1);
 
 		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
 		unordered_map<NodeIDType, char>  inMap, outMap;
-		inMap.reserve(queryGraph.graphSize() << 1);
-		outMap.reserve(queryGraph.graphSize() << 1);
+		inMap.reserve(queryGraph.size() << 1);
+		outMap.reserve(queryGraph.size() << 1);
 		const auto calNodeMatchPoint = [&](const NodeType & node) {
 			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + inMap[node.getID()] + outMap[node.getID()];
 			return p1;
@@ -373,7 +373,7 @@ private:
 		};
 
 
-		matchSequence.reserve(queryGraph.graphSize() + 5);
+		matchSequence.reserve(queryGraph.size() + 5);
 
 		while (nodeNotInMatchSet.empty() == false) {
 			NodeMatchPointPair nodePointPair;
@@ -417,14 +417,10 @@ private:
 public:
 	StateVF2(const GraphType & _t, const GraphType & _q, bool _induceGraph) :targetGraph(_t), queryGraph(_q), induceGraph(_induceGraph) {
 
-		auto calASizeForHash = [](const size_t need) {
-			size_t i = 16;
-			while (i < need) i = i << 1;
-			if (i * 0.8 > need) return i;
-			else return i << 1;
-		};
-		const int queryHashSize = calASizeForHash(queryGraph.graphSize());
-		const int targetHashSize = calASizeForHash(targetGraph.graphSize());
+		const auto queryGraphSize = queryGraph.size();
+		const auto targetGraphSize = targetGraph.size();
+		const auto queryHashSize =calHashSuitableSize(queryGraphSize);
+		const auto targetHashSize =calHashSuitableSize(targetGraphSize);
 		mapping.reserve(queryHashSize);
 		mappingAux.reserve(targetHashSize);
 		targetMappingIn.reserve(targetHashSize);
@@ -471,15 +467,14 @@ public:
 		targetOutRefTimesCla = vector<size_t>(targetOutMax + 1, 0);
 		targetInBothRefTimesCla = vector<size_t>(targetInMax + 1, 0);
 		targetOutBothRefTimesCla = vector<size_t>(targetOutMax + 1, 0);
-		targetInRefTimesCla[0] = targetGraph.graphSize();
-		targetOutRefTimesCla[0] = targetGraph.graphSize();
-
+		targetInRefTimesCla[0] = targetGraphSize;
+		targetOutRefTimesCla[0] = targetGraphSize;
 		queryInRefTimesCla = vector<size_t>(queryInMax + 1, 0);
 		queryOutRefTimesCla = vector<size_t>(queryOutMax + 1, 0);
 		queryInBothRefTimesCla = vector<size_t>(queryInMax + 1, 0);
 		queryOutBothRefTimesCla = vector<size_t>(queryOutMax + 1, 0);
-		queryInRefTimesCla[0] = queryGraph.graphSize();
-		queryOutRefTimesCla[0] = queryGraph.graphSize();
+		queryInRefTimesCla[0] = queryGraphSize;
+		queryOutRefTimesCla[0] = queryGraphSize;
 
 		seleteMatchOrder();
 
@@ -1031,7 +1026,7 @@ public:
 
 	}
 	bool isCoverQueryGraph()const {
-		if (queryGraph.graphSize() == searchDepth)	return true;
+		if (queryGraph.size() == searchDepth)	return true;
 		return false;
 	};
 	MapType getMap(bool showNotCoverWarning = true) const {

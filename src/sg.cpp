@@ -13,7 +13,7 @@ void writeToFile(string fileName,GraphType graph) {
 		cout << fileName << " : open fail" << endl;
 		return;
 	}
-	f << graph.graphSize() << endl;
+	f << graph.size() << endl;
 	for (auto &node : graph.getAllNodes()) {
 		f << node.getOutEdgesNum() << " ";
 		for (auto edge : node.getOutEdges()) {

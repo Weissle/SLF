@@ -2,6 +2,7 @@
 #include<vector>
 #include"Node.hpp"
 #include"Edge.hpp"
+#include"common.h"
 #include<assert.h>
 #include<unordered_map>
 using namespace std;
@@ -20,9 +21,8 @@ public:
 	Graph() = default;
 	~Graph() = default;
 
-	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) = 0;
-	virtual void addEdge(const NodeIDType source, const NodeIDType target) = 0;
-	virtual size_t graphSize() const = 0;
+	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel=EdgeLabelType()) = 0;
+	virtual size_t size() const = 0;
 	virtual void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) = 0;
 	virtual vector<NodeType> const & getAllNodes()const = 0;
 	virtual const NodeType* getNodePointer(const NodeIDType &nodeID) const = 0;
@@ -46,21 +46,16 @@ private:
 	vector<NodeType> nodes;
 	unordered_map<NodeIDType, size_t> index;
 	GRAPH_TYPE graphType;
-	size_t graphsize;
+	size_t _size;
 public:
 	GraphVF2() = default;
 	~GraphVF2() = default;
 	GraphVF2(vector<NodeType> &_nodes, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION)
 		:nodes(_nodes), graphType(_graphType)
 	{
-		auto calASizeForHash = [](const size_t need) {
-			size_t i = 16;
-			while (i < need) i = i << 1;
-			if (i * 0.8 > need) return i;
-			else return i << 1;
-		};
-		graphsize = nodes.size();
-		index.reserve(calASizeForHash(nodes.size()));
+		
+		_size = nodes.size();
+		index.reserve(calHashSuitableSize(_size));
 		for (size_t i = 0; i < nodes.size(); ++i) {
 			index[nodes[i].getID()] = i;
 		}
@@ -70,7 +65,7 @@ public:
 		tempNode.setLabel(_label);
 		return;
 	}
-	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel) {
+	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel=EdgeLabelType()) {
 		assert(source != target && "not support self loop");
 		assert(index.find(source) != index.end() && index.find(target) != index.end() && "node id more than node num should be");
 		auto &sourceNode = nodes[index[source]];
@@ -87,11 +82,9 @@ public:
 			targetNode.addOutEdge(targetEdge1);
 		}
 	}
-	void addEdge(const NodeIDType source, const NodeIDType target) {
-		addEdge(source, target, EdgeLabelType());
-	}
-	size_t graphSize() const {
-		return graphsize;
+
+	size_t size() const {
+		return _size;
 	};
 	vector<NodeType> const & getAllNodes()const { return nodes; }
 	const NodeType* getNodePointer(const NodeIDType &nodeID) const {

@@ -145,7 +145,7 @@ public:
 	{
 	/*	fstream f;
 		f.open("D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\midgraph.graph",ios_base::in);
-		for (int i = 0; i < queryGraph.graphSize(); ++i) {
+		for (int i = 0; i < queryGraph.size(); ++i) {
 			int a;
 			int b;
 			f >> a >> b;
@@ -158,7 +158,7 @@ public:
 	{
 		cout << "start match" << endl;
 		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);
-		if(queryGraph.graphSize()<=targetGraph.graphSize()) goDeeper(initialState);
+		if(queryGraph.size()<=targetGraph.size()) goDeeper(initialState);
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;

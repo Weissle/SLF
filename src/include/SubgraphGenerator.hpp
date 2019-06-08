@@ -26,7 +26,7 @@ namespace sg {
 			srand(time(NULL));
 			midG.reserve(nodeNum);
 			inSmall.reserve(nodeNum << 1);
-			inquery.reserve(target.graphSize() << 1);
+			inquery.reserve(target.size() << 1);
 			const auto temp = (size_t)(rand() % nodeNum);
 			int i = 0;
 			for (const auto &node : target.getAllNodes()) {
