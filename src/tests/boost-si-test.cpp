@@ -24,8 +24,9 @@ int main() {
 	int num_vertices1 = 8;
 	int num_vertices2 = 9;
 
-	
-/*
+#define LAD
+#ifdef ARG
+
 	FILE *f = fopen(queryGraphPath.c_str(), "rb");
 	assert(f != nullptr && "open file fail");
 	num_vertices1 = getwc(f);
@@ -52,7 +53,8 @@ int main() {
 			add_edge(source, target, graph2);
 		}
 	}
-	fclose(f);*/
+	fclose(f);
+#elif defined(LAD)
 	fstream f;
 	f.open(queryGraphPath.c_str(), ios::ios_base::in);
 	f >> num_vertices1;
@@ -84,7 +86,7 @@ int main() {
 		}
 	}
 	f.close();
-	
+#endif
 	// Create callback to print mappings
 	cout << num_vertices1 << " " << num_vertices2 << endl;
 	auto t1 = clock();
