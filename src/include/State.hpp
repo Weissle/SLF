@@ -149,15 +149,16 @@ private:
 		const auto& querySourceNode = queryGraph.getNode(querySourceNodeID);
 		const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
 
-		unordered_map<size_t, size_t> queryTargetInDepth, queryTargetOutDepth, queryTargetBothDepth,
+
+		vector<size_t> queryTargetInDepth, queryTargetOutDepth, queryTargetBothDepth,
 			targetTargetInDepth, targetTargetOutDepth, targetTargetBothDepth;
 
-		queryTargetInDepth.reserve(searchDepth<<1);
-		queryTargetOutDepth.reserve(searchDepth<<1);
-		queryTargetBothDepth.reserve(searchDepth<<1);
-		targetTargetInDepth.reserve(searchDepth<<1);
-		targetTargetOutDepth.reserve(searchDepth<<1);
-		targetTargetBothDepth.reserve(searchDepth<<1);
+		queryTargetInDepth.resize(searchDepth + 1);
+		queryTargetOutDepth.resize(searchDepth + 1);
+		queryTargetBothDepth.resize(searchDepth + 1);
+		targetTargetInDepth.resize(searchDepth + 1);
+		targetTargetOutDepth.resize(searchDepth + 1);
+		targetTargetBothDepth.resize(searchDepth + 1);
 
 		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0,
 			queryOutCount = 0, targetOutCount = 0, queryBothCount = 0, targetBothCount = 0;
@@ -225,8 +226,11 @@ private:
 
 		if (queryNotTCount > targetNotTCount) return false;
 		if (queryInCount > targetInCount || queryOutCount > targetOutCount || queryBothCount > targetBothCount)return false;
-	/*	if (mapIsCovered(queryTargetInDepth, targetTargetInDepth) == false || mapIsCovered(queryTargetOutDepth, targetTargetOutDepth) == false
-			|| mapIsCovered(queryTargetBothDepth, targetTargetBothDepth) == false)return false;*/
+
+		for (auto i = 1; i <= searchDepth; ++i) {
+			if (queryTargetBothDepth[i] > targetTargetBothDepth[i] || queryTargetInDepth[i] > targetTargetInDepth[i] || queryTargetOutDepth[i] > targetTargetOutDepth[i])return false;
+		}
+
 		return true;
 
 	}
@@ -241,15 +245,15 @@ private:
 		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0,
 			queryOutCount = 0, targetOutCount = 0, queryBothCount = 0, targetBothCount = 0;
 
-		unordered_map<size_t, size_t> querySourceInDepth, querySourceOutDepth, querySourceBothDepth,
+		vector<size_t> querySourceInDepth, querySourceOutDepth, querySourceBothDepth,
 			targetSourceInDepth, targetSourceOutDepth, targetSourceBothDepth;
 
-		querySourceInDepth.reserve(searchDepth<<1);
-		querySourceOutDepth.reserve(searchDepth<<1);
-		querySourceBothDepth.reserve(searchDepth<<1);
-		targetSourceInDepth.reserve(searchDepth<<1);
-		targetSourceOutDepth.reserve(searchDepth<<1);
-		targetSourceBothDepth.reserve(searchDepth<<1);
+		querySourceInDepth.resize(searchDepth + 1);
+		querySourceOutDepth.resize(searchDepth + 1);
+		querySourceBothDepth.resize(searchDepth + 1);
+		targetSourceInDepth.resize(searchDepth + 1);
+		targetSourceOutDepth.resize(searchDepth + 1);
+		targetSourceBothDepth.resize(searchDepth + 1);
 
 		for (const auto& tempEdge : queryTargetNode.getInEdges()) {
 			const auto& querySourceNodeID = tempEdge.getSourceNodeID();
@@ -266,12 +270,15 @@ private:
 
 				if (o && !b) {
 					querySourceOutDepth[querySourceNodeDepth]++;
+					++queryOutCount;
 				}
 				if (i && !b) {
 					querySourceInDepth[querySourceNodeDepth]++;
+					++queryInCount;
 				}
 				if (b) {
 					querySourceBothDepth[querySourceNodeDepth]++;
+					++queryBothCount;
 				}
 				if (!b && !i && !o) ++queryNotTCount;
 			}
@@ -294,22 +301,26 @@ private:
 
 				if (o && !b) {
 					targetSourceOutDepth[targetSourceNodeDepth]++;
-
+					++targetOutCount;
 				}
 				if (i && !b) {
 					targetSourceInDepth[targetSourceNodeDepth]++;
-
+					++targetInCount;
 				}
 				if (b) {
 					targetSourceBothDepth[targetSourceNodeDepth]++;
+					++targetBothCount;
 				}
 				if (!b && !i && !o) ++targetNotTCount;
 			}
 		}
 
 		if (queryNotTCount > targetNotTCount) return false;
-		if (mapIsCovered(querySourceInDepth, targetSourceInDepth) == false || mapIsCovered(querySourceOutDepth, targetSourceOutDepth) == false
-			|| mapIsCovered(querySourceBothDepth, targetSourceBothDepth) == false)return false;
+		if (queryInCount > targetInCount || queryOutCount > targetOutCount || queryBothCount > targetBothCount)return false;
+
+		for (auto i = 1; i <= searchDepth; ++i) {
+			if (querySourceBothDepth[i] > targetSourceBothDepth[i] || querySourceInDepth[i] > targetSourceInDepth[i] || querySourceOutDepth[i] > targetSourceOutDepth[i])return false;
+		}
 
 		return true;
 	}
