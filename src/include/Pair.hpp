@@ -43,6 +43,14 @@ public:
 	inline bool operator==(const FSPair<F, S> &p) const {
 		return (p.getFirst() == first && p.getSecond() == second);
 	}
+	inline bool operator<(const FSPair<F, S> &p)const {
+		if (first == p.first) return second < p.second;
+		else return first < p.second;
+	}
+	inline bool operator>(const FSPair<F, S> &p)const {
+		if (first == p.first) return second > p.second;
+		else return first > p.second;
+	}
 };
 namespace std {
 	template<typename F, typename S>
@@ -50,7 +58,7 @@ namespace std {
 	{
 		size_t operator()(const FSPair<F, S> &p)const {
 			auto hash1 = hash<F>()(p.getFirst());
-			auto hash2 = hash<S>()(p.getValue());
+			auto hash2 = hash<S>()(p.getSecond());
 			return ((hash1 << 2) + 0x9e3779b9) ^ (hash2);
 		}
 	};
