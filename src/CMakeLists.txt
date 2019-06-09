@@ -18,10 +18,13 @@ message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
 add_subdirectory(tests)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/tools)
-add_executable(si si.cpp )
+add_executable(si si.cpp include/Edge.hpp include/Graph.hpp 
+				include/Node.hpp include/State.hpp include/VF2.hpp 
+				include/Pair.hpp include/GraphReader.hpp include/AnswerReceiver.hpp
+				include/argh.h include/common.h)
 
-add_executable(sg sg.cpp )
+add_executable(sg sg.cpp include/SubgraphGenerator.hpp include/Graph.hpp
+			include/Node.hpp include/Edge.hpp include/GraphReader.hpp include/argh.h)
 
 
 
