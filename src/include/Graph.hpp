@@ -44,32 +44,30 @@ public:
 private:
 
 	vector<NodeType> nodes;
-	unordered_map<NodeIDType, size_t> index;
+//	unordered_map<NodeIDType, size_t> index;
 	GRAPH_TYPE graphType;
 	size_t _size;
 public:
 	GraphVF2() = default;
 	~GraphVF2() = default;
-	GraphVF2(vector<NodeType> &_nodes, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION)
-		:nodes(_nodes), graphType(_graphType)
-	{
-		
-		_size = nodes.size();
-		index.reserve(calHashSuitableSize(_size));
-		for (size_t i = 0; i < nodes.size(); ++i) {
-			index[nodes[i].getID()] = i;
-		}
+
+	GraphVF2(const size_t s, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) :_size(s) , graphType(_graphType) {
+		vector<NodeType> n;
+		n.reserve(s + 1);
+		for (int i = 0; i < s; ++i) n.push_back(NodeType(i));
+		swap(nodes, n);
+
 	}
 	void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
-		auto &tempNode = nodes[index[_id]];
-		tempNode.setLabel(_label);
+		assert(( _id < _size) && "node ID overflow");
+		nodes[_id].setLabel(_label);
 		return;
 	}
 	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel=EdgeLabelType()) {
 		assert(source != target && "not support self loop");
-		assert(index.find(source) != index.end() && index.find(target) != index.end() && "node id more than node num should be");
-		auto &sourceNode = nodes[index[source]];
-		auto &targetNode = nodes[index[target]];
+		assert( source<_size && target<_size && "node id more than node num should be");
+		auto &sourceNode = nodes[source];
+		auto &targetNode = nodes[target];
 
 		const EdgeType  sourceEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
 		const EdgeType  targetEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, source, target, edgeLabel);
@@ -88,16 +86,12 @@ public:
 	};
 	vector<NodeType> const & getAllNodes()const { return nodes; }
 	const NodeType* getNodePointer(const NodeIDType &nodeID) const {
-		const auto tempIndexPair = index.find(nodeID);
-		assert((tempIndexPair != index.end()) && "this node id not exist!");
-		const auto nodeIndex = tempIndexPair->second;
-		return &(nodes[nodeIndex]);
+		assert((nodeID < _size) && "node ID overflow");
+		return &nodes[nodeID];
 	}
 	const NodeType & getNode(const NodeIDType &nodeID) const {
-		const auto tempIndexPair = index.find(nodeID);
-		assert((tempIndexPair != index.end()) && "this node id not exist!");
-		const auto nodeIndex = tempIndexPair->second;
-		return nodes[nodeIndex];
+		assert((nodeID < _size )&& "node ID overflow");
+		return nodes[nodeID];
 	}
 
 };

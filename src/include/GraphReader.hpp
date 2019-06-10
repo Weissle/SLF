@@ -13,6 +13,7 @@ fstream& openGraphFile(string graphPath,ios_base::openmode mode) {
 	
 }*/
 
+
 template<class GraphType>
 class LADReader {
 	typedef typename GraphType::NodeType NodeType;
@@ -29,12 +30,7 @@ public:
 		}
 		int nodeNum;
 		f >> nodeNum;
-		vector<NodeType> nodeList;
-		nodeList.reserve(nodeNum);
-		for (int i = 0; i < nodeNum; ++i) {
-			nodeList.push_back(NodeType(i));
-		}
-		GraphType *graph=new GraphType(nodeList);
+		GraphType *graph=new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			int edgeNum;
 			const int &source = i;
@@ -66,13 +62,9 @@ public:
 		int nodeNum; 
 		nodeNum = getwc(f);
 
-		vector<NodeType> nodeList;
-		nodeList.reserve(nodeNum + 5);
-		for (int i = 0; i < nodeNum; ++i) {
-			nodeList.push_back(NodeType(i));
-		}
+	
 
-		GraphType *graph = new GraphType(nodeList);
+		GraphType *graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			int edgeNum = getwc(f);
 			const int &source = i;
@@ -105,15 +97,8 @@ public:
 		}
 		int nodeNum;
 		f >> nodeNum;
-	
-		vector<NodeType> nodeList;
-		nodeList.reserve(nodeNum);
-		int edgeNum;
-		f >> edgeNum;
-		for (int i = 0; i < nodeNum; ++i) {
-			nodeList.push_back(NodeType(i));
-		}
-		GraphType *graph = new GraphType(nodeList);
+
+		GraphType *graph = new GraphType(nodeNum);
 
 
 		for (int i = 0; i < edgeNum; ++i) {
@@ -121,8 +106,6 @@ public:
 			f >> source >> target;
 			graph->addEdge(source, target);	
 		}
-
-
 		f.close();
 		return graph;
 	}
@@ -144,14 +127,7 @@ public:
 		int nodeNum;
 		f >> nodeNum;
 
-		vector<NodeType> nodeList;
-		nodeList.reserve(nodeNum);
-		int edgeNum;
-		f >> edgeNum;
-		for (int i = 0; i < nodeNum; ++i) {
-			nodeList.push_back(NodeType(i));
-		}
-		GraphType *graph = new GraphType(nodeList);
+		GraphType *graph = new GraphType(nodeNum);
 
 
 		for (int i = 0; i < edgeNum; ++i) {

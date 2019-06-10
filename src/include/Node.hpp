@@ -4,14 +4,14 @@
 #include<vector>
 
 using namespace std;
-template<typename _NodeIDType, typename _EdgeType, typename _NodeLabelType>
+template<typename _EdgeType, typename _NodeLabelType>
 class Node {
 public:
-	typedef _NodeIDType NodeIDType;
+	typedef size_t NodeIDType;
 	typedef _NodeLabelType NodeLabelType;
 	typedef _EdgeType EdgeType;
-	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeType;
-private:
+	typedef Node<EdgeType, NodeLabelType> NodeType;
+protected:
 	NodeIDType id;
 
 public:
@@ -47,14 +47,14 @@ public:
 	virtual void addOutEdge(const EdgeType &e) = 0;
 };
 
-template<typename _NodeIDType, typename _EdgeType, typename _NodeLabelType>
-class NodeVF2 :public Node<_NodeIDType, _EdgeType, _NodeLabelType> {
+template<typename _EdgeType, typename _NodeLabelType>
+class NodeVF2 :public Node<_EdgeType, _NodeLabelType> {
 public:
-	typedef _NodeIDType NodeIDType;
+	typedef size_t NodeIDType;
 	typedef _NodeLabelType NodeLabelType;
 	typedef _EdgeType EdgeType;
-	typedef Node<NodeIDType, EdgeType, NodeLabelType> NodeBaseType;
-	typedef NodeVF2<NodeIDType, EdgeType, NodeLabelType> NodeType;
+	typedef Node<EdgeType, NodeLabelType> NodeBaseType;
+	typedef NodeVF2<EdgeType, NodeLabelType> NodeType;
 	
 
 private:
@@ -65,7 +65,7 @@ private:
 public:
 	NodeVF2() = default;
 	~NodeVF2() = default;
-	NodeVF2(const NodeIDType _id ) :Node<NodeIDType,EdgeType,NodeLabelType>(_id) {}
+	NodeVF2(const NodeIDType _id ) :NodeBaseType(_id) {}
 	NodeVF2(const NodeIDType _id, const NodeLabelType _label) :NodeBaseType(_id), label(_label) {}
 	NodeVF2(const NodeIDType _id, const NodeLabelType _label, vector<EdgeType> &_inEdges, vector<EdgeType> &_outEdges) :NodeBaseType(_id,_label) {
 		swap(inEdges, _inEdges);
@@ -125,10 +125,10 @@ static bool isSameTypeNode(const NodeType1 &n1, const NodeType2 &n2) {
 }
 namespace std
 {
-	template<typename NodeIDType, typename EdgeType, typename NodeLabelType>
-	struct hash<Node<NodeIDType, EdgeType, NodeLabelType>>
+	template<typename EdgeType, typename NodeLabelType>
+	struct hash<Node<EdgeType, NodeLabelType>>
 	{
-		size_t operator() (const Node<NodeIDType, EdgeType, NodeLabelType>  &n) const {
+		size_t operator() (const Node<EdgeType, NodeLabelType>  &n) const {
 			return n.nodeIdHash();
 		}
 	};

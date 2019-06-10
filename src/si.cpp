@@ -10,8 +10,8 @@ static long t = 0;
 
 int main(int argc, char * argv[]) {
 	typedef size_t NodeIDType;
-	typedef EdgeVF2<NodeIDType, int> EdgeType;
-	typedef NodeVF2<NodeIDType, EdgeType, int> NodeType;
+	typedef EdgeVF2<int> EdgeType;
+	typedef NodeVF2<EdgeType, int> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 	typedef StateVF2<GraphType> StateType;
 	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
