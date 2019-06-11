@@ -1,8 +1,11 @@
 #pragma once
 #include"Edge.hpp"
+#include"common.h"
+#include<algorithm>
 #include<typeinfo>
 #include<vector>
-
+#include<iostream>
+#include<time.h>
 using namespace std;
 template<typename _EdgeType, typename _NodeLabelType>
 class Node {
@@ -41,7 +44,8 @@ public:
 	virtual const NodeIDType& getID()const {
 		return id;
 	}
-	// 
+	virtual void reserve(const size_t s) = 0;
+	virtual void NodeBuildFinish() = 0;
 	virtual size_t nodeIdHash()const = 0;
 	virtual void addInEdge(const EdgeType &e) = 0;
 	virtual void addOutEdge(const EdgeType &e) = 0;
@@ -61,7 +65,7 @@ private:
 
 	NodeLabelType label = NodeLabelType();
 	vector<EdgeType> inEdges, outEdges;
-
+	bool edgeSort = false;
 public:
 	NodeVF2() = default;
 	~NodeVF2() = default;
@@ -91,24 +95,54 @@ public:
 		return n >= *this;
 	}
 	  bool existSameTypeEdgeToNode(const NodeBaseType &n, const EdgeType& e)const {
-		for (const auto &it : outEdges) {
-			if (it.getTargetNodeID() == n.getID() && it.isSameTypeEdge(e)) return true;
-		}
-		return false;
+		  if (edgeSort) {
+			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, id, n.getID(), e.getLabel()));
+		  }
+		  else {
+			 
+			  for (const auto &it : outEdges) {
+				  if (it.getTargetNodeID() == n.getID() && it.isSameTypeEdge(e))return true;
+			  }
+			  return false;
+		  }
 	}
-	  bool existSameTypeEdgeFromNode(const NodeBaseType &n, const EdgeType& e)const {
-		for (const auto &it : inEdges) {
-			if (it.getSourceNodeID() == n.getID() && it.isSameTypeEdge(e)) return true;
-		}
-		return false;
+	  bool existSameTypeEdgeFromNode(const NodeBaseType &n, const EdgeType& e)const {	 
+		  if (edgeSort) {
+			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.getID(), id, e.getLabel()));
+		  }
+		  else {
+			  for (const auto &it : inEdges) {
+				  if (it.getSourceNodeID() == n.getID() && it.isSameTypeEdge(e)) return true;
+			  }
+			  return false;
+		  }
 	}
+	  void reserve(const size_t s){
+		  inEdges.reserve(s);
+		  outEdges.reserve(s);
+	  }
 	  const vector<EdgeType>& getOutEdges() const { return outEdges; }
 	  const vector<EdgeType>& getInEdges() const { return inEdges; }
 	  size_t getOutEdgesNum() const { return outEdges.size(); }
 	  size_t getInEdgesNum() const { return inEdges.size(); }
 	  size_t nodeIdHash()const { return hash<NodeIDType>()(this->getID()); }
-	  void addInEdge(const EdgeType &e) { inEdges.push_back(e); }
-	  void addOutEdge(const EdgeType &e) { outEdges.push_back(e); }
+	  void addInEdge(const EdgeType &e) { 
+		  inEdges.push_back(e); 
+		  edgeSort = false;
+	  }
+	  void addOutEdge(const EdgeType &e) {
+		  outEdges.push_back(e); 
+		  edgeSort = false;
+	  }
+	  void NodeBuildFinish() {
+		  sort(inEdges.begin(), inEdges.end(), [](const EdgeType &a, const EdgeType &b) {
+			  return a.getSourceNodeID() < b.getSourceNodeID();
+		  });
+		  sort(outEdges.begin(), outEdges.end(), [](const EdgeType &a, const EdgeType &b) {
+			  return a.getTargetNodeID() < b.getTargetNodeID();
+		  });
+		  edgeSort = true;
+	  }
 };
 
 template<typename NodeType, typename NodeIDType = typename NodeType::NodeIDType>

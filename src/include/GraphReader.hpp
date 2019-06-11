@@ -4,33 +4,34 @@
 #include<fstream>
 #include<iostream>
 #include<typeinfo>
-
+#include<unordered_set>
+#include"si_marcos.h"
 using namespace std;
 /*
 fstream& openGraphFile(string graphPath,ios_base::openmode mode) {
 	fstream f;
 	f.open(graphPath.c_str(), mode);
-	
+
 }*/
 
 
 template<class GraphType>
 class LADReader {
 	typedef typename GraphType::NodeType NodeType;
-	
+
 public:
 	static GraphType* readGraph(string graphPath) {
 		fstream f;
 
 		f.open(graphPath.c_str(), ios_base::in);
-//		auto f = openGraphFile(graphPath, ios_base::in);
+		//		auto f = openGraphFile(graphPath, ios_base::in);
 		if (f.is_open() == false) {
 			cout << graphPath << " open fail" << endl;
 			exit(0);
 		}
 		int nodeNum;
 		f >> nodeNum;
-		GraphType *graph=new GraphType(nodeNum);
+		GraphType *graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			int edgeNum;
 			const int &source = i;
@@ -59,10 +60,10 @@ public:
 		FILE *f = fopen(graphPath.c_str(), "rb");
 		assert(f != nullptr && "open file fail");
 
-		int nodeNum; 
+		int nodeNum;
 		nodeNum = getwc(f);
 
-	
+
 
 		GraphType *graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
@@ -104,7 +105,7 @@ public:
 		for (int i = 0; i < edgeNum; ++i) {
 			int source, target;
 			f >> source >> target;
-			graph->addEdge(source, target);	
+			graph->addEdge(source, target);
 		}
 		f.close();
 		return graph;
@@ -130,8 +131,9 @@ public:
 		GraphType *graph = new GraphType(nodeNum);
 
 
+
 		for (int i = 0; i < edgeNum; ++i) {
-			int source, target;
+			size_t source, target;
 			int label;
 			f >> source >> target >> label;
 			graph->addEdge(source, target, label);
@@ -142,4 +144,88 @@ public:
 		return graph;
 	}
 
+};
+
+template<class GraphType>
+class GRFGraphNoLabel {
+public:
+	static GraphType* readGraph(string graphPath) {
+		fstream f;
+		f.open(graphPath.c_str(), ios_base::in);
+		//		auto f = openGraphFile(graphPath, ios_base::in);
+		if (f.is_open() == false) {
+			cout << graphPath << " open fail" << endl;
+			exit(0);
+		}
+		int nodeNum;
+		f >> nodeNum;
+
+		GraphType *graph = new GraphType(nodeNum);
+		unordered_set< FSPair<size_t, size_t> > s;
+		s.reserve(nodeNum*nodeNum);
+
+		while (f.eof() == false) {
+			size_t source, target;
+			f >> source >> target;
+			FSPair<size_t, size_t> p(source, target);
+
+			if (IN_SET(s, p))continue;
+			s.insert(p);
+			graph->addEdge(source, target);
+		}
+
+		f.close();
+		return graph;
+	}
+};
+
+template<class GraphType>
+class GRFGraphLabel {
+public:
+	static GraphType* readGraph(string graphPath) {
+		fstream f;
+		f.open(graphPath.c_str(), ios_base::in);
+		//		auto f = openGraphFile(graphPath, ios_base::in);
+		if (f.is_open() == false) {
+			cout << graphPath << " open fail" << endl;
+			exit(0);
+		}
+		int nodeNum;
+		f >> nodeNum;
+
+		GraphType *graph = new GraphType(nodeNum);
+
+		for (auto i = 0; i < nodeNum; ++i) {
+			size_t id;
+			int label;
+			f >> id >> label;
+			graph->setNodeLabel(id, label);
+		}
+		bool *pp = new bool[nodeNum]();
+		while (f.eof() == false) {
+			int edges;
+			f >> edges;
+			
+			unordered_set< FSPair<size_t, size_t> > s;
+			s.reserve(calHashSuitableSize(edges));
+			for (auto i = 0; i < edges; ++i) {
+
+				size_t source, target;
+
+				f >> source >> target;
+				FSPair<size_t, size_t> p(source, target);
+				if (IN_SET(s, p))continue;
+				if (pp[source] == false) {
+					graph->edgeVectorReserve(source, edges);
+					pp[source] = true;
+				}
+
+				s.insert(p);
+				graph->addEdge(source, target);
+			}
+		}
+
+		f.close();
+		return graph;
+	}
 };

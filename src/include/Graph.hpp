@@ -27,7 +27,6 @@ public:
 	virtual vector<NodeType> const & getAllNodes()const = 0;
 	virtual const NodeType* getNodePointer(const NodeIDType &nodeID) const = 0;
 	virtual const NodeType & getNode(const NodeIDType &nodeID) const = 0;
-
 };
 
 template<typename _NodeType, typename _EdgeType>
@@ -40,6 +39,7 @@ public:
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
+	typedef typename GraphVF2<_NodeType, _EdgeType> GraphType;
 	//	typedef const NodeType* NodeCPointer;
 private:
 
@@ -54,9 +54,14 @@ public:
 	GraphVF2(const size_t s, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) :_size(s) , graphType(_graphType) {
 		vector<NodeType> n;
 		n.reserve(s + 1);
-		for (int i = 0; i < s; ++i) n.push_back(NodeType(i));
+		for (auto i = 0; i < s; ++i) n.push_back(NodeType(i));
 		swap(nodes, n);
 
+	}
+	void edgeVectorReserve(const NodeIDType id,size_t s) {
+		assert(id < _size);
+		nodes[id].reserve(s);
+		return;
 	}
 	void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
 		assert(( _id < _size) && "node ID overflow");
@@ -64,7 +69,8 @@ public:
 		return;
 	}
 	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel=EdgeLabelType()) {
-		assert(source != target && "not support self loop");
+		
+	//	assert(source != target && "not support self loop");
 		assert( source<_size && target<_size && "node id more than node num should be");
 		auto &sourceNode = nodes[source];
 		auto &targetNode = nodes[target];
@@ -92,6 +98,13 @@ public:
 	const NodeType & getNode(const NodeIDType &nodeID) const {
 		assert((nodeID < _size )&& "node ID overflow");
 		return nodes[nodeID];
+	}
+
+	//do something to improve match speed
+	void graphBuildFinish() {
+		for (auto &node : nodes) {
+			node.NodeBuildFinish();
+		}
 	}
 
 };

@@ -15,7 +15,7 @@ public:
 	void operator<<(const MapType &mapping) {
 		static size_t count = 1;
 		std::cout << "Solution : " << count++ << std::endl;
-		for (int i = 0; i < mapping.size();++i) {
+		for (auto i = 0; i < mapping.size();++i) {
 			std::cout << '(' << i << ',' << mapping[i] << ") ";
 		}
 	/*	std::vector<MapPair> v;

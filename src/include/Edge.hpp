@@ -1,5 +1,6 @@
 #pragma once
 #include<typeinfo>
+#include<assert.h>
 template<typename _EdgeLabelType>
 class Edge {
 public:
@@ -15,6 +16,7 @@ public:
 	virtual bool operator==(const EdgeType &e)const = 0;
 	virtual bool isSameTypeEdge(const EdgeType &n) const = 0;
 	virtual const EdgeLabelType&  getLabel()const = 0;
+	virtual bool operator<(const EdgeType &e)const = 0;
 };
 
 
@@ -32,24 +34,24 @@ public:
 	typedef Edge<EdgeLabelType> EdgeBaseType;
 private:
 	NodeIDType source, target;
-	NODE_RECORD_TYPE recodeType;
+	NODE_RECORD_TYPE recordType;
 	EdgeLabelType label = EdgeLabelType();
 public:
 	EdgeVF2() = default;
 	~EdgeVF2() = default;
-	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _source, const NodeIDType _target) :
-		recodeType(_recodeType), source(_source), target(_target) {
+	EdgeVF2(NODE_RECORD_TYPE _recordType, const NodeIDType _source, const NodeIDType _target) :
+		recordType(_recordType), source(_source), target(_target) {
 	}
-	EdgeVF2(NODE_RECORD_TYPE _recodeType, const NodeIDType _source, const NodeIDType _target, const EdgeLabelType _label) :
-		recodeType(_recodeType), source(_source), target(_target), label(_label) {
+	EdgeVF2(NODE_RECORD_TYPE _recordType, const NodeIDType _source, const NodeIDType _target, const EdgeLabelType _label) :
+		recordType(_recordType), source(_source), target(_target), label(_label) {
 	}
 	const NodeIDType& getSourceNodeID() const {
-		if (recodeType == NODE_RECORD_TYPE::TARGET) throw "this is a edge record target node!!";
+		if (recordType == NODE_RECORD_TYPE::TARGET) throw "this is a edge record target node!!";
 		return source;
 	}
 	const NodeIDType& getTargetNodeID()const
 	{
-		if (recodeType == NODE_RECORD_TYPE::SOURCE)throw "this is a edge record source node!!";
+		if (recordType == NODE_RECORD_TYPE::SOURCE)throw "this is a edge record source node!!";
 		return target;
 	}
 	const EdgeLabelType&  getLabel()const
@@ -62,5 +64,11 @@ public:
 	bool operator==(const EdgeBaseType &e)const {
 		return this->isSameTypeEdge(e);
 	}
+	bool operator<(const EdgeBaseType &e)const {
+		assert(recordType != NODE_RECORD_TYPE::BOTH && "Both edge cannot be compare");
+		if (recordType == NODE_RECORD_TYPE::TARGET) return target < e.getTargetNodeID();
+		else if (recordType == NODE_RECORD_TYPE::SOURCE) return source < e.getSourceNodeID();
+		else assert("error situation");
+	};
 };
 

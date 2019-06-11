@@ -24,7 +24,7 @@ int main() {
 	int num_vertices1 = 8;
 	int num_vertices2 = 9;
 
-#define LAD
+#define GRF_NL
 #ifdef ARG
 
 	FILE *f = fopen(queryGraphPath.c_str(), "rb");
@@ -84,6 +84,30 @@ int main() {
 			f >> target;
 			add_edge(source, target, graph2);
 		}
+	}
+	f.close();
+#elif defined(GRF_NL)
+	fstream f;
+	f.open(queryGraphPath.c_str(), ios::ios_base::in);
+	f >> num_vertices1;
+	graph_type graph1(num_vertices1);
+	while(f.eof()==false) {
+		size_t source, target;
+		f >> source >> target;
+		add_edge(source, target, graph1);
+		
+	}
+	f.close();
+
+	f.open(targetGraphPath.c_str(), ios::ios_base::in);
+
+	f >> num_vertices2;
+	graph_type graph2(num_vertices2);
+	while (f.eof() == false) {
+		size_t source, target;
+		f >> source >> target;
+		add_edge(source, target, graph2);
+
 	}
 	f.close();
 #endif

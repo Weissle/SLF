@@ -24,17 +24,22 @@ int main(int argc, char * argv[]) {
 	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-	typedef LADReader<GraphType> GraphReader;
+	typedef GRFGraphLabel<GraphType> GraphReader;
+//	typedef LADReader<GraphType> GraphReader;
 
-
-	const GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
+	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		*targetGraph = GraphReader::readGraph(targetGraphPath);
 
 	cout << "read graph finish" << endl;
+	auto t1 = clock();
+	targetGraph->graphBuildFinish();
+	queryGraph->graphBuildFinish();
+
+	TIME_COST_PRINT("sort edge time : ",clock()- t1);
 	AnswerReceiverType answerReceiver;
 	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
 
-	auto t1 = clock();
+	t1 = clock();
 	vf2.run();
 
 	auto t2 = clock();

@@ -158,10 +158,13 @@ private:
 		for (const auto& tempEdge : querySourceNode.getOutEdges()) {
 			const auto& queryTargetNodeID = tempEdge.getTargetNodeID();
 			//this tempnode have been mapped
-			if (NOT_IN_NODESET(queryUnmap, queryTargetNodeID)) {
+			if (NOT_IN_NODESET(queryUnmap, queryTargetNodeID) ) {
 				const auto& targetTargetNodeID = mapping[queryTargetNodeID];
 				const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
+			}
+			else if (queryTargetNodeID == querySourceNodeID) {
+				if (targetSourceNode.existSameTypeEdgeToNode(targetSourceNode, tempEdge) == false)return false;
 			}
 			else {
 
@@ -197,6 +200,9 @@ private:
 				const auto & queryTargetNodeID = mappingAux[targetTargetNodeID];
 				const auto & queryTargetNode = queryGraph.getNode(queryTargetNodeID);
 				if (querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
+			}
+			else if (targetTargetNodeID == targetSourceNodeID) {
+				if (querySourceNode.existSameTypeEdgeToNode(querySourceNode, tempEdge) == false)return false;
 			}
 			else {
 
@@ -269,6 +275,9 @@ private:
 				const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
 				if (targetTargetNode.existSameTypeEdgeFromNode(targetSourceNode, tempEdge) == false) return false;
 			}
+			else if (queryTargetNodeID == querySourceNodeID) {
+				if (targetTargetNode.existSameTypeEdgeFromNode(targetTargetNode, tempEdge) == false)return false;
+			}
 			else {
 
 				const bool o = IN_NODESET(queryOut, querySourceNodeID);
@@ -304,6 +313,9 @@ private:
 				const auto & querySourceNodeID = mappingAux[targetSourceNodeID];
 				const auto & querySourceNode = queryGraph.getNode(querySourceNodeID);
 				if (queryTargetNode.existSameTypeEdgeFromNode(querySourceNode, tempEdge) == false) return false;
+			}
+			else if (targetTargetNodeID == targetSourceNodeID) {
+				if (queryTargetNode.existSameTypeEdgeFromNode(queryTargetNode, tempEdge) == false)return false;
 			}
 			else {
 
@@ -819,18 +831,13 @@ public:
 	}
 	void deleteCanditatePairToMapping(const MapPair & cp)
 	{
-		if (cp.getKey() == 48 && cp.getValue() == 24) {
-			int a = 0;
-		}
-		mapping[cp.getKey()] = NO_MAP;
-		mappingAux[cp.getValue()] = NO_MAP;
+		
 		const auto& queryNodeID = cp.getKey();
 		const auto& targetNodeID = cp.getValue();
 		const auto& queryNode = queryGraph.getNode(queryNodeID);
 		const auto& targetNode = targetGraph.getNode(targetNodeID);
 
-		targetUnmap.insert(targetNodeID);
-		queryUnmap.insert(queryNodeID);
+		
 
 
 		for (const auto& tempEdge : queryNode.getInEdges()) {
@@ -1038,6 +1045,12 @@ public:
 		if (targetOutBothRefTimesCla[1] > 1E5) {
 			int a = 0;
 		}
+
+		mapping[queryNodeID] = NO_MAP;
+		mappingAux[targetNodeID] = NO_MAP;
+		targetUnmap.insert(targetNodeID);
+		queryUnmap.insert(queryNodeID);
+
 		searchDepth--;
 
 		return;
