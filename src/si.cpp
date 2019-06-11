@@ -26,6 +26,8 @@ int main(int argc, char * argv[]) {
 
 	typedef GRFGraphLabel<GraphType> GraphReader;
 //	typedef LADReader<GraphType> GraphReader;
+//	typedef ARGGraphNoLabel<GraphType> GraphReader;
+
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		*targetGraph = GraphReader::readGraph(targetGraphPath);
