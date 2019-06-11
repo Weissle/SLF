@@ -10,12 +10,12 @@ using namespace std;
 template<typename _EdgeType, typename _NodeLabelType>
 class Node {
 public:
+
 	typedef size_t NodeIDType;
 	typedef _NodeLabelType NodeLabelType;
 	typedef _EdgeType EdgeType;
 	typedef Node<EdgeType, NodeLabelType> NodeType;
-protected:
-	NodeIDType id;
+	const NodeIDType id;
 
 public:
 	Node() = default;
@@ -26,7 +26,7 @@ public:
 	virtual void setLabel(const NodeLabelType _label) = 0;
 
 /*	virtual bool operator==(const NodeType &n)const {
-		return id == n.getID();
+		return id == n.id;
 	}*/
 	//same label
 	virtual bool isSameType(const NodeType &n)const = 0;
@@ -41,9 +41,6 @@ public:
 	virtual const vector<EdgeType>& getInEdges() const = 0;
 	virtual size_t getOutEdgesNum() const = 0;
 	virtual size_t getInEdgesNum() const = 0;
-	virtual const NodeIDType& getID()const {
-		return id;
-	}
 	virtual void reserve(const size_t s) = 0;
 	virtual void NodeBuildFinish() = 0;
 	virtual size_t nodeIdHash()const = 0;
@@ -71,7 +68,7 @@ public:
 	~NodeVF2() = default;
 	NodeVF2(const NodeIDType _id ) :NodeBaseType(_id) {}
 	NodeVF2(const NodeIDType _id, const NodeLabelType _label) :NodeBaseType(_id), label(_label) {}
-	NodeVF2(const NodeIDType _id, const NodeLabelType _label, vector<EdgeType> &_inEdges, vector<EdgeType> &_outEdges) :NodeBaseType(_id,_label) {
+	NodeVF2(const NodeIDType _id, const NodeLabelType _label, vector<EdgeType> &_inEdges, vector<EdgeType> &_outEdges) :NodeType(_id,_label) {
 		swap(inEdges, _inEdges);
 		swap(outEdges, _outEdges);
 	}
@@ -82,9 +79,7 @@ public:
 	  void setLabel(const NodeLabelType _label) {
 		this->label = _label;
 	}
-/*	  bool operator==(const NodeBaseType &n)const {
-		  return this->getID() == n.getID();
-	  }*/
+
 	  bool isSameType(const NodeBaseType &n)const {	
 		return label == n.getLabel();
 	}
@@ -96,23 +91,23 @@ public:
 	}
 	  bool existSameTypeEdgeToNode(const NodeBaseType &n, const EdgeType& e)const {
 		  if (edgeSort) {
-			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, id, n.getID(), e.getLabel()));
+			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, id, n.id, e.getLabel()));
 		  }
 		  else {
 			 
 			  for (const auto &it : outEdges) {
-				  if (it.getTargetNodeID() == n.getID() && it.isSameTypeEdge(e))return true;
+				  if (it.getTargetNodeID() == n.id && it.isSameTypeEdge(e))return true;
 			  }
 			  return false;
 		  }
 	}
 	  bool existSameTypeEdgeFromNode(const NodeBaseType &n, const EdgeType& e)const {	 
 		  if (edgeSort) {
-			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.getID(), id, e.getLabel()));
+			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.id, id, e.getLabel()));
 		  }
 		  else {
 			  for (const auto &it : inEdges) {
-				  if (it.getSourceNodeID() == n.getID() && it.isSameTypeEdge(e)) return true;
+				  if (it.getSourceNodeID() == n.id && it.isSameTypeEdge(e)) return true;
 			  }
 			  return false;
 		  }
@@ -125,7 +120,7 @@ public:
 	  const vector<EdgeType>& getInEdges() const { return inEdges; }
 	  size_t getOutEdgesNum() const { return outEdges.size(); }
 	  size_t getInEdgesNum() const { return inEdges.size(); }
-	  size_t nodeIdHash()const { return hash<NodeIDType>()(this->getID()); }
+	  size_t nodeIdHash()const { return hash<NodeIDType>()(this->id); }
 	  void addInEdge(const EdgeType &e) { 
 		  inEdges.push_back(e); 
 		  edgeSort = false;
@@ -135,6 +130,8 @@ public:
 		  edgeSort = false;
 	  }
 	  void NodeBuildFinish() {
+		  inEdges.shrink_to_fit();
+		  outEdges.shrink_to_fit();
 		  sort(inEdges.begin(), inEdges.end(), [](const EdgeType &a, const EdgeType &b) {
 			  return a.getSourceNodeID() < b.getSourceNodeID();
 		  });
@@ -145,14 +142,7 @@ public:
 	  }
 };
 
-template<typename NodeType, typename NodeIDType = typename NodeType::NodeIDType>
-static NodeIDType getNodeID(const NodeType &node) {
-	return node.getID();
-}
-template<typename NodeType, typename NodeIDType = typename NodeType::NodeIDType>
-static NodeIDType getNodeID(const NodeType *node) {
-	return node->getID();
-}
+
 template<typename NodeType1, typename NodeType2>
 static bool isSameTypeNode(const NodeType1 &n1, const NodeType2 &n2) {
 	return n1.isSameType(n2);

@@ -387,7 +387,7 @@ private:
 		inMap.resize(queryGraph.size() + 1);
 		outMap.resize(queryGraph.size() + 1);
 		const auto calNodeMatchPoint = [&](const NodeType & node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + inMap[node.getID()] + outMap[node.getID()];
+			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + inMap[node.id] + outMap[node.id];
 			return p1;
 		};
 		const auto seleteAGoodNodeToMatch = [&](const Set & s) {
@@ -419,7 +419,7 @@ private:
 			assert(nodePointPair.getKey() != nullptr && "error happened");
 			const auto & node = *nodePointPair.getKey();
 
-			const auto & nodeID = node.getID();
+			const auto & nodeID = node.id;
 			matchSequence.push_back(nodeID);
 			nodeNotInMatchSet.erase(nodeID);
 			inSet.erase(nodeID);
@@ -485,13 +485,13 @@ public:
 		{
 			targetInMax = max(targetInMax, tempNode.getInEdgesNum());
 			targetOutMax = max(targetOutMax, tempNode.getOutEdgesNum());
-			targetUnmap.insert(getNodeID(tempNode));
+			targetUnmap.insert(tempNode.id);
 		}
 		for (auto& tempNode : queryGraph.getAllNodes())
 		{
 			queryInMax = max(queryInMax, tempNode.getInEdgesNum());
 			queryOutMax = max(queryOutMax, tempNode.getOutEdgesNum());
-			queryUnmap.insert(getNodeID(tempNode));
+			queryUnmap.insert(tempNode.id);
 		}
 		//ofc not a subgraph of target Graph.
 		if (targetInMax < queryInMax || targetOutMax < queryOutMax) stillConsistentAfterAdd = false;
