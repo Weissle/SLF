@@ -50,9 +50,9 @@ int main(int argc,char *argv[]) {
 	cmdl({ "-sg" }) >> smallGraphPath;
 	assert(nodeNeed != 0);
 
-	typedef int NodeIDType;
-	typedef EdgeVF2<NodeIDType, int> EdgeType;
-	typedef NodeVF2<int, EdgeType, int> NodeType;
+	typedef size_t NodeIDType;
+	typedef EdgeVF2< int> EdgeType;
+	typedef NodeVF2<EdgeType, int> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 
 

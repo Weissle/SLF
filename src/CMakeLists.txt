@@ -4,7 +4,7 @@ project (subgraph-isomorphism)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 if(CXX_COMPILER)
 SET(CMAKE_CXX_COMPILER ${CXX_COMPILER})
 endif()

@@ -91,7 +91,7 @@ public:
 	}
 	  bool existSameTypeEdgeToNode(const NodeBaseType &n, const EdgeType& e)const {
 		  if (edgeSort) {
-			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, id, n.id, e.getLabel()));
+			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET,this-> id, n.id, e.getLabel()));
 		  }
 		  else {
 			 
@@ -103,7 +103,7 @@ public:
 	}
 	  bool existSameTypeEdgeFromNode(const NodeBaseType &n, const EdgeType& e)const {	 
 		  if (edgeSort) {
-			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.id, id, e.getLabel()));
+			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.id,this-> id, e.getLabel()));
 		  }
 		  else {
 			  for (const auto &it : inEdges) {

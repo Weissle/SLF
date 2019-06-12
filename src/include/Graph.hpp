@@ -10,9 +10,9 @@ using namespace std;
 template<typename _NodeType, typename _EdgeType>
 class Graph {
 public:
+	typedef size_t	NodeIDType;
 	typedef _NodeType NodeType;
 	typedef _EdgeType EdgeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
@@ -34,12 +34,13 @@ class GraphVF2 :public Graph<_NodeType, _EdgeType>
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
+	typedef size_t NodeIDType;
 	typedef _NodeType NodeType;
 	typedef _EdgeType EdgeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
+	typedef GraphVF2<_NodeType, _EdgeType> GraphType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-	typedef typename GraphVF2<_NodeType, _EdgeType> GraphType;
+	
 	//	typedef const NodeType* NodeCPointer;
 private:
 

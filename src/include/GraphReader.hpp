@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNING
 #include"Graph.hpp"
+#include"Pair.hpp"
 #include<string>
 #include<fstream>
 #include<iostream>
@@ -83,7 +84,7 @@ public:
 
 
 };
-
+/*
 template<class GraphType>
 class STFGraphNoLabel {
 	typedef typename GraphType::NodeType NodeType;
@@ -111,8 +112,8 @@ public:
 		return graph;
 	}
 
-};
-
+};*/
+/*
 template<class GraphType>
 class STFGraphLabel {
 	typedef typename GraphType::NodeType NodeType;
@@ -145,7 +146,7 @@ public:
 	}
 
 };
-
+*/
 template<class GraphType>
 class GRFGraphNoLabel {
 public:
