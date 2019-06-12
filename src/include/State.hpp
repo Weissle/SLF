@@ -419,7 +419,7 @@ private:
 			assert(nodePointPair.getKey() != nullptr && "error happened");
 			const auto & node = *nodePointPair.getKey();
 
-			const auto & nodeID = node.id;
+			const auto nodeID = node.id;
 			matchSequence.push_back(nodeID);
 			nodeNotInMatchSet.erase(nodeID);
 			inSet.erase(nodeID);

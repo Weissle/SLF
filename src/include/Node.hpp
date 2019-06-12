@@ -15,7 +15,7 @@ public:
 	typedef _NodeLabelType NodeLabelType;
 	typedef _EdgeType EdgeType;
 	typedef Node<EdgeType, NodeLabelType> NodeType;
-	const NodeIDType id;
+	NodeIDType id;
 
 public:
 	Node() = default;
@@ -34,7 +34,6 @@ public:
 	// <= operator :similar to >= operator
 	virtual bool operator>=(const NodeType &n) const = 0;
 	virtual bool operator<=(const NodeType &n)const = 0;
-
 	virtual bool existSameTypeEdgeToNode(const NodeType &n, const EdgeType& e)const = 0;
 	virtual bool existSameTypeEdgeFromNode(const NodeType &n, const EdgeType& e)const = 0;
 	virtual const vector<EdgeType>& getOutEdges() const = 0;

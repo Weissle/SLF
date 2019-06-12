@@ -24,8 +24,8 @@ int main(int argc, char * argv[]) {
 	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-	typedef GRFGraphLabel<GraphType> GraphReader;
-//	typedef LADReader<GraphType> GraphReader;
+//	typedef GRFGraphLabel<GraphType> GraphReader;
+	typedef LADReader<GraphType> GraphReader;
 //	typedef ARGGraphNoLabel<GraphType> GraphReader;
 
 

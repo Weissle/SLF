@@ -22,16 +22,16 @@ namespace sg {
 		uint32_t nodeNum;
 		vector<NodeIDType> midG;
 	public:
-		SubgraphGenerator<GraphType>(const GraphType &target, uint32_t _nN) : bigGraph(target), nodeNum(_nN) {
+		SubgraphGenerator<GraphType>(const GraphType &target, size_t _nN) : bigGraph(target), nodeNum(_nN) {
 			srand(time(NULL));
 			midG.reserve(nodeNum);
-			inSmall.reserve(nodeNum << 1);
+			inSmall.reserve(nodeNum );
 			inquery.reserve(target.size() << 1);
 			const auto temp = (size_t)(rand() % nodeNum);
 			int i = 0;
 			for (const auto &node : target.getAllNodes()) {
 				if (i == temp) {
-					inquery.insert(node.getID());
+					inquery.insert(node.id);
 					break;
 				}
 				else ++i;

@@ -50,6 +50,9 @@ private:
 	size_t _size;
 public:
 	GraphVF2() = default;
+	GraphVF2(const vector<NodeType> &_nodes):nodes(_nodes){
+		_size=nodes.size();
+	}
 	~GraphVF2() = default;
 
 	GraphVF2(const size_t s, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) :_size(s) , graphType(_graphType) {
