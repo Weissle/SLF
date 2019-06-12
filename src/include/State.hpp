@@ -158,7 +158,7 @@ private:
 		for (const auto& tempEdge : querySourceNode.getOutEdges()) {
 			const auto& queryTargetNodeID = tempEdge.getTargetNodeID();
 			//this tempnode have been mapped
-			if (NOT_IN_NODESET(queryUnmap, queryTargetNodeID) ) {
+			if (NOT_IN_SET(queryUnmap, queryTargetNodeID) ) {
 				const auto& targetTargetNodeID = mapping[queryTargetNodeID];
 				const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
@@ -168,8 +168,8 @@ private:
 			}
 			else {
 
-				const bool o = IN_NODESET(queryOut, queryTargetNodeID);
-				const bool i = IN_NODESET(queryIn, queryTargetNodeID);
+				const bool o = IN_SET(queryOut, queryTargetNodeID);
+				const bool i = IN_SET(queryIn, queryTargetNodeID);
 				const bool b = (o && i);
 				size_t inDepth, outDepth;
 				if (o) outDepth = queryMappingOutDepth[queryTargetNodeID];
@@ -195,7 +195,7 @@ private:
 		for (const auto& tempEdge : targetSourceNode.getOutEdges()) {
 			const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
 
-			if (NOT_IN_NODESET(targetUnmap, targetTargetNodeID)) {
+			if (NOT_IN_SET(targetUnmap, targetTargetNodeID)) {
 				if (induceGraph == false)continue;
 				const auto & queryTargetNodeID = mappingAux[targetTargetNodeID];
 				const auto & queryTargetNode = queryGraph.getNode(queryTargetNodeID);
@@ -206,8 +206,8 @@ private:
 			}
 			else {
 
-				const bool o = IN_NODESET(targetOut, targetTargetNodeID);
-				const bool i = IN_NODESET(targetIn, targetTargetNodeID);
+				const bool o = IN_SET(targetOut, targetTargetNodeID);
+				const bool i = IN_SET(targetIn, targetTargetNodeID);
 				const bool b = (i && o);
 				size_t inDepth, outDepth;
 				if (o) outDepth = targetMappingOutDepth[targetTargetNodeID];
@@ -269,7 +269,7 @@ private:
 
 		for (const auto& tempEdge : queryTargetNode.getInEdges()) {
 			const auto& querySourceNodeID = tempEdge.getSourceNodeID();
-			if (NOT_IN_NODESET(queryUnmap, querySourceNodeID)) {
+			if (NOT_IN_SET(queryUnmap, querySourceNodeID)) {
 
 				const auto& targetSourceNodeID = mapping[querySourceNodeID];
 				const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
@@ -280,8 +280,8 @@ private:
 			}
 			else {
 
-				const bool o = IN_NODESET(queryOut, querySourceNodeID);
-				const bool i = IN_NODESET(queryIn, querySourceNodeID);
+				const bool o = IN_SET(queryOut, querySourceNodeID);
+				const bool i = IN_SET(queryIn, querySourceNodeID);
 				const bool b = (o && i);
 				size_t inDepth, outDepth;
 				if (o) outDepth = queryMappingOutDepth[querySourceNodeID];
@@ -308,7 +308,7 @@ private:
 		for (const auto& tempEdge : targetTargetNode.getInEdges()) {
 			const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
 
-			if (NOT_IN_NODESET(targetUnmap, targetSourceNodeID)) {
+			if (NOT_IN_SET(targetUnmap, targetSourceNodeID)) {
 				if (induceGraph == false)continue;
 				const auto & querySourceNodeID = mappingAux[targetSourceNodeID];
 				const auto & querySourceNode = queryGraph.getNode(querySourceNodeID);
@@ -319,8 +319,8 @@ private:
 			}
 			else {
 
-				const bool o = IN_NODESET(targetOut, targetSourceNodeID);
-				const bool i = IN_NODESET(targetIn, targetSourceNodeID);
+				const bool o = IN_SET(targetOut, targetSourceNodeID);
+				const bool i = IN_SET(targetIn, targetSourceNodeID);
 				const bool b = (o && i);
 				size_t inDepth, outDepth;
 				if (o) outDepth = targetMappingOutDepth[targetSourceNodeID];
@@ -526,8 +526,8 @@ public:
 		if (inOutRefRule() == false)return answer;
 
 		const auto & queryNodeToMatchID = selectNodeToCalCanditates();
-		const bool queryNodeInIn = IN_NODESET(queryIn, queryNodeToMatchID);
-		const bool queryNodeInOut = IN_NODESET(queryOut, queryNodeToMatchID);
+		const bool queryNodeInIn = IN_SET(queryIn, queryNodeToMatchID);
+		const bool queryNodeInOut = IN_SET(queryOut, queryNodeToMatchID);
 		const NodeSetType * tempNodeSetPointer;
 		if (queryNodeInIn && queryNodeInOut) tempNodeSetPointer = &targetBoth;
 		else if (queryNodeInIn) tempNodeSetPointer = &targetIn;
@@ -543,7 +543,7 @@ public:
 		answer.reserve(targetInSize + targetOutSize);
 		const auto & targetNodeToMatchSet = *tempNodeSetPointer;
 		//	for (const auto& targetNodeToMatchID : targetNodeToMatchSet) {
-		TRAVERSE_NODESET(targetNodeToMatchID, targetNodeToMatchSet)
+		TRAVERSE_SET(targetNodeToMatchID, targetNodeToMatchSet)
 		{
 			if (twoNodesMayMatch(queryNodeToMatchID, targetNodeToMatchID) == false)continue;
 
@@ -597,8 +597,8 @@ public:
 
 
 
-		bool inInSet = IN_NODESET(targetIn, targetNodeID);
-		bool inOutSet = IN_NODESET(targetOut, targetNodeID);
+		bool inInSet = IN_SET(targetIn, targetNodeID);
+		bool inOutSet = IN_SET(targetOut, targetNodeID);
 		auto inRefTimes = targetMappingInRefTimes[targetNodeID];
 		auto outRefTimes = targetMappingOutRefTimes[targetNodeID];
 		if (inInSet) {
@@ -620,8 +620,8 @@ public:
 
 
 
-		inInSet = IN_NODESET(queryIn, queryNodeID);
-		inOutSet = IN_NODESET(queryOut, queryNodeID);
+		inInSet = IN_SET(queryIn, queryNodeID);
+		inOutSet = IN_SET(queryOut, queryNodeID);
 		inRefTimes = queryMappingInRefTimes[queryNodeID];
 		outRefTimes = queryMappingOutRefTimes[queryNodeID];
 		if (inInSet) {
@@ -648,7 +648,7 @@ public:
 		searchDepth++;
 
 		const auto addOneIfExist = [](const NodeSetType & set, NodeSetType & both, const NodeIDType nodeID, int & size) {
-			if (IN_NODESET(set, nodeID)) {
+			if (IN_SET(set, nodeID)) {
 				++size;
 				both.insert(nodeID);
 				return true;
@@ -680,10 +680,10 @@ public:
 		for (const auto& tempEdge : targetNodePointer->getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 			// was not be mapped
-			const bool n = IN_NODESET(targetUnmap, nodeID);
+			const bool n = IN_SET(targetUnmap, nodeID);
 			if (!n)continue;
-			const bool o = IN_NODESET(targetOut, nodeID);
-			const bool i = IN_NODESET(targetIn, nodeID);
+			const bool o = IN_SET(targetOut, nodeID);
+			const bool i = IN_SET(targetIn, nodeID);
 			const bool b = (o && i);
 
 			if (!i) {
@@ -713,10 +713,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNodePointer->getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
-			const bool n = IN_NODESET(targetUnmap, nodeID);
+			const bool n = IN_SET(targetUnmap, nodeID);
 			if (!n)continue;
-			const bool o = IN_NODESET(targetOut, nodeID);
-			const bool i = IN_NODESET(targetIn, nodeID);
+			const bool o = IN_SET(targetOut, nodeID);
+			const bool i = IN_SET(targetIn, nodeID);
 			const bool b = (o && i);
 			bool temp = false;
 			if (!o) {
@@ -748,10 +748,10 @@ public:
 		for (const auto& tempEdge : queryNodePointer->getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 			//		queryMappingInRefTimes[sourceNodeID]++;
-			const bool n = IN_NODESET(queryUnmap, nodeID);
+			const bool n = IN_SET(queryUnmap, nodeID);
 			if (!n)continue;
-			const bool o = IN_NODESET(queryOut, nodeID);
-			const bool i = IN_NODESET(queryIn, nodeID);
+			const bool o = IN_SET(queryOut, nodeID);
+			const bool i = IN_SET(queryIn, nodeID);
 			const bool b = (o && i);
 
 			if (!i) {
@@ -779,10 +779,10 @@ public:
 		}
 		for (const auto& tempEdge : queryNodePointer->getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
-			const bool n = IN_NODESET(queryUnmap, nodeID);
+			const bool n = IN_SET(queryUnmap, nodeID);
 			if (!n)continue;
-			const bool o = IN_NODESET(queryOut, nodeID);
-			const bool i = IN_NODESET(queryIn, nodeID);
+			const bool o = IN_SET(queryOut, nodeID);
+			const bool i = IN_SET(queryIn, nodeID);
 			const bool b = (o && i);
 			bool temp = false;
 			if (!o) {
@@ -843,10 +843,10 @@ public:
 		for (const auto& tempEdge : queryNode.getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 
-			const bool n = IN_NODESET(queryUnmap, nodeID);
+			const bool n = IN_SET(queryUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = IN_NODESET(queryBoth, nodeID);
+			const bool b = IN_SET(queryBoth, nodeID);
 
 			auto &refTimes = queryMappingInRefTimes[nodeID];
 			auto &nodeDepth = queryMappingInDepth[nodeID];
@@ -877,10 +877,10 @@ public:
 		for (const auto& tempEdge : queryNode.getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
 
-			const bool n = IN_NODESET(queryUnmap, nodeID);
+			const bool n = IN_SET(queryUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = IN_NODESET(queryBoth, nodeID);
+			const bool b = IN_SET(queryBoth, nodeID);
 
 			auto &refTimes = queryMappingOutRefTimes[nodeID];
 			auto &nodeDepth = queryMappingOutDepth[nodeID];
@@ -910,10 +910,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNode.getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
-			const bool n = IN_NODESET(targetUnmap, nodeID);
+			const bool n = IN_SET(targetUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = IN_NODESET(targetBoth, nodeID);
+			const bool b = IN_SET(targetBoth, nodeID);
 
 			auto &refTimes = targetMappingInRefTimes[nodeID];
 			auto &nodeDepth = targetMappingInDepth[nodeID];
@@ -943,10 +943,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNode.getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
-			const bool n = IN_NODESET(targetUnmap, nodeID);
+			const bool n = IN_SET(targetUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = IN_NODESET(targetBoth, nodeID);
+			const bool b = IN_SET(targetBoth, nodeID);
 
 			auto &refTimes = targetMappingOutRefTimes[nodeID];
 			auto &nodeDepth = targetMappingOutDepth[nodeID];
@@ -981,7 +981,7 @@ public:
 
 			const auto refTimes = queryMappingInRefTimes[queryNodeID];
 			queryInRefTimesCla[refTimes]++;
-			if (IN_NODESET(queryOut, queryNodeID)) {
+			if (IN_SET(queryOut, queryNodeID)) {
 
 				queryInBothRefTimesCla[refTimes]++;
 				const auto outRefTimes = queryMappingOutRefTimes[queryNodeID];
@@ -999,7 +999,7 @@ public:
 
 			const auto refTimes = queryMappingOutRefTimes[queryNodeID];
 			queryOutRefTimesCla[refTimes]++;
-			if (IN_NODESET(queryIn, queryNodeID)) {
+			if (IN_SET(queryIn, queryNodeID)) {
 				queryOutBothRefTimesCla[refTimes]++;
 				const auto inRefTimes = queryMappingInRefTimes[queryNodeID];
 				queryInBothRefTimesCla[inRefTimes]++;
@@ -1014,7 +1014,7 @@ public:
 
 			const auto refTimes = targetMappingInRefTimes[targetNodeID];
 			targetInRefTimesCla[refTimes]++;
-			if (IN_NODESET(targetOut, targetNodeID)) {
+			if (IN_SET(targetOut, targetNodeID)) {
 
 				targetInBothRefTimesCla[refTimes]++;
 				const auto outRefTimes = targetMappingOutRefTimes[targetNodeID];
@@ -1033,7 +1033,7 @@ public:
 			const auto refTimes = targetMappingOutRefTimes[targetNodeID];
 			targetOutRefTimesCla[refTimes]++;
 
-			if (IN_NODESET(targetIn, targetNodeID)) {
+			if (IN_SET(targetIn, targetNodeID)) {
 				targetOutBothRefTimesCla[refTimes]++;
 				const auto inRefTimes = targetMappingInRefTimes[targetNodeID];
 				targetInBothRefTimesCla[inRefTimes]++;

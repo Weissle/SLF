@@ -20,12 +20,11 @@ public:
 			belong[i] = false;
 		}
 	}
-	bool exist(NodeIDType id)const {
-		assert(id < _size);
-		return belong[id];
-	}
+
 	void insert(NodeIDType id) {
-		assert(id < _size);
+		if (id >= _size) {
+			throw "id is too large";
+		}
 		if (belong[id])return;
 		else {
 			belong[id] = true;
@@ -33,14 +32,28 @@ public:
 		}
 	}
 	void erase(NodeIDType id) {
-		assert(id < _size);
+		if (id >= _size) {
+			throw "id is too large";
+		}
 		if (belong[id] == false)return;
 		else {
 			belong[id] = false;
 			s.erase(id);
 		}
 	}
-	const auto& getSet()const { return s; }
+	auto find(const NodeIDType id)const {
+		if (id >= _size || belong[id] == false)return s.end();
+		else return s.find(id);
+	}
+	auto end()const {
+		return s.end();
+	}
+	auto begin()const {
+		return s.begin();
+	}
+	auto getSet()const {
+		return s;
+	}
 
 };
 
