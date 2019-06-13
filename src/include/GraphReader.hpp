@@ -206,7 +206,6 @@ public:
 		while (f.eof() == false) {
 			int edges=0;
 			f >> edges;
-			bool vvv = false;
 			unordered_set< FSPair<size_t, size_t> > s;
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
@@ -214,10 +213,6 @@ public:
 				size_t source=INT32_MAX, target=INT32_MAX;
 
 				f >> source >> target;
-				if (target == 501 && source ==749) {
-					if(vvv)cout << 214;
-					vvv = true;
-				}
 				FSPair<size_t, size_t> p(source, target);
 				if (IN_SET(s, p))continue;
 				if (pp[source] == false) {

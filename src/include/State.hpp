@@ -159,7 +159,7 @@ private:
 			const auto& queryTargetNodeID = tempEdge.getTargetNodeID();
 			//this tempnode have been mapped
 			if (NOT_IN_SET(queryUnmap, queryTargetNodeID) ) {
-				const auto& targetTargetNodeID = mapping[queryTargetNodeID];
+				const auto targetTargetNodeID = mapping[queryTargetNodeID];
 				const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
 			}
@@ -173,7 +173,7 @@ private:
 				const bool b = (o && i);
 				size_t inDepth, outDepth;
 				if (o) outDepth = queryMappingOutDepth[queryTargetNodeID];
-				if (i)inDepth = queryMappingInDepth[queryTargetNodeID];
+				if (i) inDepth = queryMappingInDepth[queryTargetNodeID];
 				if (o && !b) {
 					queryOutDepth[outDepth]++;
 					++queryOutCount;
@@ -197,7 +197,7 @@ private:
 
 			if (NOT_IN_SET(targetUnmap, targetTargetNodeID)) {
 				if (induceGraph == false)continue;
-				const auto & queryTargetNodeID = mappingAux[targetTargetNodeID];
+				const auto queryTargetNodeID = mappingAux[targetTargetNodeID];
 				const auto & queryTargetNode = queryGraph.getNode(queryTargetNodeID);
 				if (querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
 			}
@@ -354,6 +354,7 @@ private:
 	}
 
 	bool inOutRefRule()const {
+		if (queryInRefTimesCla[0] > targetInRefTimesCla[0] || queryOutRefTimesCla[0] > targetOutRefTimesCla[0])return false;
 		for (auto i = 1; i < queryInRefTimesCla.size(); ++i) {
 			if (queryInBothRefTimesCla[i] > targetInBothRefTimesCla[i])return false;
 			int querySub = queryInRefTimesCla[i] - queryInBothRefTimesCla[i];
@@ -542,7 +543,7 @@ public:
 		const auto queryNodeOutDepth = queryMappingOutDepth[queryNodeToMatchID];
 		answer.reserve(targetInSize + targetOutSize);
 		const auto & targetNodeToMatchSet = *tempNodeSetPointer;
-		//	for (const auto& targetNodeToMatchID : targetNodeToMatchSet) {
+
 		TRAVERSE_SET(targetNodeToMatchID, targetNodeToMatchSet)
 		{
 			if (twoNodesMayMatch(queryNodeToMatchID, targetNodeToMatchID) == false)continue;

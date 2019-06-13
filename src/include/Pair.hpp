@@ -45,11 +45,11 @@ public:
 	}
 	inline bool operator<(const FSPair<F, S> &p)const {
 		if (first == p.first) return second < p.second;
-		else return first < p.second;
+		else return first < p.first;
 	}
 	inline bool operator>(const FSPair<F, S> &p)const {
 		if (first == p.first) return second > p.second;
-		else return first > p.second;
+		else return first > p.first;
 	}
 };
 namespace std {

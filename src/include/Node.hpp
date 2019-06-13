@@ -15,7 +15,7 @@ public:
 	typedef _NodeLabelType NodeLabelType;
 	typedef _EdgeType EdgeType;
 	typedef Node<EdgeType, NodeLabelType> NodeType;
-	NodeIDType id;
+	const NodeIDType id=UINT32_MAX;
 
 public:
 	Node() = default;
