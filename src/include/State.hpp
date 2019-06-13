@@ -13,6 +13,7 @@
 #include<limits>
 #include"common.h"
 #include<si_marcos.h>
+#include<cstring>
 
 
 #define NO_MAP SIZE_MAX
@@ -37,7 +38,7 @@ public:
 	~State() = default;
 
 	virtual vector<MapPair> calCandidatePairs()const = 0;
-	virtual bool checkCanditatePairIsAddable(const MapPair& cp) const = 0;
+	virtual bool checkCanditatePairIsAddable(const MapPair& cp) = 0;
 	virtual void addCanditatePairToMapping(const MapPair& cp) = 0;
 	virtual void deleteCanditatePairToMapping(const MapPair& cp) = 0;
 	virtual bool isCoverQueryGraph()const = 0;
@@ -57,7 +58,12 @@ void delete_two_dim_array(T **&p, size_t one) {
 	delete[]p;
 	return;
 }
-
+template<typename T>
+void clear_two_dim_array(T **&p, size_t one, size_t two = -1) {
+	if (two == -1)two = one;
+	for (auto i = 0; i < one; ++i) memset(p[i], 0, sizeof(int)*two);
+	return;
+}
 template<typename _GraphType>
 class StateVF2 : public State<_GraphType> {
 public:
@@ -96,6 +102,9 @@ private:
 	vector<int> targetInRefTimesCla, targetOutRefTimesCla, targetInBothRefTimesCla, targetOutBothRefTimesCla,
 		queryInRefTimesCla, queryOutRefTimesCla, queryInBothRefTimesCla, queryOutBothRefTimesCla;
 	vector<NodeIDType> matchSequence;
+
+	int **DRin, **DRout, **DRinB, **DRoutB;
+
 	bool induceGraph = true;
 
 	inline void seePairID(const MapPair& cp)const {
@@ -142,7 +151,7 @@ private:
 	};
 
 	//check the mapping is still consistent after add this pair
-	bool sourceRule(const MapPair & cp) const
+	bool sourceRule(const MapPair & cp)
 	{
 		const auto& querySourceNodeID = cp.getKey();
 		const auto& targetSourceNodeID = cp.getValue();
@@ -151,12 +160,12 @@ private:
 		const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
 
 
-		int **DRin, **DRout, **DRinB, **DRoutB;
+		
 		bool kill = false;
-		new_two_dim_array(DRin, searchDepth + 1);
-		new_two_dim_array(DRout, searchDepth + 1);
-		new_two_dim_array(DRinB, searchDepth + 1);
-		new_two_dim_array(DRoutB, searchDepth + 1);
+		clear_two_dim_array(DRin, searchDepth + 1);
+		clear_two_dim_array(DRout, searchDepth + 1);
+		clear_two_dim_array(DRinB, searchDepth + 1);
+		clear_two_dim_array(DRoutB, searchDepth + 1);
 		size_t queryNotTCount = 0, targetNotTCount = 0;
 
 		for (const auto& tempEdge : targetSourceNode.getOutEdges()) {
@@ -263,25 +272,16 @@ private:
 			}
 		}
 
-		delete_two_dim_array(DRin, searchDepth + 1);
-		delete_two_dim_array(DRout, searchDepth + 1);
-
-		delete_two_dim_array(DRinB, searchDepth + 1);
-		delete_two_dim_array(DRoutB, searchDepth + 1);
 		if (kill)return false;
 
 		if (queryNotTCount > targetNotTCount) return false;
-//		if (queryBothCount > targetBothCount)return false;
 
-	/*	for (auto i = 1; i <= searchDepth; ++i) {
-			if (queryInBothDepth[i] > targetInBothDepth[i] || queryOutBothDepth[i] > targetOutBothDepth[i])return false;
-		}*/
 
 		return true;
 
 	}
 
-	bool targetRule(const MapPair & cp)const
+	bool targetRule(const MapPair & cp)
 	{
 		const auto& queryTargetNodeID = cp.getKey();
 		const auto& targetTargetNodeID = cp.getValue();
@@ -293,12 +293,12 @@ private:
 
 	
 
-		int **DRin, **DRout,**DRinB,**DRoutB;
+
 		bool kill = false;
-		new_two_dim_array(DRin, searchDepth + 1);
-		new_two_dim_array(DRout, searchDepth + 1);
-		new_two_dim_array(DRinB, searchDepth + 1);
-		new_two_dim_array(DRoutB, searchDepth + 1);
+		clear_two_dim_array(DRin, searchDepth + 1);
+		clear_two_dim_array(DRout, searchDepth + 1);
+		clear_two_dim_array(DRinB, searchDepth + 1);
+		clear_two_dim_array(DRoutB, searchDepth + 1);
 
 	
 
@@ -403,10 +403,6 @@ private:
 			}
 		}
 
-		delete_two_dim_array(DRin, searchDepth + 1);
-		delete_two_dim_array(DRout, searchDepth + 1);
-		delete_two_dim_array(DRinB, searchDepth + 1);
-		delete_two_dim_array(DRoutB, searchDepth + 1);
 		if (kill)return false;
 		if (queryNotTCount > targetNotTCount) return false;
 
@@ -574,10 +570,21 @@ public:
 
 		seleteMatchOrder();
 
+		new_two_dim_array(DRin, queryGraphSize + 1);
+		new_two_dim_array(DRout, queryGraphSize + 1);
+		new_two_dim_array(DRinB, queryGraphSize + 1);
+		new_two_dim_array(DRoutB, queryGraphSize + 1);
+
 
 	};
 	StateVF2() = default;
-	~StateVF2() = default;
+	~StateVF2() {
+		const auto queryGraphSize = queryGraph.size();
+		delete_two_dim_array(DRin, queryGraphSize + 1);
+		delete_two_dim_array(DRout, queryGraphSize + 1);
+		delete_two_dim_array(DRinB, queryGraphSize + 1);
+		delete_two_dim_array(DRoutB, queryGraphSize + 1);
+	}
 
 public:
 	//public function
@@ -635,7 +642,7 @@ public:
 		return answer;
 
 	}
-	bool checkCanditatePairIsAddable(const MapPair & cp)const
+	bool checkCanditatePairIsAddable(const MapPair & cp)
 	{
 
 		//	seeMappingContent();
