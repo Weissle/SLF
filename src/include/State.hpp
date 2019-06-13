@@ -151,24 +151,13 @@ private:
 		const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
 
 
-		int **DRin, **DRout;
+		int **DRin, **DRout, **DRinB, **DRoutB;
 		bool kill = false;
 		new_two_dim_array(DRin, searchDepth + 1);
 		new_two_dim_array(DRout, searchDepth + 1);
-	
-
-		vector<size_t> queryInBothDepth, queryOutBothDepth,
-		targetInBothDepth, targetOutBothDepth;
-
-	
-		queryInBothDepth.resize(searchDepth + 1);
-		queryOutBothDepth.resize(searchDepth + 1);
-
-		targetInBothDepth.resize(searchDepth + 1);
-		targetOutBothDepth.resize(searchDepth + 1);
-
-		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0,
-			queryOutCount = 0, targetOutCount = 0, queryBothCount = 0, targetBothCount = 0;
+		new_two_dim_array(DRinB, searchDepth + 1);
+		new_two_dim_array(DRoutB, searchDepth + 1);
+		size_t queryNotTCount = 0, targetNotTCount = 0;
 
 		for (const auto& tempEdge : targetSourceNode.getOutEdges()) {
 			const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
@@ -204,10 +193,8 @@ private:
 		
 				}
 				if (b) {
-
-					targetOutBothDepth[outDepth]++;
-					targetInBothDepth[inDepth]++;
-					++targetBothCount;
+					DRinB[inDepth][inRef]++;
+					DRoutB[outDepth][outRef]++;
 				}
 
 				if (!b && !i && !o) ++targetNotTCount;
@@ -259,10 +246,18 @@ private:
 		
 				}
 				if (b) {
-
-					queryOutBothDepth[outDepth]++;
-					queryInBothDepth[inDepth]++;
-					++queryBothCount;
+					
+					if (DRinB[inDepth][inRef] != 0)--DRinB[inDepth][inRef];
+					else {
+						kill = true;
+						break;
+					}
+					if (DRoutB[outDepth][outRef] != 0)--DRoutB[outDepth][outRef];
+					else {
+						kill = true;
+						break;
+					}
+		
 				}
 				if (!b && !i && !o) ++queryNotTCount;
 			}
@@ -270,14 +265,17 @@ private:
 
 		delete_two_dim_array(DRin, searchDepth + 1);
 		delete_two_dim_array(DRout, searchDepth + 1);
+
+		delete_two_dim_array(DRinB, searchDepth + 1);
+		delete_two_dim_array(DRoutB, searchDepth + 1);
 		if (kill)return false;
 
 		if (queryNotTCount > targetNotTCount) return false;
-		if (queryBothCount > targetBothCount)return false;
+//		if (queryBothCount > targetBothCount)return false;
 
-		for (auto i = 1; i <= searchDepth; ++i) {
+	/*	for (auto i = 1; i <= searchDepth; ++i) {
 			if (queryInBothDepth[i] > targetInBothDepth[i] || queryOutBothDepth[i] > targetOutBothDepth[i])return false;
-		}
+		}*/
 
 		return true;
 
@@ -291,23 +289,18 @@ private:
 		const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
 		const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 
-		size_t queryInCount = 0, targetInCount = 0, queryNotTCount = 0, targetNotTCount = 0,
-			queryOutCount = 0, targetOutCount = 0, queryBothCount = 0, targetBothCount = 0;
+		size_t queryNotTCount = 0, targetNotTCount = 0;
 
-		vector<size_t>queryInBothDepth, queryOutBothDepth,
-		targetInBothDepth, targetOutBothDepth;
+	
 
-		int **DRin, **DRout;
+		int **DRin, **DRout,**DRinB,**DRoutB;
 		bool kill = false;
 		new_two_dim_array(DRin, searchDepth + 1);
 		new_two_dim_array(DRout, searchDepth + 1);
+		new_two_dim_array(DRinB, searchDepth + 1);
+		new_two_dim_array(DRoutB, searchDepth + 1);
 
-
-		queryInBothDepth.resize(searchDepth + 1);
-		queryOutBothDepth.resize(searchDepth + 1);
-
-		targetInBothDepth.resize(searchDepth + 1);
-		targetOutBothDepth.resize(searchDepth + 1);
+	
 
 		for (const auto& tempEdge : targetTargetNode.getInEdges()) {
 			const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
@@ -344,9 +337,8 @@ private:
 				
 				}
 				if (b) {
-					targetOutBothDepth[outDepth]++;
-					targetInBothDepth[inDepth]++;
-					++targetBothCount;
+					DRinB[inDepth][inRef]++;
+					DRoutB[outDepth][outRef]++;
 				}
 				if (!b && !i && !o) ++targetNotTCount;
 			}
@@ -396,11 +388,16 @@ private:
 	
 				}
 				if (b) {
-					queryOutBothDepth[outDepth]++;
-					queryInBothDepth[inDepth]++;
-
-					++queryBothCount;
-
+					if(DRinB[inDepth][inRef]!=0)--DRinB[inDepth][inRef];
+					else {
+						kill = true;
+						break;
+					}
+					if (DRoutB[outDepth][outRef] != 0)--DRoutB[outDepth][outRef];
+					else {
+						kill = true;
+						break;
+					}
 				}
 				if (!b && !i && !o) ++queryNotTCount;
 			}
@@ -408,13 +405,11 @@ private:
 
 		delete_two_dim_array(DRin, searchDepth + 1);
 		delete_two_dim_array(DRout, searchDepth + 1);
+		delete_two_dim_array(DRinB, searchDepth + 1);
+		delete_two_dim_array(DRoutB, searchDepth + 1);
 		if (kill)return false;
 		if (queryNotTCount > targetNotTCount) return false;
-		if (queryBothCount > targetBothCount)return false;
 
-		for (auto i = 1; i <= searchDepth; ++i) {
-			if (queryInBothDepth[i] > targetInBothDepth[i] || queryOutBothDepth[i] > targetOutBothDepth[i])return false;
-		}
 
 		return true;
 	}
