@@ -103,7 +103,7 @@ private:
 		queryInRefTimesCla, queryOutRefTimesCla, queryInBothRefTimesCla, queryOutBothRefTimesCla;
 	vector<NodeIDType> matchSequence;
 
-	int **DRin, **DRout, **DRinB, **DRoutB;
+	int **DRin, **DRout;
 
 	bool induceGraph = true;
 
@@ -150,6 +150,7 @@ private:
 		}
 	};
 
+
 	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair & cp)
 	{
@@ -159,14 +160,15 @@ private:
 		const auto& querySourceNode = queryGraph.getNode(querySourceNodeID);
 		const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
 
-
+		typedef FSPair<size_t, size_t> DRPair;
+		unordered_map< FSPair< DRPair, DRPair>, size_t>  bothIO;
+		bothIO.reserve(calHashSuitableSize(targetSourceNode.getOutEdgesNum()));
 		
-		bool kill = false;
 		clear_two_dim_array(DRin, searchDepth + 1);
 		clear_two_dim_array(DRout, searchDepth + 1);
-		clear_two_dim_array(DRinB, searchDepth + 1);
-		clear_two_dim_array(DRoutB, searchDepth + 1);
+
 		size_t queryNotTCount = 0, targetNotTCount = 0;
+
 
 		for (const auto& tempEdge : targetSourceNode.getOutEdges()) {
 			const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
@@ -202,8 +204,7 @@ private:
 		
 				}
 				if (b) {
-					DRinB[inDepth][inRef]++;
-					DRoutB[outDepth][outRef]++;
+					bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))]++;
 				}
 
 				if (!b && !i && !o) ++targetNotTCount;
@@ -238,41 +239,25 @@ private:
 				}
 
 				if (o && !b) {
-					if (DRout[outDepth][outRef] == 0) {
-						kill = true;
-						break;
-					}
+					if (DRout[outDepth][outRef] == 0)return false;
 					else --DRout[outDepth][outRef];
 
 	
 				}
 				if (i && !b) {
-					if (DRin[inDepth][inRef] == 0) {
-						kill = true;
-						break;
-					}
+					if (DRin[inDepth][inRef] == 0) return false;
 					else --DRin[inDepth][inRef];
 		
 				}
 				if (b) {
-					
-					if (DRinB[inDepth][inRef] != 0)--DRinB[inDepth][inRef];
-					else {
-						kill = true;
-						break;
-					}
-					if (DRoutB[outDepth][outRef] != 0)--DRoutB[outDepth][outRef];
-					else {
-						kill = true;
-						break;
-					}
-		
+					auto &temp = bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))];
+					if (temp)--temp;
+					else return false;
 				}
 				if (!b && !i && !o) ++queryNotTCount;
 			}
 		}
 
-		if (kill)return false;
 
 		if (queryNotTCount > targetNotTCount) return false;
 
@@ -291,16 +276,14 @@ private:
 
 		size_t queryNotTCount = 0, targetNotTCount = 0;
 
-	
-
-
-		bool kill = false;
 		clear_two_dim_array(DRin, searchDepth + 1);
 		clear_two_dim_array(DRout, searchDepth + 1);
-		clear_two_dim_array(DRinB, searchDepth + 1);
-		clear_two_dim_array(DRoutB, searchDepth + 1);
+
 
 	
+		typedef FSPair<size_t, size_t> DRPair;
+		unordered_map< FSPair< DRPair, DRPair>, size_t>  bothIO;
+		bothIO.reserve(calHashSuitableSize(targetTargetNode.getInEdgesNum()));
 
 		for (const auto& tempEdge : targetTargetNode.getInEdges()) {
 			const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
@@ -337,8 +320,7 @@ private:
 				
 				}
 				if (b) {
-					DRinB[inDepth][inRef]++;
-					DRoutB[outDepth][outRef]++;
+					bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))]++;
 				}
 				if (!b && !i && !o) ++targetNotTCount;
 			}
@@ -372,38 +354,24 @@ private:
 					inDepth = queryMappingInDepth[querySourceNodeID];
 				}
 				if (o && !b) {
-					if (DRout[outDepth][outRef] == 0) {
-						kill = true;
-						break;
-					}
+					if (DRout[outDepth][outRef] == 0)return false;
 					else --DRout[outDepth][outRef];
 				}
 				if (i && !b) {
-					if (DRin[inDepth][inRef] == 0) {
-						kill = true;
-						break;
-					}
+					if (DRin[inDepth][inRef] == 0) return false;
 					else --DRin[inDepth][inRef];
 
 	
 				}
 				if (b) {
-					if(DRinB[inDepth][inRef]!=0)--DRinB[inDepth][inRef];
-					else {
-						kill = true;
-						break;
-					}
-					if (DRoutB[outDepth][outRef] != 0)--DRoutB[outDepth][outRef];
-					else {
-						kill = true;
-						break;
-					}
+					auto &temp = bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))];
+					if (temp)--temp;
+					else return false;
 				}
+
 				if (!b && !i && !o) ++queryNotTCount;
 			}
 		}
-
-		if (kill)return false;
 		if (queryNotTCount > targetNotTCount) return false;
 
 
@@ -572,8 +540,7 @@ public:
 
 		new_two_dim_array(DRin, queryGraphSize + 1);
 		new_two_dim_array(DRout, queryGraphSize + 1);
-		new_two_dim_array(DRinB, queryGraphSize + 1);
-		new_two_dim_array(DRoutB, queryGraphSize + 1);
+	
 
 
 	};
@@ -582,8 +549,7 @@ public:
 		const auto queryGraphSize = queryGraph.size();
 		delete_two_dim_array(DRin, queryGraphSize + 1);
 		delete_two_dim_array(DRout, queryGraphSize + 1);
-		delete_two_dim_array(DRinB, queryGraphSize + 1);
-		delete_two_dim_array(DRoutB, queryGraphSize + 1);
+	
 	}
 
 public:
@@ -678,7 +644,7 @@ public:
 		if (inOutSet) {
 			--targetOutSize;
 			targetOut.erase(targetNodeID);
-			targetOutRefTimesCla[inRefTimes]--;
+			targetOutRefTimesCla[outRefTimes]--;
 		}
 		if (inInSet && inOutSet) {
 			targetBoth.erase(targetNodeID);
@@ -701,7 +667,7 @@ public:
 		if (inOutSet) {
 			--queryOutSize;
 			queryOut.erase(queryNodeID);
-			queryOutRefTimesCla[inRefTimes]--;
+			queryOutRefTimesCla[outRefTimes]--;
 		}
 		if (inInSet && inOutSet) {
 			queryBoth.erase(queryNodeID);
@@ -1110,9 +1076,6 @@ public:
 				++targetBothSize;
 			}
 
-		}
-		if (targetOutBothRefTimesCla[1] > 1E5) {
-			int a = 0;
 		}
 
 		mapping[queryNodeID] = NO_MAP;
