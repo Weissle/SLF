@@ -21,7 +21,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(si si.cpp include/Edge.hpp include/Graph.hpp 
 				include/Node.hpp include/State.hpp include/VF2.hpp 
 				include/Pair.hpp include/GraphReader.hpp include/AnswerReceiver.hpp
-				include/argh.h include/common.h include/NodeSet.hpp)
+				include/argh.h include/common.h include/NodeSet.hpp include/IndexTurner.hpp)
 
 add_executable(sg sg.cpp include/SubgraphGenerator.hpp include/Graph.hpp
 			include/Node.hpp include/Edge.hpp include/GraphReader.hpp include/argh.h)
