@@ -5,6 +5,18 @@
 #include<typeinfo>
 #include"common.h"
 using namespace std;
+/*
+In this subgraph isomorphism algorithm ,node id's type is size_t
+So in case of your graph node id's type is not size_t, such as string, IndexTurner can turn it to unique id (of course type is size_t).
+NameType is your node id's type
+IndexType should similar to std::map or std::unordered_map
+If IndexType is std::map , NameType should define operator < function;
+If IndexType is unordered_map ,you should define a hash function for NameType .
+Main function is operator [] and () , 
+operator[] is used in graph output, it can turn size_t to NameType
+operator() is used in graph input, it can turn NameType to size_t
+
+*/
 template<typename _NameType,typename _IndexType=unordered_map<_NameType,size_t> >
 class IndexTurner {
 public:

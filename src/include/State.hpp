@@ -163,7 +163,7 @@ private:
 		typedef FSPair<size_t, size_t> DRPair;
 		unordered_map< FSPair< DRPair, DRPair>, size_t>  bothIO;
 		bothIO.reserve(calHashSuitableSize(targetSourceNode.getOutEdgesNum()));
-		
+
 		clear_two_dim_array(DRin, searchDepth + 1);
 		clear_two_dim_array(DRout, searchDepth + 1);
 
@@ -201,7 +201,7 @@ private:
 				}
 				if (i && !b) {
 					DRin[inDepth][inRef]++;
-		
+
 				}
 				if (b) {
 					bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))]++;
@@ -215,7 +215,7 @@ private:
 		for (const auto& tempEdge : querySourceNode.getOutEdges()) {
 			const auto& queryTargetNodeID = tempEdge.getTargetNodeID();
 			//this tempnode have been mapped
-			if (NOT_IN_SET(queryUnmap, queryTargetNodeID) ) {
+			if (NOT_IN_SET(queryUnmap, queryTargetNodeID)) {
 				const auto targetTargetNodeID = mapping[queryTargetNodeID];
 				const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
@@ -242,12 +242,12 @@ private:
 					if (DRout[outDepth][outRef] == 0)return false;
 					else --DRout[outDepth][outRef];
 
-	
+
 				}
 				if (i && !b) {
 					if (DRin[inDepth][inRef] == 0) return false;
 					else --DRin[inDepth][inRef];
-		
+
 				}
 				if (b) {
 					auto &temp = bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))];
@@ -280,7 +280,7 @@ private:
 		clear_two_dim_array(DRout, searchDepth + 1);
 
 
-	
+
 		typedef FSPair<size_t, size_t> DRPair;
 		unordered_map< FSPair< DRPair, DRPair>, size_t>  bothIO;
 		bothIO.reserve(calHashSuitableSize(targetTargetNode.getInEdgesNum()));
@@ -313,11 +313,11 @@ private:
 				}
 				if (o && !b) {
 					DRout[outDepth][outRef]++;
-				
+
 				}
 				if (i && !b) {
 					DRin[inDepth][inRef]++;
-				
+
 				}
 				if (b) {
 					bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))]++;
@@ -361,7 +361,7 @@ private:
 					if (DRin[inDepth][inRef] == 0) return false;
 					else --DRin[inDepth][inRef];
 
-	
+
 				}
 				if (b) {
 					auto &temp = bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))];
@@ -380,14 +380,14 @@ private:
 
 	bool inOutRefRule()const {
 		if (queryInRefTimesCla[0] > targetInRefTimesCla[0] || queryOutRefTimesCla[0] > targetOutRefTimesCla[0])return false;
-		for (auto i = 1; i < queryInRefTimesCla.size(); ++i) {
+		for (auto i = 1; i < min(searchDepth + 1, queryInRefTimesCla.size()); ++i) {
 			if (queryInBothRefTimesCla[i] > targetInBothRefTimesCla[i])return false;
 			int querySub = queryInRefTimesCla[i] - queryInBothRefTimesCla[i];
 			int targetSub = targetInRefTimesCla[i] - targetInBothRefTimesCla[i];
 			if (querySub > targetSub)return false;
 		}
 
-		for (auto i = 1; i < queryOutRefTimesCla.size(); ++i) {
+		for (auto i = 1; i < min(searchDepth + 1, queryOutRefTimesCla.size()); ++i) {
 			if (queryOutBothRefTimesCla[i] > targetOutBothRefTimesCla[i])return false;
 			int querySub = queryOutRefTimesCla[i] - queryOutBothRefTimesCla[i];
 			int targetSub = targetOutRefTimesCla[i] - targetOutBothRefTimesCla[i];
@@ -398,22 +398,22 @@ private:
 
 	}
 
+
+
 	void seleteMatchOrder() {
 		//	NodeSetType nodeNotInMatchSet = queryUnmap, inSet, outSet, bothSet;
 		auto nodeNotInMatchSet = queryUnmap.getSet();
 		typedef decltype(nodeNotInMatchSet) Set;
-		Set inSet, outSet, bothSet;
-		inSet.reserve(queryGraph.size() << 1);
-		outSet.reserve(queryGraph.size() << 1);
-		bothSet.reserve(queryGraph.size() << 1);
+		Set ioSet;
+		ioSet.reserve(queryGraph.size() << 1);
 
 		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
-		vector<int>  inMap, outMap;
+		vector<int>  ioMap;
 
-		inMap.resize(queryGraph.size() + 1);
-		outMap.resize(queryGraph.size() + 1);
+		ioMap.resize(queryGraph.size() + 1);
+
 		const auto calNodeMatchPoint = [&](const NodeType & node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + inMap[node.id] + outMap[node.id];
+			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id] * 2;
 			return p1;
 		};
 		const auto seleteAGoodNodeToMatch = [&](const Set & s) {
@@ -435,11 +435,9 @@ private:
 
 		while (nodeNotInMatchSet.empty() == false) {
 			NodeMatchPointPair nodePointPair;
-			if (bothSet.empty() == false) nodePointPair = seleteAGoodNodeToMatch(bothSet);
-			else if (inSet.empty() == false || outSet.empty() == false) {
-				const auto inPair = seleteAGoodNodeToMatch(inSet);
-				const auto outPair = seleteAGoodNodeToMatch(outSet);
-				nodePointPair = (inPair.getValue() > outPair.getValue()) ? inPair : outPair;
+			if (ioSet.empty() == false) {
+				const auto pair = seleteAGoodNodeToMatch(ioSet);
+				nodePointPair = pair;
 			}
 			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
 			assert(nodePointPair.getKey() != nullptr && "error happened");
@@ -448,24 +446,21 @@ private:
 			const auto nodeID = node.id;
 			matchSequence.push_back(nodeID);
 			nodeNotInMatchSet.erase(nodeID);
-			inSet.erase(nodeID);
-			outSet.erase(nodeID);
-			bothSet.erase(nodeID);
+			ioSet.erase(nodeID);
 
 			for (const auto& tempEdge : node.getInEdges()) {
 				const auto sourceNodeID = tempEdge.getSourceNodeID();
 				if (IN_SET(nodeNotInMatchSet, sourceNodeID)) {
-					inSet.insert(sourceNodeID);
-					inMap[sourceNodeID]++;
-					if (IN_SET(outSet, sourceNodeID)) bothSet.insert(sourceNodeID);
+					ioSet.insert(sourceNodeID);
+					ioMap[sourceNodeID]++;
+
 				}
 			}
 			for (const auto& tempEdge : node.getOutEdges()) {
 				const auto targetNodeID = tempEdge.getTargetNodeID();
 				if (IN_SET(nodeNotInMatchSet, targetNodeID)) {
-					outSet.insert(targetNodeID);
-					outMap[targetNodeID]++;
-					if (IN_SET(inSet, targetNodeID))bothSet.insert(targetNodeID);
+					ioSet.insert(targetNodeID);
+					ioMap[targetNodeID]++;
 				}
 			}
 
@@ -540,7 +535,7 @@ public:
 
 		new_two_dim_array(DRin, queryGraphSize + 1);
 		new_two_dim_array(DRout, queryGraphSize + 1);
-	
+
 
 
 	};
@@ -549,7 +544,7 @@ public:
 		const auto queryGraphSize = queryGraph.size();
 		delete_two_dim_array(DRin, queryGraphSize + 1);
 		delete_two_dim_array(DRout, queryGraphSize + 1);
-	
+
 	}
 
 public:
@@ -866,13 +861,13 @@ public:
 	}
 	void deleteCanditatePairToMapping(const MapPair & cp)
 	{
-		
+
 		const auto& queryNodeID = cp.getKey();
 		const auto& targetNodeID = cp.getValue();
 		const auto& queryNode = queryGraph.getNode(queryNodeID);
 		const auto& targetNode = targetGraph.getNode(targetNodeID);
 
-		
+
 
 
 		for (const auto& tempEdge : queryNode.getInEdges()) {
