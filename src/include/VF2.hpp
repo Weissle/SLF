@@ -7,19 +7,24 @@
 #include<time.h>
 #include<map>
 #include<fstream>
+#include<MatchOrderSelector.hpp>
 #define TIME_COUNT
 using namespace std;
-template<typename StateType,typename _AnswerReceiver>
+template<typename StateType,typename _AnswerReceiver,typename _MatchOrderSelector = MatchOrderSelector<StateType::GraphType> >
 class VF2 {
 	typedef _AnswerReceiver AnswerReceiver;
 	typedef typename StateType::GraphType GraphType;
 	typedef typename StateType::NodeType NodeType;
+	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename StateType::EdgeType EdgeType;
 	
 	typedef typename StateType::MapType MapType;
 	typedef typename StateType::MapPair MapPair;
 	map<int, int> midGraph;
 	const GraphType &targetGraph, &queryGraph;
+	vector<NodeIDType> matchSequence;
+	size_t searchDepth;
+
 	AnswerReceiver &answerReceiver;
 	bool onlyNeedOneSolution = true;
 	bool induceGraph = true;
@@ -35,7 +40,7 @@ class VF2 {
 			cout << hitTime << endl;
 		}
 		auto t1 = clock();
-		const auto canditarePairs = s.calCandidatePairs();
+		const auto canditarePairs = s.calCandidatePairs(matchSequence[searchDepth]);
 		auto t2 = clock();
 		cal += t2 - t1;
 		if (canditarePairs.empty())return false;
@@ -112,11 +117,13 @@ class VF2 {
 			if(suitable){
 				t1 = clock();
 				s.addCanditatePairToMapping(tempCanditatePair);
+				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
 				if (goDeeper(s) && this->onlyNeedOneSolution) return true;
 				t1 = clock();
 				s.deleteCanditatePairToMapping(tempCanditatePair);
+				--searchDepth;
 				t2 = clock();
 				del += t2 - t1;
 			}
@@ -145,6 +152,9 @@ public:
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph,AnswerReceiver &_answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph),answerReceiver(_answerReceiver)
 	{
+		matchSequence = _MatchOrderSelector::run(_queryGraph);
+		searchDepth = 0;
+
 	/*	fstream f;
 		f.open("D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\midgraph.graph",ios_base::in);
 		for (int i = 0; i < queryGraph.size(); ++i) {
@@ -155,7 +165,12 @@ public:
 		}*/
 	
 	};
-	
+	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph, AnswerReceiver &_answerReceiver,vector<NodeIDType> &_matchSequence, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
+		:targetGraph(_targetGraph), queryGraph(_queryGraph), matchSequence(_matchSequence), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver)
+	{
+		searchDepth = 0;
+
+	};
 	void run()
 	{
 		cout << "start match" << endl;

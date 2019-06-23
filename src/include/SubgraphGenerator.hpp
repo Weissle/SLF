@@ -29,7 +29,7 @@ namespace sg {
 			inquery.reserve(target.size() << 1);
 			const auto temp = (size_t)(rand() % nodeNum);
 			int i = 0;
-			for (const auto &node : target.getAllNodes()) {
+			for (const auto &node : target.nodes()) {
 				if (i == temp) {
 					inquery.insert(node.id);
 					break;

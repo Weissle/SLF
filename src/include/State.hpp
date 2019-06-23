@@ -37,7 +37,7 @@ public:
 	State() = default;
 	~State() = default;
 
-	virtual vector<MapPair> calCandidatePairs()const = 0;
+	virtual vector<MapPair> calCandidatePairs(const NodeIDType id)const = 0;
 	virtual bool checkCanditatePairIsAddable(const MapPair& cp) = 0;
 	virtual void addCanditatePairToMapping(const MapPair& cp) = 0;
 	virtual void deleteCanditatePairToMapping(const MapPair& cp) = 0;
@@ -92,8 +92,6 @@ private:
 	int targetInSize = 0, targetOutSize = 0, queryInSize = 0,
 		queryOutSize = 0, targetBothSize = 0, queryBothSize = 0;
 
-	/*	unordered_map<NodeIDType, int> targetMappingInDepth, targetMappingOutDepth,
-			queryMappingInDepth, queryMappingOutDepth;*/
 	vector<int> targetMappingInDepth, targetMappingOutDepth,
 		queryMappingInDepth, queryMappingOutDepth;
 	vector<int> targetMappingInRefTimes, targetMappingOutRefTimes,
@@ -101,7 +99,7 @@ private:
 	size_t searchDepth;
 	vector<int> targetInRefTimesCla, targetOutRefTimesCla, targetInBothRefTimesCla, targetOutBothRefTimesCla,
 		queryInRefTimesCla, queryOutRefTimesCla, queryInBothRefTimesCla, queryOutBothRefTimesCla;
-	vector<NodeIDType> matchSequence;
+
 
 	int **DRin, **DRout;
 
@@ -123,11 +121,7 @@ private:
 
 
 	bool stillConsistentAfterAdd = true;
-	//because the match order is immutable , search depth decides which node to be matched;
-	inline NodeIDType selectNodeToCalCanditates()const
-	{
-		return matchSequence[searchDepth];
-	}
+
 	//same label and target node edges' number should cover query node's.
 	inline bool twoNodesMayMatch(NodeIDType queryNodeID, NodeIDType targetNodeID)const
 	{
@@ -398,75 +392,6 @@ private:
 
 	}
 
-
-
-	void seleteMatchOrder() {
-		//	NodeSetType nodeNotInMatchSet = queryUnmap, inSet, outSet, bothSet;
-		auto nodeNotInMatchSet = queryUnmap.getSet();
-		typedef decltype(nodeNotInMatchSet) Set;
-		Set ioSet;
-		ioSet.reserve(queryGraph.size() << 1);
-
-		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
-		vector<int>  ioMap;
-
-		ioMap.resize(queryGraph.size() + 1);
-
-		const auto calNodeMatchPoint = [&](const NodeType & node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id] * 2;
-			return p1;
-		};
-		const auto seleteAGoodNodeToMatch = [&](const Set & s) {
-			double nodePoint = -1;
-			NodeCPointer answer = nullptr;
-			for (const auto& tempNodeID : s) {
-				const auto & tempNode = queryGraph.getNode(tempNodeID);
-				const auto tempPoint = calNodeMatchPoint(tempNode);
-				if (tempPoint > nodePoint) {
-					answer = &tempNode;
-					nodePoint = tempPoint;
-				}
-			}
-			return NodeMatchPointPair(answer, nodePoint);
-		};
-
-
-		matchSequence.reserve(queryGraph.size() + 5);
-
-		while (nodeNotInMatchSet.empty() == false) {
-			NodeMatchPointPair nodePointPair;
-			if (ioSet.empty() == false) {
-				const auto pair = seleteAGoodNodeToMatch(ioSet);
-				nodePointPair = pair;
-			}
-			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
-			assert(nodePointPair.getKey() != nullptr && "error happened");
-			const auto & node = *nodePointPair.getKey();
-
-			const auto nodeID = node.id;
-			matchSequence.push_back(nodeID);
-			nodeNotInMatchSet.erase(nodeID);
-			ioSet.erase(nodeID);
-
-			for (const auto& tempEdge : node.getInEdges()) {
-				const auto sourceNodeID = tempEdge.getSourceNodeID();
-				if (IN_SET(nodeNotInMatchSet, sourceNodeID)) {
-					ioSet.insert(sourceNodeID);
-					ioMap[sourceNodeID]++;
-
-				}
-			}
-			for (const auto& tempEdge : node.getOutEdges()) {
-				const auto targetNodeID = tempEdge.getTargetNodeID();
-				if (IN_SET(nodeNotInMatchSet, targetNodeID)) {
-					ioSet.insert(targetNodeID);
-					ioMap[targetNodeID]++;
-				}
-			}
-
-		}
-	}
-
 public:
 	StateVF2(const GraphType & _t, const GraphType & _q, bool _induceGraph) :targetGraph(_t), queryGraph(_q), induceGraph(_induceGraph) {
 
@@ -502,13 +427,13 @@ public:
 
 		searchDepth = 0;
 		size_t targetInMax = 0, targetOutMax = 0, queryInMax = 0, queryOutMax = 0;
-		for (auto& tempNode : targetGraph.getAllNodes())
+		for (auto& tempNode : targetGraph.nodes())
 		{
 			targetInMax = max(targetInMax, tempNode.getInEdgesNum());
 			targetOutMax = max(targetOutMax, tempNode.getOutEdgesNum());
 			targetUnmap.insert(tempNode.id);
 		}
-		for (auto& tempNode : queryGraph.getAllNodes())
+		for (auto& tempNode : queryGraph.nodes())
 		{
 			queryInMax = max(queryInMax, tempNode.getInEdgesNum());
 			queryOutMax = max(queryOutMax, tempNode.getOutEdgesNum());
@@ -531,7 +456,6 @@ public:
 		queryInRefTimesCla[0] = queryGraphSize;
 		queryOutRefTimesCla[0] = queryGraphSize;
 
-		seleteMatchOrder();
 
 		new_two_dim_array(DRin, queryGraphSize + 1);
 		new_two_dim_array(DRout, queryGraphSize + 1);
@@ -549,13 +473,13 @@ public:
 
 public:
 	//public function
-	vector<MapPair> calCandidatePairs()const
+	vector<MapPair> calCandidatePairs(const NodeIDType id)const
 	{
 		vector<MapPair> answer;
 		if (stillConsistentAfterAdd == false) return answer;
 		if (inOutRefRule() == false)return answer;
 
-		const auto & queryNodeToMatchID = selectNodeToCalCanditates();
+		const auto & queryNodeToMatchID = id;
 		const bool queryNodeInIn = IN_SET(queryIn, queryNodeToMatchID);
 		const bool queryNodeInOut = IN_SET(queryOut, queryNodeToMatchID);
 		const NodeSetType * tempNodeSetPointer;

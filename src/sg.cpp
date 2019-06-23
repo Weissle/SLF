@@ -14,7 +14,7 @@ void writeToFile(string fileName,GraphType graph) {
 		return;
 	}
 	f << graph.size() << endl;
-	for (auto &node : graph.getAllNodes()) {
+	for (auto &node : graph.nodes()) {
 		f << node.getOutEdgesNum() << " ";
 		for (auto edge : node.getOutEdges()) {
 			f << edge.getTargetNodeID() << " ";

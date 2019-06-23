@@ -24,7 +24,7 @@ public:
 	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel=EdgeLabelType()) = 0;
 	virtual size_t size() const = 0;
 	virtual void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) = 0;
-	virtual vector<NodeType> const & getAllNodes()const = 0;
+	virtual vector<NodeType> const & nodes()const = 0;
 	virtual const NodeType* getNodePointer(const NodeIDType &nodeID) const = 0;
 	virtual const NodeType & getNode(const NodeIDType &nodeID) const = 0;
 };
@@ -44,14 +44,14 @@ public:
 	//	typedef const NodeType* NodeCPointer;
 private:
 
-	vector<NodeType> nodes;
+	vector<NodeType> _nodes;
 //	unordered_map<NodeIDType, size_t> index;
 	GRAPH_TYPE graphType;
 	size_t _size;
 public:
 	GraphVF2() = default;
-	GraphVF2(const vector<NodeType> &_nodes):nodes(_nodes){
-		_size=nodes.size();
+	GraphVF2(const vector<NodeType> &__nodes):_nodes(__nodes){
+		_size=_nodes.size();
 	}
 	~GraphVF2() = default;
 
@@ -59,25 +59,25 @@ public:
 		vector<NodeType> n;
 		n.reserve(s + 1);
 		for (auto i = 0; i < s; ++i) n.push_back(NodeType(i));
-		swap(nodes, n);
+		swap(_nodes, n);
 
 	}
 	void edgeVectorReserve(const NodeIDType id,size_t s) {
 		assert(id < _size);
-		nodes[id].reserve(s);
+		_nodes[id].reserve(s);
 		return;
 	}
 	void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
 		assert(( _id < _size) && "node ID overflow");
-		nodes[_id].setLabel(_label);
+		_nodes[_id].setLabel(_label);
 		return;
 	}
 	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel=EdgeLabelType()) {
 		
 	//	assert(source != target && "not support self loop");
 		assert( source<_size && target<_size && "node id more than node num should be");
-		auto &sourceNode = nodes[source];
-		auto &targetNode = nodes[target];
+		auto &sourceNode = _nodes[source];
+		auto &targetNode = _nodes[target];
 
 		const EdgeType  sourceEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
 		const EdgeType  targetEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, source, target, edgeLabel);
@@ -94,19 +94,19 @@ public:
 	size_t size() const {
 		return _size;
 	};
-	vector<NodeType> const & getAllNodes()const { return nodes; }
+	vector<NodeType> const & nodes()const { return _nodes; }
 	const NodeType* getNodePointer(const NodeIDType &nodeID) const {
 		assert((nodeID < _size) && "node ID overflow");
-		return &nodes[nodeID];
+		return &_nodes[nodeID];
 	}
 	const NodeType & getNode(const NodeIDType &nodeID) const {
 		assert((nodeID < _size )&& "node ID overflow");
-		return nodes[nodeID];
+		return _nodes[nodeID];
 	}
 
 	//do something to improve match speed
 	void graphBuildFinish() {
-		for (auto &node : nodes) {
+		for (auto &node : _nodes) {
 			node.NodeBuildFinish();
 		}
 	}
