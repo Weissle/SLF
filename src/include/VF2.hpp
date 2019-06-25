@@ -8,9 +8,15 @@
 #include<map>
 #include<fstream>
 #include<MatchOrderSelector.hpp>
+#include<typeinfo>
 #define TIME_COUNT
 using namespace std;
-template<typename StateType,typename _AnswerReceiver,typename _MatchOrderSelector = MatchOrderSelector<StateType::GraphType> >
+/*
+About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , VF2 will use default MatchOrderSelector.
+
+
+*/
+template<typename StateType,typename _AnswerReceiver,typename _MatchOrderSelector = void >
 class VF2 {
 	typedef _AnswerReceiver AnswerReceiver;
 	typedef typename StateType::GraphType GraphType;
@@ -152,7 +158,8 @@ public:
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph,AnswerReceiver &_answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph),answerReceiver(_answerReceiver)
 	{
-		matchSequence = _MatchOrderSelector::run(_queryGraph);
+		if( typeid(_MatchOrderSelector) != typeid(void) )matchSequence = _MatchOrderSelector::run(_queryGraph);
+		else matchSequence = MatchOrderSelector<GraphType>::run(_queryGraph);
 		searchDepth = 0;
 
 	/*	fstream f;

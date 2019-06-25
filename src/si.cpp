@@ -15,20 +15,32 @@ int main(int argc, char * argv[]) {
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 	typedef StateVF2<GraphType> StateType;
 	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
-	typedef MatchOrderSelector<GraphType> MatchOrderSelectorType;
+
+
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg" });
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath;
 	bool induceGraph = true, onlyNeedOneSolution = false;
 	cmdl({ "-target-graph","-tg" }) >> targetGraphPath;
 	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
-	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
+//	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
 
-//	typedef GRFGraphLabel<GraphType> GraphReader;
-	typedef LADReader<GraphType> GraphReader;
-//	typedef ARGGraphNoLabel<GraphType> GraphReader;
+#define MOS_TEST
+#ifdef MOS_TEST
+	typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
+#elif
+	typedef MatchOrderSelector<GraphType> MatchOrderSelectorType;
+#endif
 
+#define GRF_L
+#ifdef GRF_L
+	typedef GRFGraphLabel<GraphType> GraphReader;
+#elif defined(LAD)
+	typedef LADReader<GraphType> GraphReader;
+#elif defined ARG_NL
+	typedef ARGGraphNoLabel<GraphType> GraphReader;
+#endif
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		*targetGraph = GraphReader::readGraph(targetGraphPath);
@@ -41,8 +53,11 @@ int main(int argc, char * argv[]) {
 	TIME_COST_PRINT("sort edge time : ",clock()- t1);
 	AnswerReceiverType answerReceiver;
 	auto ms = MatchOrderSelectorType::run(*queryGraph);
-	VF2<StateType, AnswerReceiverType, MatchOrderSelectorType> vf2(*targetGraph, *queryGraph, answerReceiver,ms, induceGraph, onlyNeedOneSolution);
-//	VF2<StateType, AnswerReceiverType,MatchOrderSelectorType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
+/*	for (auto &id : ms) {
+		cout << id << " ";
+	}*/
+//	VF2<StateType, AnswerReceiverType> vf2(*targetGraph, *queryGraph, answerReceiver,ms, induceGraph, onlyNeedOneSolution);
+	VF2<StateType, AnswerReceiverType,MatchOrderSelectorType> vf2(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
 
 	t1 = clock();
 	vf2.run();
