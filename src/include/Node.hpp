@@ -15,13 +15,14 @@ public:
 	typedef _NodeLabelType NodeLabelType;
 	typedef _EdgeType EdgeType;
 	typedef Node<EdgeType, NodeLabelType> NodeType;
-	const NodeIDType id=UINT32_MAX;
+protected:
+	NodeIDType _id=UINT32_MAX;
 
 public:
 	Node() = default;
 	~Node() = default;
-	Node(const NodeIDType _id) :id(_id) {}
-	
+	Node(const NodeIDType __id) :_id(__id) {}
+
 	virtual const NodeLabelType& getLabel()const = 0;
 	virtual void setLabel(const NodeLabelType _label) = 0;
 
@@ -29,6 +30,7 @@ public:
 		return id == n.id;
 	}*/
 	//same label
+	virtual const NodeIDType id()const { return _id; }
 	virtual bool isSameType(const NodeType &n)const = 0;
 	// >= operator :this node's edges should cover the second node's edges;
 	// <= operator :similar to >= operator
@@ -90,23 +92,23 @@ public:
 	}
 	  bool existSameTypeEdgeToNode(const NodeBaseType &n, const EdgeType& e)const {
 		  if (edgeSort) {
-			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET,this-> id, n.id, e.getLabel()));
+			 return binary_search(outEdges.begin(), outEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET,this-> id(), n.id(), e.getLabel()));
 		  }
 		  else {
 			 
 			  for (const auto &it : outEdges) {
-				  if (it.getTargetNodeID() == n.id && it.isSameTypeEdge(e))return true;
+				  if (it.getTargetNodeID() == n.id() && it.isSameTypeEdge(e))return true;
 			  }
 			  return false;
 		  }
 	}
 	  bool existSameTypeEdgeFromNode(const NodeBaseType &n, const EdgeType& e)const {	 
 		  if (edgeSort) {
-			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.id,this-> id, e.getLabel()));
+			 return binary_search(inEdges.begin(), inEdges.end(), EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n.id(),this-> id(), e.getLabel()));
 		  }
 		  else {
 			  for (const auto &it : inEdges) {
-				  if (it.getSourceNodeID() == n.id && it.isSameTypeEdge(e)) return true;
+				  if (it.getSourceNodeID() == n.id() && it.isSameTypeEdge(e)) return true;
 			  }
 			  return false;
 		  }
@@ -119,7 +121,7 @@ public:
 	  const vector<EdgeType>& getInEdges() const { return inEdges; }
 	  size_t getOutEdgesNum() const { return outEdges.size(); }
 	  size_t getInEdgesNum() const { return inEdges.size(); }
-	  size_t nodeIdHash()const { return hash<NodeIDType>()(this->id); }
+	  size_t nodeIdHash()const { return hash<NodeIDType>()(this->_id); }
 	  void addInEdge(const EdgeType &e) { 
 		  inEdges.push_back(e); 
 		  edgeSort = false;

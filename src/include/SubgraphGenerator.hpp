@@ -31,7 +31,7 @@ namespace sg {
 			int i = 0;
 			for (const auto &node : target.nodes()) {
 				if (i == temp) {
-					inquery.insert(node.id);
+					inquery.insert(node.id());
 					break;
 				}
 				else ++i;

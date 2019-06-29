@@ -15,7 +15,7 @@ public:
 		typedef set<NodeIDType> Set;
 		Set nodeNotInMatchSet;
 		for (const auto node : graph.nodes()) {
-			nodeNotInMatchSet.insert(node.id);
+			nodeNotInMatchSet.insert(node.id());
 		}
 		Set ioSet;
 
@@ -26,7 +26,7 @@ public:
 		ioMap.resize(graph.size() + 1);
 
 		const auto calNodeMatchPoint = [&](const NodeType & node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id] * 2;
+			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id()] * 2;
 			return p1;
 		};
 		const auto seleteAGoodNodeToMatch = [&](const Set & s) {
@@ -56,7 +56,7 @@ public:
 			assert(nodePointPair.getKey() != nullptr && "error happened");
 			const auto & node = *nodePointPair.getKey();
 
-			const auto nodeID = node.id;
+			const auto nodeID = node.id();
 			matchSequence.push_back(nodeID);
 			nodeNotInMatchSet.erase(nodeID);
 			ioSet.erase(nodeID);
@@ -94,7 +94,7 @@ public:
 		typedef set<NodeIDType> Set;
 		Set nodeNotInMatchSet;
 		for (const auto node : graph.nodes()) {
-			nodeNotInMatchSet.insert(node.id);
+			nodeNotInMatchSet.insert(node.id());
 		}
 		Set ioSet;
 
@@ -105,7 +105,7 @@ public:
 		ioMap.resize(graph.size() + 1);
 
 		const auto calNodeMatchPoint = [&](const NodeType & node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id] * 2;
+			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id()] * 2;
 			for (const auto &edge : node.getInEdges()) {
 				const auto nodeID = edge.getSourceNodeID();
 				const auto &tempNode = graph.getNode(nodeID);
@@ -124,7 +124,7 @@ public:
 			for (const auto& tempNodeID : s) {
 				
 				const auto & tempNode = graph.getNode(tempNodeID);
-				if (ioMap[tempNodeID] == tempNode.getInEdgesNum() + tempNode.getOutEdgesNum()) return NodeMatchPointPair(&tempNode, nodePoint);
+	//			if (ioMap[tempNodeID] == tempNode.getInEdgesNum() + tempNode.getOutEdgesNum()) return NodeMatchPointPair(&tempNode, nodePoint);
 				const auto tempPoint = calNodeMatchPoint(tempNode);
 				if (tempPoint > nodePoint) {
 					answer = &tempNode;
@@ -147,7 +147,7 @@ public:
 			assert(nodePointPair.getKey() != nullptr && "error happened");
 			const auto & node = *nodePointPair.getKey();
 
-			const auto nodeID = node.id;
+			const auto nodeID = node.id();
 			matchSequence.push_back(nodeID);
 			nodeNotInMatchSet.erase(nodeID);
 			ioSet.erase(nodeID);

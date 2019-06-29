@@ -14,10 +14,11 @@ void writeToFile(string fileName,GraphType graph) {
 		return;
 	}
 	f << graph.size() << endl;
+	for (auto& node : graph.nodes()) f << node.id() << " " << node.getLabel() << endl;
 	for (auto &node : graph.nodes()) {
-		f << node.getOutEdgesNum() << " ";
+		f << node.getOutEdgesNum() << endl;
 		for (auto edge : node.getOutEdges()) {
-			f << edge.getTargetNodeID() << " ";
+			f << node.id() << " " << edge.getTargetNodeID() << endl;
 		}
 		f << endl;
 	}
@@ -56,7 +57,7 @@ int main(int argc,char *argv[]) {
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 
 
-	const auto *graph = LADReader<GraphType>::readGraph(graphPath.c_str());
+	const auto *graph = GRFGraphLabel<GraphType>::readGraph(graphPath.c_str());
 //	const auto *graph = STFGraphNoLabel<GraphType>::readGraph(graphPath.c_str());
 	sg::SubgraphGenerator<GraphType> subgraphG(*graph, nodeNeed);
 

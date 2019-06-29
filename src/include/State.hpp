@@ -431,13 +431,13 @@ public:
 		{
 			targetInMax = max(targetInMax, tempNode.getInEdgesNum());
 			targetOutMax = max(targetOutMax, tempNode.getOutEdgesNum());
-			targetUnmap.insert(tempNode.id);
+			targetUnmap.insert(tempNode.id());
 		}
 		for (auto& tempNode : queryGraph.nodes())
 		{
 			queryInMax = max(queryInMax, tempNode.getInEdgesNum());
 			queryOutMax = max(queryOutMax, tempNode.getOutEdgesNum());
-			queryUnmap.insert(tempNode.id);
+			queryUnmap.insert(tempNode.id());
 		}
 		//ofc not a subgraph of target Graph.
 		if (targetInMax < queryInMax || targetOutMax < queryOutMax) stillConsistentAfterAdd = false;
