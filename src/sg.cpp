@@ -57,7 +57,8 @@ int main(int argc,char *argv[]) {
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 
 
-	const auto *graph = GRFGraphLabel<GraphType>::readGraph(graphPath.c_str());
+	auto *graph = GRFGraphLabel<GraphType>::readGraph(graphPath.c_str());
+	graph->graphBuildFinish();
 //	const auto *graph = STFGraphNoLabel<GraphType>::readGraph(graphPath.c_str());
 	sg::SubgraphGenerator<GraphType> subgraphG(*graph, nodeNeed);
 

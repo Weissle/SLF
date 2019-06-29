@@ -23,11 +23,11 @@ namespace sg {
 		vector<NodeIDType> midG;
 	public:
 		SubgraphGenerator<GraphType>(const GraphType &target, size_t _nN) : bigGraph(target), nodeNum(_nN) {
-			srand(time(NULL));
+	//		srand(time(NULL));
 			midG.reserve(nodeNum);
 			inSmall.reserve(nodeNum );
 			inquery.reserve(target.size() << 1);
-			const auto temp = (size_t)(rand() % nodeNum);
+			const auto temp = (size_t)((uint32_t)rand() % nodeNum);
 			int i = 0;
 			for (const auto &node : target.nodes()) {
 				if (i == temp) {
@@ -85,15 +85,23 @@ namespace sg {
 				smallGraphNodes.push_back(node);
 			}
 			smallGraph = GraphType(smallGraphNodes);
+			for (auto i = 0; i < midG.size();++i) {
+				assert(index[midG[i]] == i);
+			}
 			for (auto i = 0; i < midG.size(); ++i) {
 				const auto protoNode = bigGraph.getNode(midG[i]);
-				const auto sourceID = index[midG[i]];
+				const auto sourceID = i;
 				for (auto edge : protoNode.getOutEdges()) {
 					const auto pair = index.find(edge.getTargetNodeID());
 					if (pair == index.end())continue;
 					const auto targetID = pair->second;
-					if (inSmall.find(pair->first) != inSmall.end())
+					if (inSmall.find(pair->first) != inSmall.end()) {
+						if (sourceID == 0 && targetID == 41) {
+							int a = 0;
+
+						}
 						smallGraph.addEdge(sourceID, targetID, edge.getLabel());
+					}
 				}
 
 			}
