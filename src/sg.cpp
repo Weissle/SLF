@@ -58,15 +58,17 @@ int main(int argc,char *argv[]) {
 
 
 	auto *graph = GRFGraphLabel<GraphType>::readGraph(graphPath.c_str());
-	graph->graphBuildFinish();
+	cout << "read finish" << endl;
+//	graph->graphBuildFinish();
 //	const auto *graph = STFGraphNoLabel<GraphType>::readGraph(graphPath.c_str());
 	sg::SubgraphGenerator<GraphType> subgraphG(*graph, nodeNeed);
 
 	subgraphG.run();
+	cout << "subgraph generation is finished" << endl;
 	const auto midGraph = subgraphG.getMid();
 	writeMapping(midGraphPath, midGraph);
-	const auto queryGraph = subgraphG.getSmallGraph();
-
+	auto queryGraph = subgraphG.getSmallGraph();
+	queryGraph.graphBuildFinish();
 	writeToFile(smallGraphPath, queryGraph);
 
 

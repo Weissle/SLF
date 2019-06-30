@@ -5,6 +5,7 @@
 #include<unordered_set>
 #include<unordered_map>
 #include<time.h>
+#include<IndexTurner.hpp>
 #define FLOAT_ZERO 1E-6
 namespace sg {
 
@@ -23,7 +24,7 @@ namespace sg {
 		vector<NodeIDType> midG;
 	public:
 		SubgraphGenerator<GraphType>(const GraphType &target, size_t _nN) : bigGraph(target), nodeNum(_nN) {
-	//		srand(time(NULL));
+			srand(time(NULL));
 			midG.reserve(nodeNum);
 			inSmall.reserve(nodeNum );
 			inquery.reserve(target.size() << 1);
@@ -77,29 +78,36 @@ namespace sg {
 				midG.push_back(nodeID);
 				++num;
 			}
-			vector<NodeType> smallGraphNodes;
+/*			vector<NodeType> smallGraphNodes;
 			smallGraphNodes.reserve(num);
 			for (auto i = 0; i < num; ++i) {
 				const auto protoNode = bigGraph.getNode(midG[i]);
 				const auto node = NodeType(i, protoNode.getLabel());
 				smallGraphNodes.push_back(node);
-			}
-			smallGraph = GraphType(smallGraphNodes);
-			for (auto i = 0; i < midG.size();++i) {
-				assert(index[midG[i]] == i);
-			}
+			}*/
+
+			IndexTurner<size_t> turner(nodeNum);
 			for (auto i = 0; i < midG.size(); ++i) {
+				turner(midG[i]);
+			}
+			smallGraph = GraphType(nodeNum);
+
+			for (auto i = 0; i < midG.size(); ++i) {
+				unordered_set<size_t> s;
+				s.reserve(midG.size());
 				const auto protoNode = bigGraph.getNode(midG[i]);
-				const auto sourceID = i;
+				const auto sourceID = turner(protoNode.id());
+				smallGraph.setNodeLabel(sourceID, protoNode.getLabel());
 				for (auto edge : protoNode.getOutEdges()) {
 					const auto pair = index.find(edge.getTargetNodeID());
 					if (pair == index.end())continue;
+
 					const auto targetID = pair->second;
 					if (inSmall.find(pair->first) != inSmall.end()) {
-						if (sourceID == 0 && targetID == 41) {
+					/*	if (sourceID == 0 && targetID == 41) {
 							int a = 0;
 
-						}
+						}*/
 						smallGraph.addEdge(sourceID, targetID, edge.getLabel());
 					}
 				}
