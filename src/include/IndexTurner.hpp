@@ -33,14 +33,14 @@ public:
 		if ( typeid(IndexType) == typeid( unordered_map<_NameType, int> ) )index.reserve(calHashSuitableSize(s));
 	}
 	~IndexTurner() = default;
-	size_t size() { return _s };
+	size_t size() { return _s; }
 	//from graph id to user id
 	NameType operator[](const size_t id)const {
 		if (id > _s) throw "id>size()";
 		return BIndex[id];
 	}
 	NameType userID(const size_t id)const {
-		this->[](id);
+		this->operator[](id);
 	}
 	//from user id to graph id
 	size_t operator()(const NameType& name) {
@@ -57,7 +57,7 @@ public:
 		}
 	}
 	size_t graphID(const NameType& name) {
-		return this->(name);
+		return this->operator()(name);
 	}
 	auto begin() {
 		return index.begin();
