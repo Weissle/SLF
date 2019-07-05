@@ -181,7 +181,7 @@ public:
 	void run()
 	{
 		cout << "start match" << endl;
-		StateType initialState = StateType(targetGraph, queryGraph, induceGraph);
+		StateType initialState = StateType(targetGraph, queryGraph);
 		if(queryGraph.size()<=targetGraph.size()) goDeeper(initialState);
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
