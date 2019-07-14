@@ -12,8 +12,16 @@ if(CC_COMPILER)
 SET(CMAKE_CXX_COMPILER ${CC_COMPILER})
 endif()
 
-message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
-message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
+
+if( ${CMAKE_BUILD_TYPE} EQUAL Debug)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O0 -g")
+#add_compile_options("  ")
+elseif(${CMAKE_BUILD_TYPE} EQUAL Release)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
+endif()
+
+message(${CMAKE_BUILD_TYPE})
+
 
 add_subdirectory(tests)
 

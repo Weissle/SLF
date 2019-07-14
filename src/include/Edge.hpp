@@ -69,6 +69,7 @@ public:
 		if (recordType == NODE_RECORD_TYPE::TARGET) return target < e.getTargetNodeID();
 		else if (recordType == NODE_RECORD_TYPE::SOURCE) return source < e.getSourceNodeID();
 		else assert("error situation");
+		return false;
 	};
 };
 

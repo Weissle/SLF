@@ -441,7 +441,8 @@ public:
 
 		mappingAux.resize(targetGraphSize);
 		for (auto& i : mappingAux) i = NO_MAP;
-
+        mapping.resize(queryGraphSize);
+        for (auto& i : mapping) i = NO_MAP;
 
 		targetIn = NodeSet(targetGraphSize);
 		targetOut = NodeSet(targetGraphSize);
