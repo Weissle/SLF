@@ -13,15 +13,6 @@ SET(CMAKE_CXX_COMPILER ${CC_COMPILER})
 endif()
 
 
-if( ${CMAKE_BUILD_TYPE} EQUAL Debug)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O0 -g")
-#add_compile_options("  ")
-elseif(${CMAKE_BUILD_TYPE} EQUAL Release)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
-endif()
-
-message(${CMAKE_BUILD_TYPE})
-
 
 add_subdirectory(tests)
 

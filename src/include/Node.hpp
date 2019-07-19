@@ -134,10 +134,10 @@ public:
 		  inEdges.shrink_to_fit();
 		  outEdges.shrink_to_fit();
 		  sort(inEdges.begin(), inEdges.end(), [](const EdgeType &a, const EdgeType &b) {
-			  return a.getSourceNodeID() < b.getSourceNodeID();
+			  return a < b;
 		  });
 		  sort(outEdges.begin(), outEdges.end(), [](const EdgeType &a, const EdgeType &b) {
-			  return a.getTargetNodeID() < b.getTargetNodeID();
+			  return a < b;
 		  });
 		  edgeSort = true;
 	  }

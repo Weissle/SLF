@@ -66,8 +66,14 @@ public:
 	}
 	bool operator<(const EdgeBaseType &e)const {
 		assert(recordType != NODE_RECORD_TYPE::BOTH && "Both edge cannot be compare");
-		if (recordType == NODE_RECORD_TYPE::TARGET) return target < e.getTargetNodeID();
-		else if (recordType == NODE_RECORD_TYPE::SOURCE) return source < e.getSourceNodeID();
+		if (recordType == NODE_RECORD_TYPE::TARGET) {
+			if (target == e.getTargetNodeID()) return label < e.getLabel();
+			else return target < e.getTargetNodeID();
+		}
+		else if (recordType == NODE_RECORD_TYPE::SOURCE) {
+			if (source == e.getSourceNodeID()) return label < e.getLabel();
+			else return source < e.getSourceNodeID();
+		}
 		else assert("error situation");
 		return false;
 	};

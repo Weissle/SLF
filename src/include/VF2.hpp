@@ -136,7 +136,11 @@ class VF2 {
 		}
 		
 #else
-		for (const auto &tempCanditatePair : s.calCandidatePairs()) {
+		if (s.isCoverQueryGraph()) {
+			this->ToDoAfterFindASolution(s);
+			return true;
+		}
+		for (const auto &tempCanditatePair : s.calCandidatePairs( matchSequence[searchDepth] )) {
 			if (s.checkCanditatePairIsAddable(tempCanditatePair)) {
 				s.addCanditatePairToMapping(tempCanditatePair);
 				if (goDeeper(s) && this->onlyNeedOneSolution) return true;
