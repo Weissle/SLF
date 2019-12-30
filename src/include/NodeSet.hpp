@@ -48,12 +48,15 @@ public:
 		else return s.find(id);
 	}
 	auto end()const {
+
 		return s.end();
 	}
 	auto begin()const {
+
 		return s.begin();
 	}
 	auto getSet()const {
+
 		return s;
 	}
 	auto max_size()const {

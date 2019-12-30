@@ -162,8 +162,8 @@ public:
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph,AnswerReceiver &_answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph),answerReceiver(_answerReceiver)
 	{
-		if( typeid(_MatchOrderSelector) != typeid(void) )matchSequence = _MatchOrderSelector::run(_queryGraph);
-		else matchSequence = MatchOrderSelector<GraphType>::run(_queryGraph);
+		if( typeid(_MatchOrderSelector) != typeid(void) )matchSequence = _MatchOrderSelector::run(_queryGraph,_targetGraph);
+		else matchSequence = MatchOrderSelector<GraphType>::run(_queryGraph,_targetGraph);
 		searchDepth = 0;
 
 	/*	fstream f;

@@ -32,9 +32,9 @@ namespace std {
 
 template<typename F, typename S>
 class FSPair {
+public:
 	F first;
 	S second;
-public:
 	F getFirst()const { return first; }
 	S getSecond()const { return second; }
 	FSPair() = default;

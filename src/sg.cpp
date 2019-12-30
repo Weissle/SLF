@@ -53,7 +53,7 @@ int main(int argc,char *argv[]) {
 
 	typedef size_t NodeIDType;
 	typedef EdgeVF2< int> EdgeType;
-	typedef NodeVF2<EdgeType, int> NodeType;
+	typedef NodeVF2<EdgeType> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 
 

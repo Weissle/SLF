@@ -12,7 +12,7 @@ static long t = 0;
 int main(int argc, char * argv[]) {
 	typedef size_t NodeIDType;
 	typedef EdgeVF2<int> EdgeType;
-	typedef NodeVF2<EdgeType, int> NodeType;
+	typedef NodeVF2<EdgeType> NodeType;
 	typedef GraphVF2<NodeType, EdgeType> GraphType;
 	typedef StateVF2<GraphType> StateType;
 	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
@@ -29,11 +29,13 @@ int main(int argc, char * argv[]) {
 
     cmdl({"-self-order","-so"})>>matchOrderPath;
     matchOrder = !matchOrderPath.empty();
-#define MOS_TEST
+#define MOS_VF3
 #ifdef MOS_TEST
     typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
-#elif
+#elif defined(MOS_NORMAL)
 	typedef MatchOrderSelector<GraphType> MatchOrderSelectorType;
+#elif defined(MOS_VF3)
+	typedef MatchOrderSelectorVF3<GraphType> MatchOrderSelectorType;
 #endif
 
 #define GRF_L
@@ -44,7 +46,7 @@ int main(int argc, char * argv[]) {
 #elif defined ARG_NL
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
-    typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
+
     typedef VF2<StateType, AnswerReceiverType,MatchOrderSelectorType> VF2Type;
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),

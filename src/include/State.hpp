@@ -117,9 +117,7 @@ private:
 
 
 	bool stillConsistentAfterAdd = true;
-
-
-
+	
 	template<typename _Key, typename _Value>
 	bool mapIsCovered(const unordered_map<_Key, _Value>& querym, unordered_map<_Key, _Value>& targetm)const {
 #ifdef INDUCE_ISO
@@ -166,7 +164,7 @@ private:
 				const auto queryTargetNodeID = mappingAux[targetTargetNodeID];
 				const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
 				if (querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
-#endif
+#endif		
 			}
 			else if (targetTargetNodeID == targetSourceNodeID) {
 #ifdef INDUCE_ISO
@@ -209,7 +207,8 @@ private:
 				if (b) {
 					++bothCount;
 				}
-#endif
+#endif				
+				//maybe bug in normal_iso
 				if (!i && !o) ++notTCount;
 			}
 		}
@@ -645,7 +644,6 @@ public:
 				if (!o) {
 					if (targetMappingInDepth[nodeID] == searchDepth) ++targetC;
 				}
-
 
 			}
 			if (temp == false && !o)++targetE;

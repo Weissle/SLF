@@ -26,7 +26,7 @@ int main() {
 	int num_vertices1 = 0;
 	int num_vertices2 = 0;
 
-#define GRF_L
+#define LAD
 #ifdef ARG
 	typedef adjacency_list<setS, vecS, bidirectionalS> graph_type;
 	FILE *f = fopen(queryGraphPath.c_str(), "rb");

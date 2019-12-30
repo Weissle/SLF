@@ -7,14 +7,14 @@
 #include<iostream>
 #include<time.h>
 using namespace std;
-template<typename _EdgeType, typename _NodeLabelType>
+template<typename _EdgeType>
 class Node {
 public:
 
 	typedef size_t NodeIDType;
-	typedef _NodeLabelType NodeLabelType;
+	typedef size_t NodeLabelType;
 	typedef _EdgeType EdgeType;
-	typedef Node<EdgeType, NodeLabelType> NodeType;
+	typedef Node<EdgeType> NodeType;
 protected:
 	NodeIDType _id=UINT32_MAX;
 
@@ -49,14 +49,14 @@ public:
 	virtual void addOutEdge(const EdgeType &e) = 0;
 };
 
-template<typename _EdgeType, typename _NodeLabelType>
-class NodeVF2 :public Node<_EdgeType, _NodeLabelType> {
+template<typename _EdgeType>
+class NodeVF2 :public Node<_EdgeType> {
 public:
 	typedef size_t NodeIDType;
-	typedef _NodeLabelType NodeLabelType;
+	typedef size_t NodeLabelType;
 	typedef _EdgeType EdgeType;
-	typedef Node<EdgeType, NodeLabelType> NodeBaseType;
-	typedef NodeVF2<EdgeType, NodeLabelType> NodeType;
+	typedef Node<EdgeType> NodeBaseType;
+	typedef NodeVF2<EdgeType> NodeType;
 	
 
 private:
@@ -80,7 +80,6 @@ public:
 	  void setLabel(const NodeLabelType _label) {
 		this->label = _label;
 	}
-
 	  bool isSameType(const NodeBaseType &n)const {	
 		return label == n.getLabel();
 	}
@@ -150,10 +149,10 @@ static bool isSameTypeNode(const NodeType1 &n1, const NodeType2 &n2) {
 }
 namespace std
 {
-	template<typename EdgeType, typename NodeLabelType>
-	struct hash<Node<EdgeType, NodeLabelType>>
+	template<typename EdgeType>
+	struct hash<Node<EdgeType>>
 	{
-		size_t operator() (const Node<EdgeType, NodeLabelType>  &n) const {
+		size_t operator() (const Node<EdgeType>  &n) const {
 			return n.nodeIdHash();
 		}
 	};

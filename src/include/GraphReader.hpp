@@ -7,6 +7,7 @@
 #include<typeinfo>
 #include<unordered_set>
 #include"si_marcos.h"
+#include "IndexTurner.hpp"
 using namespace std;
 /*
 fstream& openGraphFile(string graphPath,ios_base::openmode mode) {
@@ -183,7 +184,10 @@ public:
 template<class GraphType>
 class GRFGraphLabel {
 public:
-	static GraphType* readGraph(string graphPath) {
+	static GraphType* readGraph(string graphPath,bool clearMap=false) {
+	/*	static IndexTurner<int, map<int, size_t> > labelTurner;
+		if (clearMap) labelTurner.clear();
+	*/	
 		fstream f;
 		f.open(graphPath.c_str(), ios_base::in);
 		//		auto f = openGraphFile(graphPath, ios_base::in);
@@ -200,7 +204,7 @@ public:
 			size_t id;
 			int label;
 			f >> id >> label;
-			graph->setNodeLabel(id, label);
+			graph->setNodeLabel(id, label -1);
 		}
 		bool *pp = new bool[nodeNum]();
 		while (f.eof() == false) {

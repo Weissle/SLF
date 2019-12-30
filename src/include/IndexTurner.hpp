@@ -33,6 +33,10 @@ public:
 		if ( typeid(IndexType) == typeid( unordered_map<_NameType, int> ) )index.reserve(calHashSuitableSize(s));
 	}
 	~IndexTurner() = default;
+	void clear() {
+		_s = 0;
+		index.clear();
+	}
 	size_t size() { return _s; }
 	//from graph id to user id
 	NameType operator[](const size_t id)const {
