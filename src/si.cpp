@@ -18,7 +18,7 @@ int main(int argc, char * argv[]) {
 	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
 
 
-	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg" });
+	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg","self-order","-so" });
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath,matchOrderPath;
 	bool induceGraph = true, onlyNeedOneSolution = false,matchOrder = false;

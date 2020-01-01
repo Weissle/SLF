@@ -164,6 +164,8 @@ public:
 	{
 		if( typeid(_MatchOrderSelector) != typeid(void) )matchSequence = _MatchOrderSelector::run(_queryGraph,_targetGraph);
 		else matchSequence = MatchOrderSelector<GraphType>::run(_queryGraph,_targetGraph);
+		TRAVERSE_SET(s, matchSequence) cout << s << " ";
+		cout << endl;
 		searchDepth = 0;
 
 	/*	fstream f;
@@ -185,7 +187,8 @@ public:
 	void run()
 	{
 		cout << "start match" << endl;
-		StateType initialState = StateType(targetGraph, queryGraph);
+//		StateType initialState = std::move(StateType(targetGraph, queryGraph));
+		StateType initialState(targetGraph, queryGraph);
 		if(queryGraph.size()<=targetGraph.size()) goDeeper(initialState);
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
