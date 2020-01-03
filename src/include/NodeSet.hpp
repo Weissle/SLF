@@ -7,6 +7,7 @@
 // only use bool[] or unordered_set cost much time
 using namespace std;
 
+template<class _GraphType=void>
 class NodeSet {
 	typedef size_t NodeIDType;
 	unordered_set<NodeIDType> s;
@@ -17,12 +18,9 @@ public:
 	~NodeSet() = default;
 	NodeSet(size_t need) :_max_size(need) {
 		s.reserve(calHashSuitableSize(need));
-		belong = move(shared_ptr<bool[]>(new bool[need]));
-		for (auto i = 0; i < need; ++i) {
-			belong[i] = false;
-
-		}
+		belong = move(shared_ptr<bool[]>(new bool[need]()));
 	}
+	NodeSet(const _GraphType& _g) :NodeSet(_g.size()) {}
 	void insert(NodeIDType id) {
 		if (id >= _max_size) {
 			throw "id is too large";
@@ -45,19 +43,21 @@ public:
 			--_size;
 		}
 	}
-	auto find(const NodeIDType id)const {
-		if (id >= _max_size || belong[id] == false)return s.end();
-		else return s.find(id);
+	auto exist(const NodeIDType id)const {
+		if (id >= _max_size || belong[id] == false)return false;
+		else return true;
 	}
 	auto end()const {
-
 		return s.end();
+	}
+	bool operator>(const NodeSet& temp)const {
+		return _size > temp._size;
 	}
 	auto begin()const {
 
 		return s.begin();
 	}
-	auto getSet()const {
+	const unordered_set<NodeIDType>& getSet()const {
 		return s;
 	}
 	auto size()const {
@@ -76,62 +76,61 @@ private:
 	//	vector< unordered_map<NodeIDType, bool> > v;
 	vector< unordered_set<NodeIDType> > v;
 	vector<size_t> vSize;
+	shared_ptr<bool[]> belong;
+	
 	GraphType const* graph = nullptr;
 public:
+	size_t all_size = 0;
 	NodeSetWithLabel(const GraphType& _graph) :graph(&_graph) {
-		const auto LQinform = _graph.getLQinform();
-		
+		const auto LQinform = _graph.getLQinform();	
 		v.resize(LQinform.size());
 		vSize.resize(LQinform.size());
 		for (auto it = LQinform.begin(); it != LQinform.end(); ++it) {
-			v[it->first].reserve(it->second);
+			v[it->first].reserve(calHashSuitableSize(it->second));
 		}
-		
+		belong = shared_ptr<bool[]>(new bool[graph->size()]());
 	}
 	NodeSetWithLabel(const NodeSetWithLabel<GraphType>& temp) {
 		v = temp.v;
 		vSize = temp.vSize;
 		graph = temp.graph;
+		belong = shared_ptr<bool[]>(new bool[graph->size()]());
 	}
 	void insert(const NodeIDType id) {
-		const auto label = graph->getNode(id).getLabel();
-		if (NOT_IN_SET(v[label], id)) {
+		if (belong[id]==false) {
+			const auto label = graph->getNode(id).getLabel();
 			vSize[label]++;
 			v[label].insert(id);
+			belong[id] = true;
+			++all_size;
 		}
-		
 		return;
 	}
 	void erase(const NodeIDType id) {
-		const auto label = graph->getNode(id).getLabel();
-		if (IN_SET(v[label], id)) {
+		if (belong[id]==true) {
+			const auto label = graph->getNode(id).getLabel();
 			vSize[label]--;
 			v[label].erase(id);
+			--all_size;
+			belong[id] = false;
 		}
 		return;
 	}
-	bool contain(const NodeIDType id)const {
-		const auto label = graph->getNode(id).getLabel();
-		return IN_SET(v[label], id);
+	bool exist(const NodeIDType id)const {
+		return belong[id];
+	/*	const auto label = graph->getNode(id).getLabel();
+		return IN_SET(v[label], id);*/
 	}
-	const unordered_set<NodeIDType>& getSet(NodeLabelType label) {
+	const unordered_set<NodeIDType>& getSet(NodeLabelType label)const{
 		return v[label];
 	}
-	bool operator<=(const NodeSetWithLabel<GraphType>& ns)const {
-		if (vSize.size() > ns.vSize.size())return false;
-		LOOP(i, 0, min(vSize.size(), ns.vSize.size())) {
-			if (vSize[i] > ns.vSize[i])return false;
-		}
-		return true;
-	}
-	bool operator>=(const NodeSetWithLabel<GraphType>& ns)const {
-		return ns <= *this;
-	}
-	bool operator<(const NodeSetWithLabel<GraphType>& ns)const {
-		return !(ns >= *this);
-	}
 	bool operator>(const NodeSetWithLabel<GraphType>& ns)const {
-		return !(ns <= *this);
+		if (all_size > ns.all_size)return true;
+		if (vSize.size() > ns.vSize.size())return true;
+		LOOP(i, 0, vSize.size()) {
+			if (vSize[i] > ns.vSize[i])return true;
+		}
+		return false;
 	}
 	const unordered_set<NodeIDType>& operator[](const NodeLabelType label)const {
 		return v[label];
@@ -141,9 +140,64 @@ public:
 	}
 
 	NodeSetWithLabel() = default;
-//	~NodeSetWithLabel() = default;
+
 private:
 
 };
 
+template<class _GraphType>
+class NS_TEST {
+public:
+	typedef _GraphType GraphType;
+	typedef typename GraphType::NodeType NodeType;
+	typedef typename NodeType::NodeIDType NodeIDType;
+	typedef typename NodeType::NodeLabelType NodeLabelType;
+private:
+	NodeSetWithLabel<GraphType> sl;
+	NodeSet<GraphType> s;
+public:
+	NS_TEST(const GraphType& g) :sl(g), s(g) {};
+	NS_TEST() = default;
+	void insert(NodeIDType id) {
+		sl.insert(id);
+		s.insert(id);
+	}
+	void erase(NodeIDType id) {
+		sl.erase(id);
+		s.erase(id);
+	}
+	auto exist(const NodeIDType id)const {
+		bool sla = sl.exist(id);
+		bool sa = s.exist(id);
+		if (sla != sa) {
+			cout << "33333333333333333333333333" << endl;
+		}
+		return sa;
+	}
+
+	bool operator>(const NS_TEST<GraphType>& temp)const {
+		{
+			if (sl.all_size != s.size()) {
+				cout << "33333333333333333333333333" << endl;
+			}
+		}
+		bool sla = sl > temp.sl;
+		bool sa = s > temp.s;
+		if (sla != sa) {
+			cout << "33333333333333333333333333" << endl;
+		}
+		return sa;
+	}
+
+	const unordered_set<NodeIDType>& operator[](const NodeLabelType label)const {
+
+		auto s1 = s.getSet();
+		auto s2 = sl[label];
+		return s.getSet();
+
+	//	return sl[label];
+	}
+
+
+};
 

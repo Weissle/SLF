@@ -187,7 +187,7 @@ public:
 		matchSequence.reserve(graph.size() + 1);
 		map<NodeLabelType, size_t> pgLQ = graph.getLQinform(), tgLQ = targetGraph.getLQinform();
 		map<NodeLabelType, FSPair<size_t, size_t>>  pgLD = graph.getLDinform(), tgLD = targetGraph.getLDinform();
-		vector< vector< int > > pgin, pgout, tgin, tgout;
+		vector< vector< size_t > > pgin, pgout, tgin, tgout;
 		assert(pgLQ.size() <= tgLQ.size() && " pattern graph is not a subgraph of target graph owing to the label type");
 		//	pgin.resize(pgLQ.size());
 		tgin.resize(pgLQ.size());
@@ -208,7 +208,7 @@ public:
 			tgout[node.getLabel()][node.getOutEdgesNum()]++;
 		}
 		LOOP(i, 0, pgLQ.size()) {
-			int nodeCount = tgLQ[i];
+			size_t nodeCount = tgLQ[i];
 			LOOP(j, 0, tgout[i].size()) {
 				int temp = tgout[i][j];
 				tgout[i][j] = nodeCount;
@@ -246,7 +246,7 @@ public:
 				return a.second.first < b.second.first;
 			});
 
-		int maxDegreeInSeq = 0;
+		size_t maxDegreeInSeq = 0;
 		map<NodeIDType, size_t> ioMap;
 		auto* sortPossPoint = sortPoss;
 		int seqID = -1;

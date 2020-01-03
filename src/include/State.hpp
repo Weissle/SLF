@@ -17,6 +17,7 @@
 //#define INDUCE_ISO
 #define NORMAL_ISO
 #define NO_MAP SIZE_MAX
+
 using namespace std;
 
 
@@ -82,9 +83,10 @@ public:
 	typedef typename StateBase::MapPair MapPair;
 	typedef typename StateBase::MapType MapType;
 
-	//	typedef unordered_set<NodeIDType> NodeSetType;
-	//typedef NodeSet NodeSetType;
-	typedef NodeSetWithLabel<GraphType> NodeSetType;
+//	typedef NodeSet<GraphType> NodeSetType;
+//	typedef NodeSetWithLabel<GraphType> NodeSetType;
+	typedef NS_TEST<GraphType> NodeSetType;
+
 private:
 	const GraphType& targetGraph, & queryGraph;
 	size_t searchDepth = 0;
@@ -94,9 +96,9 @@ private:
 	NodeSetType targetUnmap, targetIn, targetOut, targetBoth,
 		queryUnmap, queryIn, queryOut, queryBoth;
 
-	vector<int> targetMappingInDepth, targetMappingOutDepth,
+	vector<size_t> targetMappingInDepth, targetMappingOutDepth,
 		queryMappingInDepth, queryMappingOutDepth;
-	vector<int> targetMappingInRefTimes, targetMappingOutRefTimes,
+	vector<size_t> targetMappingInRefTimes, targetMappingOutRefTimes,
 		queryMappingInRefTimes, queryMappingOutRefTimes;
 #ifdef INDUCE_ISO
 	int** DRin, ** DRout;
@@ -117,7 +119,7 @@ private:
 
 
 	bool stillConsistentAfterAdd = true;
-	
+
 	template<typename _Key, typename _Value>
 	bool mapIsCovered(const unordered_map<_Key, _Value>& querym, unordered_map<_Key, _Value>& targetm)const {
 #ifdef INDUCE_ISO
@@ -159,7 +161,7 @@ private:
 		for (const auto& tempEdge : targetSourceNode.getOutEdges()) {
 			const auto& targetTargetNodeID = tempEdge.getTargetNodeID();
 
-			if (!EXIST_IN_NSWL(targetUnmap, targetTargetNodeID)) {
+			if (!IN_NODE_SET(targetUnmap, targetTargetNodeID)) {
 #ifdef INDUCE_ISO
 				const auto queryTargetNodeID = mappingAux[targetTargetNodeID];
 				const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
@@ -173,8 +175,8 @@ private:
 			}
 			else {
 
-				const bool o = EXIST_IN_NSWL(targetOut, targetTargetNodeID);
-				const bool i = EXIST_IN_NSWL(targetIn, targetTargetNodeID);
+				const bool o = IN_NODE_SET(targetOut, targetTargetNodeID);
+				const bool i = IN_NODE_SET(targetIn, targetTargetNodeID);
 				const bool b = (i && o);
 
 #ifdef INDUCE_ISO
@@ -217,7 +219,7 @@ private:
 		for (const auto& tempEdge : querySourceNode.getOutEdges()) {
 			const auto& queryTargetNodeID = tempEdge.getTargetNodeID();
 			//this tempnode have been mapped
-			if (!EXIST_IN_NSWL(queryUnmap, queryTargetNodeID)) {
+			if (!IN_NODE_SET(queryUnmap, queryTargetNodeID)) {
 				const auto targetTargetNodeID = mapping[queryTargetNodeID];
 				const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
 				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
@@ -227,8 +229,8 @@ private:
 			}
 			else {
 
-				const bool o = EXIST_IN_NSWL(queryOut, queryTargetNodeID);
-				const bool i = EXIST_IN_NSWL(queryIn, queryTargetNodeID);
+				const bool o = IN_NODE_SET(queryOut, queryTargetNodeID);
+				const bool i = IN_NODE_SET(queryIn, queryTargetNodeID);
 				const bool b = (o && i);
 #ifdef INDUCE_ISO
 				size_t inDepth, outDepth, inRef, outRef;
@@ -307,7 +309,7 @@ private:
 		for (const auto& tempEdge : targetTargetNode.getInEdges()) {
 			const auto& targetSourceNodeID = tempEdge.getSourceNodeID();
 
-			if (!EXIST_IN_NSWL(targetUnmap, targetSourceNodeID)) {
+			if (!IN_NODE_SET(targetUnmap, targetSourceNodeID)) {
 #ifdef INDUCE_ISO
 				const auto& querySourceNodeID = mappingAux[targetSourceNodeID];
 				const auto& querySourceNode = queryGraph.getNode(querySourceNodeID);
@@ -321,8 +323,8 @@ private:
 			}
 			else {
 
-				const bool o = EXIST_IN_NSWL(targetOut, targetSourceNodeID);
-				const bool i = EXIST_IN_NSWL(targetIn, targetSourceNodeID);
+				const bool o = IN_NODE_SET(targetOut, targetSourceNodeID);
+				const bool i = IN_NODE_SET(targetIn, targetSourceNodeID);
 				const bool b = (o && i);
 #ifdef INDUCE_ISO
 				size_t inDepth, outDepth, inRef, outRef;
@@ -363,7 +365,7 @@ private:
 
 		for (const auto& tempEdge : queryTargetNode.getInEdges()) {
 			const auto& querySourceNodeID = tempEdge.getSourceNodeID();
-			if (!EXIST_IN_NSWL(queryUnmap, querySourceNodeID)) {
+			if (!IN_NODE_SET(queryUnmap, querySourceNodeID)) {
 
 				const auto& targetSourceNodeID = mapping[querySourceNodeID];
 				const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
@@ -374,8 +376,8 @@ private:
 			}
 			else {
 
-				const bool o = EXIST_IN_NSWL(queryOut, querySourceNodeID);
-				const bool i = EXIST_IN_NSWL(queryIn, querySourceNodeID);
+				const bool o = IN_NODE_SET(queryOut, querySourceNodeID);
+				const bool i = IN_NODE_SET(queryIn, querySourceNodeID);
 				const bool b = (o && i);
 #ifdef INDUCE_ISO
 				size_t inDepth, outDepth, inRef, outRef;
@@ -440,28 +442,28 @@ public:
 
 		mappingAux.resize(targetGraphSize);
 		for (auto& i : mappingAux) i = NO_MAP;
-        mapping.resize(queryGraphSize);
-        for (auto& i : mapping) i = NO_MAP;
-/*
-		targetIn = NodeSetType(targetGraphSize);
-		targetOut = NodeSetType(targetGraphSize);
-		targetBoth = NodeSetType(targetGraphSize);
-		targetUnmap = NodeSetType(targetGraphSize);
+		mapping.resize(queryGraphSize);
+		for (auto& i : mapping) i = NO_MAP;
 
-		queryIn = NodeSetType(queryGraphSize);
-		queryOut = NodeSetType(queryGraphSize);
-		queryBoth = NodeSetType(queryGraphSize);
-		queryUnmap = NodeSetType(queryGraphSize);
-*/
 		targetIn = NodeSetType(targetGraph);
-		targetOut = targetIn;
-		targetBoth = targetIn;
-		targetUnmap = targetIn;
+		targetOut = NodeSetType(targetGraph);
+		targetBoth = NodeSetType(targetGraph);
+		targetUnmap = NodeSetType(targetGraph);
+
+		targetIn = NodeSetType(targetGraph);
+		targetOut = NodeSetType(targetGraph);
+		targetBoth = NodeSetType(targetGraph);
+		targetUnmap = NodeSetType(targetGraph);
 
 		queryIn = NodeSetType(queryGraph);
-		queryOut = queryIn;
-		queryBoth = queryIn;
-		queryUnmap = queryIn;
+		queryOut = NodeSetType(queryGraph);
+		queryBoth = NodeSetType(queryGraph);
+		queryUnmap = NodeSetType(queryGraph);
+
+		queryIn = NodeSetType(queryGraph);
+		queryOut = NodeSetType(queryGraph);
+		queryBoth = NodeSetType(queryGraph);
+		queryUnmap = NodeSetType(queryGraph);
 		targetMappingInDepth.resize(targetGraphSize);
 		targetMappingOutDepth.resize(targetGraphSize);
 		queryMappingInDepth.resize(queryGraphSize);
@@ -505,13 +507,16 @@ public:
 		}
 
 		const auto& queryNodeToMatchID = id;
-		const bool queryNodeInIn = EXIST_IN_NSWL(queryIn, queryNodeToMatchID);
-		const bool queryNodeInOut = EXIST_IN_NSWL(queryOut, queryNodeToMatchID);
+		const bool queryNodeInIn = IN_NODE_SET(queryIn, queryNodeToMatchID);
+		const bool queryNodeInOut = IN_NODE_SET(queryOut, queryNodeToMatchID);
 		const auto& queryNode = queryGraph.getNode(queryNodeToMatchID);
 		const auto queryNodeInRefTimes = queryMappingInRefTimes[queryNodeToMatchID];
 		const auto queryNodeOutRefTimes = queryMappingOutRefTimes[queryNodeToMatchID];
 		const auto queryNodeInDepth = queryMappingInDepth[queryNodeToMatchID];
 		const auto queryNodeOutDepth = queryMappingOutDepth[queryNodeToMatchID];
+
+
+
 		const auto queryNodeLabel = queryNode.getLabel();
 
 		const unordered_set<NodeIDType>* tempNodeSetPointer;
@@ -519,12 +524,9 @@ public:
 		else if (queryNodeInIn) tempNodeSetPointer = &targetIn[queryNodeLabel];
 		else if (queryNodeInOut)tempNodeSetPointer = &targetOut[queryNodeLabel];
 		else tempNodeSetPointer = &targetUnmap[queryNodeLabel];
-	
-		
-		answer.reserve(max(targetIn.size(queryNodeLabel), targetOut.size(queryNodeLabel)));
+
+		answer.reserve(tempNodeSetPointer->size());
 		const auto& targetNodeToMatchSet = *tempNodeSetPointer;
-
-
 
 		TRAVERSE_SET(targetNodeToMatchID, targetNodeToMatchSet)
 		{
@@ -547,6 +549,7 @@ public:
 			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
 
 		}
+
 		return answer;
 
 	}
@@ -610,10 +613,10 @@ public:
 		for (const auto& tempEdge : targetNodePointer->getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 			// was not be mapped
-			const bool n = EXIST_IN_NSWL(targetUnmap, nodeID);
+			const bool n = IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
-			const bool o = EXIST_IN_NSWL(targetOut, nodeID);
-			const bool i = EXIST_IN_NSWL(targetIn, nodeID);
+			const bool o = IN_NODE_SET(targetOut, nodeID);
+			const bool i = IN_NODE_SET(targetIn, nodeID);
 			const bool b = (o && i);
 
 			if (!i) {
@@ -637,10 +640,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNodePointer->getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
-			const bool n = EXIST_IN_NSWL(targetUnmap, nodeID);
+			const bool n = IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
-			const bool o = EXIST_IN_NSWL(targetOut, nodeID);
-			const bool i = EXIST_IN_NSWL(targetIn, nodeID);
+			const bool o = IN_NODE_SET(targetOut, nodeID);
+			const bool i = IN_NODE_SET(targetIn, nodeID);
 			const bool b = (o && i);
 			bool temp = false;
 			if (!o) {
@@ -667,10 +670,10 @@ public:
 		for (const auto& tempEdge : queryNodePointer->getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 			//		queryMappingInRefTimes[sourceNodeID]++;
-			const bool n = EXIST_IN_NSWL(queryUnmap, nodeID);
+			const bool n = IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
-			const bool o = EXIST_IN_NSWL(queryOut, nodeID);
-			const bool i = EXIST_IN_NSWL(queryIn, nodeID);
+			const bool o = IN_NODE_SET(queryOut, nodeID);
+			const bool i = IN_NODE_SET(queryIn, nodeID);
 			const bool b = (o && i);
 
 			if (!i) {
@@ -693,10 +696,10 @@ public:
 		}
 		for (const auto& tempEdge : queryNodePointer->getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
-			const bool n = EXIST_IN_NSWL(queryUnmap, nodeID);
+			const bool n = IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
-			const bool o = EXIST_IN_NSWL(queryOut, nodeID);
-			const bool i = EXIST_IN_NSWL(queryIn, nodeID);
+			const bool o = IN_NODE_SET(queryOut, nodeID);
+			const bool i = IN_NODE_SET(queryIn, nodeID);
 			const bool b = (o && i);
 			bool temp = false;
 			if (!o) {
@@ -736,8 +739,8 @@ public:
 		//	if (induceGraph && (queryA > targetA || queryE > targetE || queryC > targetC || queryB > targetB || queryD > targetD))stillConsistentAfterAdd = false;
 		else stillConsistentAfterAdd = true;
 #elif defined(NORMAL_ISO)
-		if (queryIn <= targetIn && queryOut <= targetIn && queryBoth <= targetBoth) stillConsistentAfterAdd = true;
-		else stillConsistentAfterAdd = false;
+		if (queryIn > targetIn || queryOut > targetOut || queryBoth > targetBoth) stillConsistentAfterAdd = false;
+		else stillConsistentAfterAdd = true;
 #endif
 		return;
 	}
@@ -752,10 +755,10 @@ public:
 		for (const auto& tempEdge : queryNode.getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
 
-			const bool n = EXIST_IN_NSWL(queryUnmap, nodeID);
+			const bool n = IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = EXIST_IN_NSWL(queryBoth, nodeID);
+			const bool b = IN_NODE_SET(queryBoth, nodeID);
 
 			auto& refTimes = queryMappingInRefTimes[nodeID];
 			auto& nodeDepth = queryMappingInDepth[nodeID];
@@ -777,10 +780,10 @@ public:
 		for (const auto& tempEdge : queryNode.getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
 
-			const bool n = EXIST_IN_NSWL(queryUnmap, nodeID);
+			const bool n = IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = EXIST_IN_NSWL(queryBoth, nodeID);
+			const bool b = IN_NODE_SET(queryBoth, nodeID);
 
 			auto& refTimes = queryMappingOutRefTimes[nodeID];
 			auto& nodeDepth = queryMappingOutDepth[nodeID];
@@ -804,10 +807,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNode.getInEdges()) {
 			const auto& nodeID = tempEdge.getSourceNodeID();
-			const bool n = EXIST_IN_NSWL(targetUnmap, nodeID);
+			const bool n = IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = EXIST_IN_NSWL(targetBoth, nodeID);
+			const bool b = IN_NODE_SET(targetBoth, nodeID);
 
 			auto& refTimes = targetMappingInRefTimes[nodeID];
 			auto& nodeDepth = targetMappingInDepth[nodeID];
@@ -829,10 +832,10 @@ public:
 		}
 		for (const auto& tempEdge : targetNode.getOutEdges()) {
 			const auto& nodeID = tempEdge.getTargetNodeID();
-			const bool n = EXIST_IN_NSWL(targetUnmap, nodeID);
+			const bool n = IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
 
-			const bool b = EXIST_IN_NSWL(targetBoth, nodeID);
+			const bool b = IN_NODE_SET(targetBoth, nodeID);
 
 			auto& refTimes = targetMappingOutRefTimes[nodeID];
 			auto& nodeDepth = targetMappingOutDepth[nodeID];
@@ -858,7 +861,7 @@ public:
 			queryIn.insert(queryNodeID);
 
 			const auto refTimes = queryMappingInRefTimes[queryNodeID];
-			if (EXIST_IN_NSWL(queryOut, queryNodeID)) {
+			if (IN_NODE_SET(queryOut, queryNodeID)) {
 				const auto outRefTimes = queryMappingOutRefTimes[queryNodeID];
 				queryBoth.insert(queryNodeID);
 			}
@@ -869,7 +872,7 @@ public:
 			queryOut.insert(queryNodeID);
 
 			const auto refTimes = queryMappingOutRefTimes[queryNodeID];
-			if (EXIST_IN_NSWL(queryIn, queryNodeID)) {
+			if (IN_NODE_SET(queryIn, queryNodeID)) {
 				const auto inRefTimes = queryMappingInRefTimes[queryNodeID];
 				queryBoth.insert(queryNodeID);
 			}
@@ -879,7 +882,7 @@ public:
 			targetIn.insert(targetNodeID);
 
 			const auto refTimes = targetMappingInRefTimes[targetNodeID];
-			if (EXIST_IN_NSWL(targetOut, targetNodeID)) {
+			if (IN_NODE_SET(targetOut, targetNodeID)) {
 
 				const auto outRefTimes = targetMappingOutRefTimes[targetNodeID];
 				targetBoth.insert(targetNodeID);
@@ -892,7 +895,7 @@ public:
 			targetOut.insert(targetNodeID);
 
 			const auto refTimes = targetMappingOutRefTimes[targetNodeID];
-			if (EXIST_IN_NSWL(targetIn, targetNodeID)) {
+			if (IN_NODE_SET(targetIn, targetNodeID)) {
 
 				const auto inRefTimes = targetMappingInRefTimes[targetNodeID];
 
@@ -921,7 +924,3 @@ public:
 		return mapping;
 	}
 };
-
-
-
-
