@@ -185,17 +185,16 @@ public:
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
 		vector<NodeIDType> matchSequence;
 		matchSequence.reserve(graph.size() + 1);
-		map<NodeLabelType, size_t> pgLQ = graph.getLQinform(), tgLQ = targetGraph.getLQinform();
-		map<NodeLabelType, FSPair<size_t, size_t>>  pgLD = graph.getLDinform(), tgLD = targetGraph.getLDinform();
-		vector< vector< size_t > > pgin, pgout, tgin, tgout;
+		unordered_map<NodeLabelType, size_t> pgLQ = graph.getLQinform(), tgLQ = targetGraph.getLQinform();
+		unordered_map<NodeLabelType, FSPair<size_t, size_t>>  pgLD = graph.getLDinform(), tgLD = targetGraph.getLDinform();
+		vector< vector< size_t > > tgin, tgout;
 		assert(pgLQ.size() <= tgLQ.size() && " pattern graph is not a subgraph of target graph owing to the label type");
-		//	pgin.resize(pgLQ.size());
+
 		tgin.resize(pgLQ.size());
-		//	pgout.resize(pgLQ.size());
+
 		tgout.resize(pgLQ.size());
 		LOOP(i, 0, pgLQ.size()) {
-			/*	pgin[i].resize(pgLD[i].second+2);
-				pgout[i].resize(pgLD[i].first +2);*/
+	
 			tgin[i].resize(tgLD[i].second + 2);
 			tgout[i].resize(tgLD[i].first + 2);
 			assert(pgLD[i].second <= tgLD[i].second && pgLD[i].first <= tgLD[i].first && " pattern graph is not a subgraph of target graph owing to in or out degree");
@@ -213,21 +212,18 @@ public:
 				int temp = tgout[i][j];
 				tgout[i][j] = nodeCount;
 				nodeCount -= temp;
-
 			}
 			nodeCount = tgLQ[i];
 			LOOP(j, 0, tgin[i].size()) {
 				int temp = tgin[i][j];
 				tgin[i][j] = nodeCount;
 				nodeCount -= temp;
-
 			}
 		}
-		map<NodeIDType, size_t> aux;
 		double* possibility = new double[graph.size()];
 		FSPair<NodeIDType, FSPair<double, size_t>>* sortPoss = new FSPair<NodeIDType, FSPair<double, size_t>>[graph.size()];
 
-		set<NodeIDType> notInSeq;
+		unordered_set<NodeIDType> notInSeq;
 		for (auto node : graph.nodes()) {
 			auto id = node.id();
 			notInSeq.insert(id);
@@ -235,7 +231,7 @@ public:
 			possibility[id] = (double)(tgin[label][node.getInEdgesNum()] * tgout[label][node.getOutEdgesNum()]) / (targetGraph.size() * targetGraph.size());
 
 			sortPoss[id] = FSPair<NodeIDType, FSPair<double, size_t>>(id, FSPair<double, size_t>(possibility[id], node.getOutEdgesNum() + node.getInEdgesNum()));
-		//	sortPoss[id] = FSPair<NodeIDType, FSPair<double, size_t>>{ id, FSPair<double, size_t>{possibility[id], node.getOutEdgesNum() + node.getInEdgesNum()} };
+
 		}
 
 		sort(sortPoss, sortPoss + graph.size(), [](const FSPair<NodeIDType, FSPair<double, size_t>>& a, const FSPair<NodeIDType, FSPair<double, size_t>>& b)
@@ -279,6 +275,7 @@ public:
 							maxDegreeInSeq = it->second;
 						}
 					}
+				
 					else continue;
 				}
 			}

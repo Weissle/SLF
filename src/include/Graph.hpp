@@ -52,9 +52,9 @@ private:
 	size_t _size;
 
 	// NodeLabel -> the maximum out and in degrees of this kind of nodes have;
-	map<NodeLabelType, FSPair<size_t, size_t>> auxLDinform;
+	unordered_map<NodeLabelType, FSPair<size_t, size_t>> auxLDinform;
 	// NodeLabel -> quantity of nodes have this label
-	map<NodeLabelType, size_t> auxLQinform;
+	unordered_map<NodeLabelType, size_t> auxLQinform;
 public:
 	GraphVF2() = default;
 	GraphVF2(const vector<NodeType>& __nodes) :_nodes(__nodes) {
@@ -110,15 +110,16 @@ public:
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
-	map<NodeLabelType, FSPair<size_t, size_t>> getLDinform()const {
+	unordered_map<NodeLabelType, FSPair<size_t, size_t>> getLDinform()const {
 		return auxLDinform;
 	}
-	map<NodeLabelType, size_t> getLQinform()const {
+	unordered_map<NodeLabelType, size_t> getLQinform()const {
 		return auxLQinform;
 	}
 	//do something to improve match speed
 	void graphBuildFinish() {
 		size_t labelTypeNum = 0, labelMax = 0;
+
 		//only allow label type from 1 2 3 ... n-1
 		for (auto& node : _nodes) {
 			node.NodeBuildFinish();

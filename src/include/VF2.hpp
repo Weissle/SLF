@@ -53,44 +53,6 @@ class VF2 {
 	//	cout << canditarePairs.size() << ' ';
 		canditatePairCount += canditarePairs.size();
 
-	/*	bool isOnrightway = true;
-		for (auto it : s.getMap(false)) {
-		
-			if (midGraph[it.first] != it.second) {
-				isOnrightway = false;
-				break;
-			}
-		}
-		
-		if (isOnrightway &&s.getMap(false).size() >= 5) {
-			for (auto it : s.getMap(false)) {
-				cout << '(' << it.first << "," << it.second << ')' << " ";
-			}
-			cout << endl;
-//			cout << "error on this : " << it.first << " ," << it.second << endl;
-		}
-
-		for (const auto &tempCanditatePair : canditarePairs) {
-			const auto queryNodeID = tempCanditatePair.getKey();
-			const auto targetNodeID = tempCanditatePair.getValue();
-			if (midGraph[queryNodeID] == targetNodeID) existAA = true;
-
-		}
-		if(!existAA) {
-			bool isOnrightway = true;
-			for (auto it : s.getMap()) {
-				if (midGraph[it.first] != it.second) {
-					isOnrightway = false;
-					break;
-				}
-			}
-			if(isOnrightway)
-			for (auto it : s.getMap()) {
-				//			assert(it.first != nullptr && it.second != nullptr && "Map exist nullptr");
-				cout << '(' << it.first << "," << it.second << ')' << " ";
-			}
-			cout << endl;
-		}*/
 
 		for (const auto &tempCanditatePair : canditarePairs){
 			const auto queryNodeID = tempCanditatePair.getKey();
@@ -99,25 +61,7 @@ class VF2 {
 			t1 = clock();
 
 			bool suitable = s.checkCanditatePairIsAddable(tempCanditatePair);
-		/*	if (midGraph[queryNodeID] == targetNodeID && suitable == false) {
-				bool isOnrightway = true;
-				for (auto it : s.getMap(false)) {
 
-					if (midGraph[it.first] != it.second) {
-						isOnrightway = false;
-						break;
-					}
-				}
-
-				if (isOnrightway ) {
-					for (auto it : s.getMap(false)) {
-						cout << '(' << it.first << "," << it.second << ')' << " ";
-					}
-					cout << endl;
-					cout << "error on this : " << queryNodeID << " ," << targetNodeID << endl;
-					system("pause");
-				}
-			}*/
 			t2 = clock();
 			check += t2 - t1;
 			if(suitable){
