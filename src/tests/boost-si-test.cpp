@@ -22,11 +22,12 @@ int main() {
 	
 	string queryGraphPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\query.graph";
 	string targetGraphPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\target.graph";
+	string orderPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\order.txt";
 	// Build graph1
 	int num_vertices1 = 0;
 	int num_vertices2 = 0;
 
-#define LAD
+#define GRF_L
 #ifdef ARG
 	typedef adjacency_list<setS, vecS, bidirectionalS> graph_type;
 	FILE *f = fopen(queryGraphPath.c_str(), "rb");
@@ -114,6 +115,7 @@ int main() {
 
 	}
 	f.close();
+
 #elif defined(GRF_L)
 	typedef property<edge_name_t, int> edge_property;
 	typedef property<vertex_name_t, int, property<vertex_index_t, int> > vertex_property;
@@ -177,6 +179,19 @@ int main() {
 	cout << num_vertices1 << " " << num_vertices2 << endl;
 	auto t1 = clock();
 	vf2_print_callback<graph_type, graph_type> callback(graph1, graph2);
+/*
+	if (orderPath.empty() == false) {	
+		vector<int> order;
+		order.reserve(num_vertices1);
+		f.open(orderPath.c_str(), ios::ios_base::in);
+		while (f.eof() == false) {
+			int temp;
+			f >> temp;
+			order.push_back(temp);
+		}
+		vf2_subgraph_iso(graph1, graph2, callback, order);
+	}
+	*/
 	vf2_subgraph_iso(graph1, graph2, callback);
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;

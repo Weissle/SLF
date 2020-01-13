@@ -10,8 +10,11 @@
 #include<include/argh.h>
 #include<stack>
 #include<queue>
+#include<include/RandomGenerator.hpp>
+#include<memory>
 using namespace std;
-using namespace boost;
+volatile size_t fccc = 0;
+//using namespace boost;
 /*
 int main(int argc,char* argv[]) {
 
@@ -53,7 +56,7 @@ int main(int argc,char* argv[]) {
 	dp.property("name", gname);
 
 	// Sample graph as an std::istream;
-#if 1==1	
+#if 1==1
 	std::istringstream
 		dotfs("digraph { graph [name=\"graphname\"]  a  c e [mass = 6.66] }");
 #else
@@ -65,9 +68,9 @@ int main(int argc,char* argv[]) {
 	assert(status && "read dot graph fail");
 
 	const auto &nodeSet = graph.m_vertices;
-	
+
 	for (auto tempNode = nodeSet.begin(); tempNode != nodeSet.end(); ++tempNode) {
-		
+
 		cout << (*tempNode).m_property.m_value << endl;
 
 	}
@@ -75,26 +78,48 @@ int main(int argc,char* argv[]) {
 
 }
 */
+/*
 int main() {
-	map<int, int> m;
-	size_t n;
-	size_t labelTypeNum = 0, labelMax = 0;
-	while (true) {
-		cin >> n;
-		if (n == -50)break;
-		{
-			
-			auto po = m.find(n);
-			if (po == m.end()) {
-				labelTypeNum++;
-				labelMax = max(labelMax, n);
-			}
-			else {
-				po->second = 1;
-			}
+	int n;
+	srand((unsigned int)time(NULL));
+	while (cin >> n) {
+		set<int> s;
+		unordered_set<int> us;
+		LOOP(i, 0, n) {
+			s.insert(i);
 		}
+
+		system("pause");
+		for (auto it = s.begin(); it != s.end(); it++) {
+			us.insert(*it);
+		}
+
+		system("pause");
+		clock_t t1 = clock();
+		LOOP(i, 0, n) {
+			int temp = abs((rand() << 12) + (rand() << 6) + rand()) % n;
+			s.find(temp);
+
+		}
+		TIME_COST_PRINT("set time : ", t1);
+		t1 = clock();
+		LOOP(i, 0, n) {
+			int temp = abs((rand() << 12) + (rand() << 6) + rand()) % n;
+			us.find(temp);
+
+		}
+		TIME_COST_PRINT("us time : ", t1);
 	}
-	cout <<( (labelTypeNum - 1 == labelMax)? "true":"false") << endl;
+	unordered_set<int> ff;
+	int a;
+	return 0;
+	//ff.reser
 
+}
+*/
+int main() {
+	rg::NormalRandomGenerator generator(10, 1);
+	LOOP(i, 0, 50) cout << generator.getOne() << endl;
 
+	return 0;
 }

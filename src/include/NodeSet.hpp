@@ -80,7 +80,7 @@ private:
 
 	GraphType const* graph = nullptr;
 public:
-	size_t all_size = 0;
+
 	NodeSetWithLabel(const GraphType& _graph) :graph(&_graph) {
 		const auto LQinform = _graph.getLQinform();
 		v.resize(LQinform.size());
@@ -102,7 +102,6 @@ public:
 			vSize[label]++;
 			v[label].insert(id);
 			belong[id] = true;
-			++all_size;
 		}
 		return;
 	}
@@ -111,21 +110,17 @@ public:
 			const auto label = graph->getNode(id).getLabel();
 			vSize[label]--;
 			v[label].erase(id);
-			--all_size;
 			belong[id] = false;
 		}
 		return;
 	}
 	bool exist(const NodeIDType id)const {
 		return belong[id];
-		/*	const auto label = graph->getNode(id).getLabel();
-			return IN_SET(v[label], id);*/
 	}
 	const unordered_set<NodeIDType>& getSet(NodeLabelType label)const {
 		return v[label];
 	}
 	bool operator>(const NodeSetWithLabel<GraphType>& ns)const {
-		if (all_size > ns.all_size)return true;
 		if (vSize.size() > ns.vSize.size())return true;
 		LOOP(i, 0, vSize.size()) {
 			if (vSize[i] > ns.vSize[i])return true;
@@ -139,19 +134,26 @@ public:
 		return vSize[label];
 	}
 
-	void operator=(NodeSetWithLabel<GraphType>& temp) {
-		v = temp.v;
-		vSize = temp.vSize;
-		belong = std::move(temp.belong);
-		graph = temp.graph;
-	}
-	void emptyClone(NodeSetWithLabel<GraphType>& temp) {
+	void containerClone(NodeSetWithLabel<GraphType>& temp) {
 		v = temp.v;
 		for (auto& s : v) s.clear();
 		vSize = temp.vSize;
 		for (auto& i : vSize) i = 0;
 		graph = temp.graph;
 		belong = std::move(unique_ptr<bool[]>(new bool[graph->size()]()));
+	}
+	void completeClone(NodeSetWithLabel<GraphType>& temp) {
+		v = temp.v;
+		vSize = temp.vSize;
+		graph = temp.graph;
+		belong = std::move(unique_ptr<bool[]>(new bool[graph->size()]()));
+		LOOP(i, 0, graph->size()) {
+			belong[i] = temp.belong[i];
+		}
+	}
+	void operator=(NodeSetWithLabel<GraphType>& temp) {
+		this->completeClone(temp);
+		return;
 	}
 	NodeSetWithLabel() = default;
 };

@@ -29,7 +29,7 @@ int main(int argc, char * argv[]) {
 
     cmdl({"-self-order","-so"})>>matchOrderPath;
     matchOrder = !matchOrderPath.empty();
-#define MOS_VF3
+#define MOS_NORMAL
 #ifdef MOS_TEST
     typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_NORMAL)
@@ -48,12 +48,15 @@ int main(int argc, char * argv[]) {
 #endif
 
     typedef VF2<StateType, AnswerReceiverType,MatchOrderSelectorType> VF2Type;
+	auto t1 = clock();
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		        *targetGraph = GraphReader::readGraph(targetGraphPath);
-
+	TIME_COST_PRINT("read graph time : ", clock() - t1);
 	cout << "read graph finish" << endl;
-	auto t1 = clock();
+
+	t1 = clock();
+
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
 
@@ -80,7 +83,6 @@ int main(int argc, char * argv[]) {
     else{
         vf2 =new  VF2Type(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
     }
-
 
 	t1 = clock();
 	vf2->run();

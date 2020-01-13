@@ -14,7 +14,6 @@ using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , VF2 will use default MatchOrderSelector.
 
-
 */
 template<typename StateType,typename _AnswerReceiver,typename _MatchOrderSelector = void >
 class VF2 {
@@ -106,20 +105,13 @@ public:
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph,AnswerReceiver &_answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph),answerReceiver(_answerReceiver)
 	{
+		auto t1 = clock();
 		if( typeid(_MatchOrderSelector) != typeid(void) )matchSequence = _MatchOrderSelector::run(_queryGraph,_targetGraph);
-		else matchSequence = MatchOrderSelector<GraphType>::run(_queryGraph,_targetGraph);
+		else matchSequence = MatchOrderSelectorVF3<GraphType>::run(_queryGraph,_targetGraph);
+		TIME_COST_PRINT("match order selete time : ", clock() - t1);
 		TRAVERSE_SET(s, matchSequence) cout << s << " ";
 		cout << endl;
 		searchDepth = 0;
-
-	/*	fstream f;
-		f.open("D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\midgraph.graph",ios_base::in);
-		for (int i = 0; i < queryGraph.size(); ++i) {
-			int a;
-			int b;
-			f >> a >> b;
-			midGraph[b] = a;
-		}*/
 	
 	};
 	VF2(const GraphType &_targetGraph, const GraphType &_queryGraph, AnswerReceiver &_answerReceiver,vector<NodeIDType> &_matchSequence, bool _induceGraph = true, bool _onlyNeedOneSolution = true)

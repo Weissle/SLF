@@ -92,7 +92,7 @@ public:
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
-		typedef set<NodeIDType> Set;
+		typedef unordered_set<NodeIDType> Set;
 		Set nodeNotInMatchSet;
 		for (const auto node : graph.nodes()) {
 			nodeNotInMatchSet.insert(node.id());

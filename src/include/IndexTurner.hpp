@@ -69,5 +69,7 @@ public:
 	auto end() {
 		return index.end();
 	}
-
+	bool exist(const NameType& name) {
+		return IN_SET(index, name);
+	}
 };
