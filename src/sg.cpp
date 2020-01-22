@@ -94,31 +94,32 @@ int main(int argc,char *argv[]) {
 			nodes[i].reserve(edgeavg);
 		}
 		graph =new GraphType(nodes);		
-		vector<NodeIDType> in(bNeed), no(bNeed);
+		vector<NodeIDType> in(bNeed);
+		rg::NoRepeatIntRandomGenerator fnp(bNeed - 1);
 		int inP=1, noP = bNeed-1;
-		LOOP(i, 0, bNeed-1) no[i] = i;
 		in[0] = bNeed - 1;
 		LOOP(i, 0, bNeed - 1) {
 			auto one = rand() % inP;
-			auto two = rand() % noP;
-			no[two] = --noP;
-			in[inP++] = no[two];
-			if (rand() % 2) graph->addEdge(in[one], no[two]);
-			else graph->addEdge(no[two], in[one]);
+			auto to = fnp.getOne();
+			if (rand() % 2) graph->addEdge(in[one], to);
+			else graph->addEdge(to, in[one]);
+			in[inP++] = to;
 		}
 		LOOP(i, 0, bNeed) {
 			int edgeNum = min(max(0,(int)randomer->getOne()),bNeed-2);
 			rg::NoRepeatIntRandomGenerator irg(bNeed);
-		//	for (const auto& edge : graph->getNode(i).getOutEdges()) s.insert(edge.getTargetNodeID());
+
 			auto outEdges = graph->getNode(i).getOutEdges();
-			assert(outEdges.size() < 2 && "outEdge too much");
-			const NodeIDType exclude = (outEdges.size() == 0) ? -1 : outEdges[0].getTargetNodeID();
+			unordered_set<NodeIDType> exclude;
+			exclude.reserve(bNeed);
+			for (const auto& edge : outEdges) exclude.insert(edge.getTargetNodeID());
 			LOOP(j, 0, edgeNum) {
 				NodeIDType to = irg.getOne();
-				if (i == to || i==exclude) {
+				if (i == to || IN_SET(exclude,to)) {
 					--j;
 					continue;
 				}
+				if (to == -1) break;
 				graph->addEdge(i, to);
 			}
 		}	
