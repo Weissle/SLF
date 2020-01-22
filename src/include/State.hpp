@@ -498,7 +498,7 @@ public:
 		TRAVERSE_SET(targetNodeToMatchID, targetNodeToMatchSet)
 		{
 			const auto& targetNode = targetGraph.getNode(targetNodeToMatchID);
-			if (queryNode.isSameType(targetNode) == false || queryNode >= targetNode) continue;
+			if (/*queryNode.isSameType(targetNode) == false || */queryNode > targetNode) continue;
 
 #ifdef INDUCE_ISO
 			// it will be ditched because of sourceRule in next depth .

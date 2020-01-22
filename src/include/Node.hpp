@@ -84,10 +84,16 @@ public:
 		return label == n.getLabel();
 	}
 	bool operator>=(const NodeBaseType& n) const {
-		return ((inEdges.size() >= n.getInEdgesNum()) && (outEdges.size() >= n.getOutEdgesNum()));;
+		return ((inEdges.size() >= n.getInEdgesNum()) && (outEdges.size() >= n.getOutEdgesNum()));
+	}
+	bool operator>(const NodeBaseType& n) const {
+		return ((inEdges.size() > n.getInEdgesNum()) && (outEdges.size() > n.getOutEdgesNum()));
+	}
+	bool operator<(const NodeBaseType& n) const {
+		return ((inEdges.size() < n.getInEdgesNum()) && (outEdges.size() < n.getOutEdgesNum()));
 	}
 	bool operator<=(const NodeBaseType& n)const {
-		return n >= *this;
+		return ((inEdges.size() <= n.getInEdgesNum()) && (outEdges.size() <= n.getOutEdgesNum()));
 	}
 	bool existSameTypeEdgeToNode(const NodeBaseType& n, const EdgeType& e)const {
 		if (edgeSort) {
