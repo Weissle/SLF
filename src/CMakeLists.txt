@@ -25,5 +25,5 @@ add_executable(si si.cpp include/Edge.hpp include/Graph.hpp
 add_executable(sg sg.cpp include/SubgraphGenerator.hpp include/Graph.hpp
 			include/Node.hpp include/Edge.hpp include/GraphReader.hpp include/argh.h include/RandomGenerator.hpp)
 
-
+add_executable(veridator veridator.cpp include/AnswerChecker.hpp include/SolutionReader.hpp)
 

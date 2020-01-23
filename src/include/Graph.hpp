@@ -140,5 +140,8 @@ public:
 		assert(labelTypeNum - 1 == labelMax && "n kinds of node label , nodes' label type should range from 0 to n-1 ");
 
 	}
+	bool existEdge(const NodeIDType& from, const NodeIDType& to, const EdgeLabelType& edgeLabel)const {
+		return _nodes[from].existSameTypeEdgeToNode(_nodes[to], EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, from, to, edgeLabel));
+	}
 
 };
