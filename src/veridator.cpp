@@ -46,8 +46,10 @@ int main(int argc, char* argv[]) {
 		* targetGraph = GraphReader::readGraph(targetGraphPath);
 	queryGraph->graphBuildFinish();
 	targetGraph->graphBuildFinish();
-	typedef AnswerChecker<GraphType, vector<vector<int>>,vector<int>> ACer;
+	typedef AnswerChecker<GraphType> ACer;
 	ACer ac(*targetGraph, *queryGraph, solutions);
 	ac.run(ACer::check_type::NORMAL);
+	cout << endl << endl;
+	ac.run(ACer::check_type::INDUCE);
 	return 0;
 }
