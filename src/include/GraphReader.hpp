@@ -33,10 +33,10 @@ public:
 		}
 		int nodeNum;
 		f >> nodeNum;
-		GraphType *graph = new GraphType(nodeNum);
+		GraphType* graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			int edgeNum;
-			const int &source = i;
+			const int& source = i;
 			f >> edgeNum;
 			for (int j = 0; j < edgeNum; ++j) {
 				int target;
@@ -59,7 +59,7 @@ class ARGGraphNoLabel {
 public:
 	static GraphType* readGraph(string graphPath) {
 
-		FILE *f = fopen(graphPath.c_str(), "rb");
+		FILE* f = fopen(graphPath.c_str(), "rb");
 		assert(f != nullptr && "open file fail");
 
 		int nodeNum;
@@ -67,10 +67,10 @@ public:
 
 
 
-		GraphType *graph = new GraphType(nodeNum);
+		GraphType* graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			int edgeNum = getwc(f);
-			const int &source = i;
+			const int& source = i;
 
 			for (int j = 0; j < edgeNum; ++j) {
 				int target = getwc(f);
@@ -159,12 +159,12 @@ public:
 			cout << graphPath << " open fail" << endl;
 			exit(0);
 		}
-		int nodeNum=0;
+		int nodeNum = 0;
 		f >> nodeNum;
 
-		GraphType *graph = new GraphType(nodeNum);
+		GraphType* graph = new GraphType(nodeNum);
 		unordered_set< FSPair<size_t, size_t> > s;
-		s.reserve(nodeNum*nodeNum);
+		s.reserve(nodeNum * nodeNum);
 
 		while (f.eof() == false) {
 			size_t source = INT32_MAX, target = INT32_MAX;
@@ -184,10 +184,10 @@ public:
 template<class GraphType>
 class GRFGraphLabel {
 public:
-	static GraphType* readGraph(string graphPath,bool clearMap=false) {
-	/*	static IndexTurner<int, map<int, size_t> > labelTurner;
-		if (clearMap) labelTurner.clear();
-	*/	
+	static GraphType* readGraph(string graphPath, bool clearMap = false) {
+		/*	static IndexTurner<int, map<int, size_t> > labelTurner;
+			if (clearMap) labelTurner.clear();
+		*/
 		fstream f;
 		f.open(graphPath.c_str(), ios_base::in);
 		//		auto f = openGraphFile(graphPath, ios_base::in);
@@ -195,26 +195,26 @@ public:
 			cout << graphPath << " open fail" << endl;
 			exit(0);
 		}
-		int nodeNum=0;
+		int nodeNum = 0;
 		f >> nodeNum;
 
-		GraphType *graph = new GraphType(nodeNum);
+		GraphType* graph = new GraphType(nodeNum);
 
 		for (auto i = 0; i < nodeNum; ++i) {
 			size_t id;
 			int label;
 			f >> id >> label;
-			graph->setNodeLabel(id, label -1);
+			graph->setNodeLabel(id, label - 1);
 		}
-		bool *pp = new bool[nodeNum]();
+		bool* pp = new bool[nodeNum]();
 		while (f.eof() == false) {
-			int edges=0;
+			int edges = 0;
 			f >> edges;
 			unordered_set< FSPair<size_t, size_t> > s;
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
 
-				size_t source=INT32_MAX, target=INT32_MAX;
+				size_t source = INT32_MAX, target = INT32_MAX;
 
 				f >> source >> target;
 				FSPair<size_t, size_t> p(source, target);

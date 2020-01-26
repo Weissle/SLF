@@ -6,6 +6,7 @@
 #include"Graph.hpp"
 #include"Pair.hpp"
 using namespace std;
+namespace wg {
 template<class _GraphType>
 class MatchOrderSelector {
 public:
@@ -27,7 +28,7 @@ public:
 		ioMap.resize(graph.size() + 1);
 
 		const auto calNodeMatchPoint = [&](const NodeType& node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id()] * 2;
+			double p1 = node.inEdgesNum() + node.outEdgesNum() + ioMap[node.id()] * 2;
 			return p1;
 		};
 		const auto seleteAGoodNodeToMatch = [&](const Set& s) {
@@ -62,16 +63,16 @@ public:
 			nodeNotInMatchSet.erase(nodeID);
 			ioSet.erase(nodeID);
 
-			for (const auto& tempEdge : node.getInEdges()) {
-				const auto sourceNodeID = tempEdge.getSourceNodeID();
+			for (const auto& tempEdge : node.inEdges()) {
+				const auto sourceNodeID = tempEdge.source();
 				if (IN_SET(nodeNotInMatchSet, sourceNodeID)) {
 					ioSet.insert(sourceNodeID);
 					ioMap[sourceNodeID]++;
 
 				}
 			}
-			for (const auto& tempEdge : node.getOutEdges()) {
-				const auto targetNodeID = tempEdge.getTargetNodeID();
+			for (const auto& tempEdge : node.outEdges()) {
+				const auto targetNodeID = tempEdge.target();
 				if (IN_SET(nodeNotInMatchSet, targetNodeID)) {
 					ioSet.insert(targetNodeID);
 					ioMap[targetNodeID]++;
@@ -106,16 +107,16 @@ public:
 		ioMap.resize(graph.size() + 1);
 
 		const auto calNodeMatchPoint = [&](const NodeType& node) {
-			double p1 = node.getInEdgesNum() + node.getOutEdgesNum() + ioMap[node.id()] * 2;
-			for (const auto& edge : node.getInEdges()) {
-				const auto nodeID = edge.getSourceNodeID();
+			double p1 = node.inEdgesNum() + node.outEdgesNum() + ioMap[node.id()] * 2;
+			for (const auto& edge : node.inEdges()) {
+				const auto nodeID = edge.source();
 				const auto& tempNode = graph.getNode(nodeID);
-				p1 += tempNode.getInEdgesNum() + tempNode.getOutEdgesNum();
+				p1 += tempNode.inEdgesNum() + tempNode.outEdgesNum();
 			}
-			for (const auto& edge : node.getOutEdges()) {
-				const auto nodeID = edge.getTargetNodeID();
+			for (const auto& edge : node.outEdges()) {
+				const auto nodeID = edge.target();
 				const auto& tempNode = graph.getNode(nodeID);
-				p1 += tempNode.getInEdgesNum() + tempNode.getOutEdgesNum();
+				p1 += tempNode.inEdgesNum() + tempNode.outEdgesNum();
 			}
 			return p1;
 		};
@@ -125,7 +126,7 @@ public:
 			for (const auto& tempNodeID : s) {
 
 				const auto& tempNode = graph.getNode(tempNodeID);
-				//			if (ioMap[tempNodeID] == tempNode.getInEdgesNum() + tempNode.getOutEdgesNum()) return NodeMatchPointPair(&tempNode, nodePoint);
+				//			if (ioMap[tempNodeID] == tempNode.inEdgesNum() + tempNode.outEdgesNum()) return NodeMatchPointPair(&tempNode, nodePoint);
 				const auto tempPoint = calNodeMatchPoint(tempNode);
 				if (tempPoint > nodePoint) {
 					answer = &tempNode;
@@ -153,16 +154,16 @@ public:
 			nodeNotInMatchSet.erase(nodeID);
 			ioSet.erase(nodeID);
 
-			for (const auto& tempEdge : node.getInEdges()) {
-				const auto sourceNodeID = tempEdge.getSourceNodeID();
+			for (const auto& tempEdge : node.inEdges()) {
+				const auto sourceNodeID = tempEdge.source();
 				if (IN_SET(nodeNotInMatchSet, sourceNodeID)) {
 					ioSet.insert(sourceNodeID);
 					ioMap[sourceNodeID]++;
 
 				}
 			}
-			for (const auto& tempEdge : node.getOutEdges()) {
-				const auto targetNodeID = tempEdge.getTargetNodeID();
+			for (const auto& tempEdge : node.outEdges()) {
+				const auto targetNodeID = tempEdge.target();
 				if (IN_SET(nodeNotInMatchSet, targetNodeID)) {
 					ioSet.insert(targetNodeID);
 					ioMap[targetNodeID]++;
@@ -185,8 +186,8 @@ public:
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
 		vector<NodeIDType> matchSequence;
 		matchSequence.reserve(graph.size() + 1);
-		unordered_map<NodeLabelType, size_t> pgLQ = graph.getLQinform(), tgLQ = targetGraph.getLQinform();
-		unordered_map<NodeLabelType, FSPair<size_t, size_t>>  pgLD = graph.getLDinform(), tgLD = targetGraph.getLDinform();
+		unordered_map<NodeLabelType, size_t> pgLQ = graph.LQinform(), tgLQ = targetGraph.LQinform();
+		unordered_map<NodeLabelType, FSPair<size_t, size_t>>  pgLD = graph.LDinform(), tgLD = targetGraph.LDinform();
 		vector< vector< size_t > > tgin, tgout;
 		assert(pgLQ.size() <= tgLQ.size() && " pattern graph is not a subgraph of target graph owing to the label type");
 
@@ -194,7 +195,7 @@ public:
 
 		tgout.resize(pgLQ.size());
 		LOOP(i, 0, pgLQ.size()) {
-	
+
 			tgin[i].resize(tgLD[i].second + 2);
 			tgout[i].resize(tgLD[i].first + 2);
 			assert(pgLD[i].second <= tgLD[i].second && pgLD[i].first <= tgLD[i].first && " pattern graph is not a subgraph of target graph owing to in or out degree");
@@ -202,9 +203,9 @@ public:
 		}
 
 		for (auto& node : targetGraph.nodes()) {
-			if (node.getLabel() >= pgLQ.size()) continue;
-			tgin[node.getLabel()][node.getInEdgesNum()]++;
-			tgout[node.getLabel()][node.getOutEdgesNum()]++;
+			if (node.label() >= pgLQ.size()) continue;
+			tgin[node.label()][node.inEdgesNum()]++;
+			tgout[node.label()][node.outEdgesNum()]++;
 		}
 		LOOP(i, 0, pgLQ.size()) {
 			size_t nodeCount = tgLQ[i];
@@ -227,10 +228,10 @@ public:
 		for (auto node : graph.nodes()) {
 			auto id = node.id();
 			notInSeq.insert(id);
-			auto label = node.getLabel();
-			possibility[id] = (double)(tgin[label][node.getInEdgesNum()] * tgout[label][node.getOutEdgesNum()]) / (targetGraph.size() * targetGraph.size());
+			auto label = node.label();
+			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()]) / (targetGraph.size() * targetGraph.size());
 
-			sortPoss[id] = FSPair<NodeIDType, FSPair<double, size_t>>(id, FSPair<double, size_t>(possibility[id], node.getOutEdgesNum() + node.getInEdgesNum()));
+			sortPoss[id] = FSPair<NodeIDType, FSPair<double, size_t>>(id, FSPair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
 
 		}
 
@@ -263,7 +264,7 @@ public:
 						if (fabs(nowposs - possibility[it->second]) < 1E-20) {
 							auto nownode = graph.getNode(nowid);
 							auto thisnode = graph.getNode(it->first);
-							if (nownode.getOutEdgesNum() + nownode.getInEdgesNum() < thisnode.getOutEdgesNum() + thisnode.getInEdgesNum()) {
+							if (nownode.outEdgesNum() + nownode.inEdgesNum() < thisnode.outEdgesNum() + thisnode.inEdgesNum()) {
 								nowid = it->first;
 								nowposs = possibility[nowid];
 								maxDegreeInSeq = it->second;
@@ -275,7 +276,7 @@ public:
 							maxDegreeInSeq = it->second;
 						}
 					}
-				
+
 					else continue;
 				}
 			}
@@ -293,12 +294,12 @@ public:
 			notInSeq.erase(seqID);
 			ioMap.erase(seqID);
 			auto node = graph.getNode(seqID);
-			for (auto& edge : node.getInEdges()) {
-				auto temp = edge.getSourceNodeID();
+			for (auto& edge : node.inEdges()) {
+				auto temp = edge.source();
 				if (IN_SET(notInSeq, temp)) ioMap[temp]++;
 			}
-			for (auto& edge : node.getOutEdges()) {
-				auto temp = edge.getTargetNodeID();
+			for (auto& edge : node.outEdges()) {
+				auto temp = edge.target();
 				if (IN_SET(notInSeq, temp)) ioMap[temp]++;
 			}
 			if (notInSeq.empty())break;
@@ -311,3 +312,4 @@ public:
 
 
 };
+}

@@ -12,12 +12,9 @@
 #include<unordered_map>
 #define TIME_COUNT
 using namespace std;
-/*
-About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , VF2 will use default MatchOrderSelector.
-
-*/
+using namespace wg;
 template<class GraphType>
-class  AnswerChecker{
+class  AnswerChecker {
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
@@ -25,15 +22,15 @@ class  AnswerChecker{
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 	typedef vector<int> SolutionType;
 	typedef vector<SolutionType> SolutionsType;
-	
+
 	const GraphType& bigGraph, & smallGraph;
 	const SolutionsType solutions;
 	bool normalCheck(const SolutionType& solution) {
 		for (const auto& node : smallGraph.nodes()) {
 			const auto from = solution[node.id()];
-			for (const auto& edge : node.getOutEdges()) {
-				const auto to = solution[edge.getTargetNodeID()];
-				if (bigGraph.existEdge(from, to, edge.getLabel()) == false) {
+			for (const auto& edge : node.outEdges()) {
+				const auto to = solution[edge.target()];
+				if (bigGraph.existEdge(from, to, edge.label()) == false) {
 					return false;
 				}
 			}
@@ -45,7 +42,7 @@ class  AnswerChecker{
 		unique_ptr<bool[]> inM(new bool[bigGraph.size()]());
 		unordered_map<NodeIDType, NodeIDType> rm;
 		rm.reserve(smallGraph.size());
-		LOOP(i,0,solution.size()) {
+		LOOP(i, 0, solution.size()) {
 			const auto temp = solution[i];
 			inM[temp] = true;
 			rm[temp] = i;
@@ -53,29 +50,29 @@ class  AnswerChecker{
 		for (const auto& node : bigGraph.nodes()) {
 			const auto from = node.id();
 			if (inM[from] == false)continue;
-			for (const auto& edge : node.getOutEdges()) {
-				const auto to = edge.getTargetNodeID();
+			for (const auto& edge : node.outEdges()) {
+				const auto to = edge.target();
 				if (inM[to] == false)continue;
-				if (smallGraph.existEdge(rm[from], rm[to], edge.getLabel()) == false)return false;
+				if (smallGraph.existEdge(rm[from], rm[to], edge.label()) == false)return false;
 			}
 		}
 		return true;
 	}
 public:
-	enum check_type{INDUCE,NORMAL};
+	enum check_type { INDUCE, NORMAL };
 	AnswerChecker() = default;
 	~AnswerChecker() = default;
-	AnswerChecker(const GraphType &_b,const GraphType &_s,const SolutionsType &_solutions):bigGraph(_b),smallGraph(_s),solutions(_solutions){}
+	AnswerChecker(const GraphType& _b, const GraphType& _s, const SolutionsType& _solutions) :bigGraph(_b), smallGraph(_s), solutions(_solutions) {}
 	void run(check_type ct) {
 		size_t solutionCount = 0;
-		for (const auto &oneS : solutions) {
+		for (const auto& oneS : solutions) {
 			cout << ++solutionCount << " ";
 			bool is;
 			if (ct == check_type::NORMAL) is = normalCheck(oneS);
 			else if (ct == check_type::INDUCE) is = induceCheck(oneS);
 			else {
 				cout << "error occur" << endl;
-					return;
+				return;
 			}
 			if (!is) cout << "false" << endl;
 			else cout << "true" << endl;

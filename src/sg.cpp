@@ -4,7 +4,7 @@
 #include<RandomGenerator.hpp>
 #include"argh.h"
 using namespace std;
-
+using namespace wg;
 template<class GraphType>
 void writeToFile(string fileName,GraphType graph) {
 	ofstream f;
@@ -15,11 +15,11 @@ void writeToFile(string fileName,GraphType graph) {
 		return;
 	}
 	f << graph.size() << endl;
-	for (auto& node : graph.nodes()) f << node.id() << " " << node.getLabel()+1 << endl;
+	for (auto& node : graph.nodes()) f << node.id() << " " << node.label()+1 << endl;
 	for (auto &node : graph.nodes()) {
-		f << node.getOutEdgesNum() << endl;
-		for (auto edge : node.getOutEdges()) {
-			f << node.id() << " " << edge.getTargetNodeID() << endl;
+		f << node.outEdgesNum() << endl;
+		for (auto edge : node.outEdges()) {
+			f << node.id() << " " << edge.target() << endl;
 		}
 	}
 	f.close();
@@ -60,9 +60,9 @@ int main(int argc,char *argv[]) {
 	assert(sNeed != 0);
 	assert((graphPath.empty() ^ bNeed == 0) );
 	typedef size_t NodeIDType;
-	typedef EdgeVF2< int> EdgeType;
-	typedef NodeVF2<EdgeType> NodeType;
-	typedef GraphVF2<NodeType, EdgeType> GraphType;
+	typedef Edge<int> EdgeType;
+	typedef Node<EdgeType> NodeType;
+	typedef Graph<NodeType, EdgeType> GraphType;
 
 	srand(uint32_t(time(NULL)));
 	rg::RandomGenerator* randomer = nullptr;
@@ -109,10 +109,10 @@ int main(int argc,char *argv[]) {
 			int edgeNum = min(max(0,(int)randomer->getOne()),bNeed-2);
 			rg::NoRepeatIntRandomGenerator irg(bNeed);
 
-			auto outEdges = graph->getNode(i).getOutEdges();
+			auto outEdges = graph->getNode(i).outEdges();
 			unordered_set<NodeIDType> exclude;
 			exclude.reserve(bNeed);
-			for (const auto& edge : outEdges) exclude.insert(edge.getTargetNodeID());
+			for (const auto& edge : outEdges) exclude.insert(edge.target());
 			LOOP(j, 0, edgeNum) {
 				NodeIDType to = irg.getOne();
 				if (i == to || IN_SET(exclude,to)) {

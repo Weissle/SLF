@@ -8,38 +8,16 @@
 #include<map>
 #include<unordered_map>
 using namespace std;
-
+namespace wg {
 template<typename _NodeType, typename _EdgeType>
-class Graph {
-public:
-	typedef size_t	NodeIDType;
-	typedef _NodeType NodeType;
-	typedef _EdgeType EdgeType;
-	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-
-	typedef const NodeType* NodeCPointer;
-public:
-	Graph() = default;
-	~Graph() = default;
-
-	virtual void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel = EdgeLabelType()) = 0;
-	virtual size_t size() const = 0;
-	virtual void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) = 0;
-	virtual vector<NodeType> const& nodes()const = 0;
-	virtual const NodeType* getNodePointer(const NodeIDType& nodeID) const = 0;
-	virtual const NodeType& getNode(const NodeIDType& nodeID) const = 0;
-};
-
-template<typename _NodeType, typename _EdgeType>
-class GraphVF2 :public Graph<_NodeType, _EdgeType>
+class Graph
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
 	typedef size_t NodeIDType;
 	typedef _NodeType NodeType;
 	typedef _EdgeType EdgeType;
-	typedef GraphVF2<_NodeType, _EdgeType> GraphType;
+	typedef Graph<_NodeType, _EdgeType> GraphType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
@@ -56,13 +34,13 @@ private:
 	// NodeLabel -> quantity of nodes have this label
 	unordered_map<NodeLabelType, size_t> auxLQinform;
 public:
-	GraphVF2() = default;
-	GraphVF2(const vector<NodeType>& __nodes) :_nodes(__nodes) {
+	Graph() = default;
+	Graph(const vector<NodeType>& __nodes) :_nodes(__nodes) {
 		_size = _nodes.size();
 	}
-	~GraphVF2() = default;
+	~Graph() = default;
 
-	GraphVF2(const size_t s, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) :_size(s), graphType(_graphType) {
+	Graph(const size_t s, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) :_size(s), graphType(_graphType) {
 		vector<NodeType> n;
 		n.reserve(s + 1);
 		for (auto i = 0; i < s; ++i) n.push_back(NodeType(i));
@@ -101,7 +79,7 @@ public:
 	size_t size() const {
 		return _size;
 	};
-	vector<NodeType> const& nodes()const { return _nodes; }
+	const vector<NodeType>& nodes()const { return _nodes; }
 	const NodeType* getNodePointer(const NodeIDType& nodeID) const {
 		assert((nodeID < _size) && "node ID overflow");
 		return &_nodes[nodeID];
@@ -110,10 +88,10 @@ public:
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
-	unordered_map<NodeLabelType, FSPair<size_t, size_t>> getLDinform()const {
+	unordered_map<NodeLabelType, FSPair<size_t, size_t>> LDinform()const {
 		return auxLDinform;
 	}
-	unordered_map<NodeLabelType, size_t> getLQinform()const {
+	unordered_map<NodeLabelType, size_t> LQinform()const {
 		return auxLQinform;
 	}
 	//do something to improve match speed
@@ -124,24 +102,29 @@ public:
 		for (auto& node : _nodes) {
 			node.NodeBuildFinish();
 			//std::map<NodeLabelType,FSPair<int,int>>
-			auto po = auxLDinform.find(node.getLabel());
-			auxLQinform[node.getLabel()]++;
+			auto po = auxLDinform.find(node.label());
+			auxLQinform[node.label()]++;
 			if (po == auxLDinform.end()) {
-				auxLDinform[node.getLabel()].first = node.getOutEdgesNum();
-				auxLDinform[node.getLabel()].second = node.getInEdgesNum();
+				auxLDinform[node.label()].first = node.outEdgesNum();
+				auxLDinform[node.label()].second = node.inEdgesNum();
 				labelTypeNum++;
-				labelMax = max(labelMax, node.getLabel());
+				labelMax = max(labelMax, node.label());
 			}
 			else {
-				po->second.first = max(po->second.first, node.getOutEdgesNum());
-				po->second.second = max(po->second.second, node.getInEdgesNum());
+				po->second.first = max(po->second.first, node.outEdgesNum());
+				po->second.second = max(po->second.second, node.inEdgesNum());
 			}
 		}
 		assert(labelTypeNum - 1 == labelMax && "n kinds of node label , nodes' label type should range from 0 to n-1 ");
 
 	}
 	bool existEdge(const NodeIDType& from, const NodeIDType& to, const EdgeLabelType& edgeLabel)const {
-		return _nodes[from].existSameTypeEdgeToNode(_nodes[to], EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, from, to, edgeLabel));
+		return _nodes[from].existSameTypeEdgeToNode(to, edgeLabel);
+	}
+	const NodeType& operator[](const NodeIDType& nodeID)const {
+		return getNode(nodeID);
 	}
 
 };
+
+}

@@ -12,12 +12,13 @@ NameType is your node id's type
 IndexType should similar to std::map or std::unordered_map
 If IndexType is std::map , NameType should define operator < function;
 If IndexType is unordered_map ,you should define a hash function for NameType .
-Main function is operator [] and () , 
+Main function is operator [] and () ,
 operator[] is used in graph output, it can turn size_t to NameType
 operator() is used in graph input, it can turn NameType to size_t
 
 */
-template<typename _NameType,typename _IndexType=unordered_map<_NameType,size_t> >
+namespace wg {
+template<typename _NameType, typename _IndexType = unordered_map<_NameType, size_t> >
 class IndexTurner {
 public:
 	typedef _NameType NameType;
@@ -30,7 +31,7 @@ public:
 	IndexTurner() = default;
 	IndexTurner(const size_t  s) {
 		BIndex.reserve(s);
-		if ( typeid(IndexType) == typeid( unordered_map<_NameType, int> ) )index.reserve(calHashSuitableSize(s));
+		if (typeid(IndexType) == typeid(unordered_map<_NameType, int>))index.reserve(calHashSuitableSize(s));
 	}
 	~IndexTurner() = default;
 	void clear() {
@@ -53,8 +54,8 @@ public:
 			index[name] = _s;
 			BIndex.push_back(name);
 			++_s;
-			return _s-1;
-		
+			return _s - 1;
+
 		}
 		else {
 			return temp->second;
@@ -73,3 +74,4 @@ public:
 		return IN_SET(index, name);
 	}
 };
+}

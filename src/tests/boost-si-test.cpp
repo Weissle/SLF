@@ -20,9 +20,9 @@ using namespace std;
 int main() {
 //	boost::bid
 	
-	string queryGraphPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\query.graph";
-	string targetGraphPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\target.graph";
-	string orderPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\order.txt";
+	string queryGraphPath = "D:\\data\\vsProject\\subgraph-isomorphism\\build\\small.graph";
+	string targetGraphPath = "D:\\data\\vsProject\\subgraph-isomorphism\\build\\big.graph";
+//	string orderPath = "D:\\Doc\\Code\\Sub-graph-generator\\build\\Release\\order.txt";
 	// Build graph1
 	int num_vertices1 = 0;
 	int num_vertices2 = 0;
@@ -193,6 +193,11 @@ int main() {
 	}
 	*/
 	vf2_subgraph_iso(graph1, graph2, callback);
+/*	vector<size_t> order = { 52 ,9 ,8 ,24 ,49 ,57 ,37 ,55 ,47 ,33 ,20 ,34 ,58 ,0 ,6 ,18 ,38 ,35 ,41 ,56 ,46 ,7 ,42 ,39 ,28 ,14 ,31 ,53 ,21 ,13 ,1 ,25 ,22 ,2 ,17 ,5 ,45 ,10 ,12 ,4 ,15 ,11 ,27 ,54 ,36 ,51 ,44 ,48 ,30 ,16 ,43 ,26 ,3 ,40 ,32 ,59 ,29 ,50 ,19 ,23 };
+	vf2_subgraph_iso(graph1, graph2, callback,
+		boost::get(vertex_index, graph1), get(vertex_index, graph2),
+		order,
+		always_equivalent(), always_equivalent());*/
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	// Print out all subgraph isomorphism mappings between graph1 and graph2.

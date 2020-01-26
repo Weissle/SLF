@@ -13,7 +13,7 @@ public:
 			string temp;
 			f >> temp;
 			if (temp == "solution") {
-				int snum,graphsize=0;
+				int snum, graphsize = 0;
 				f >> snum >> graphsize;
 				if (answer.size() != snum - 1) cout << "solution num error ?" << endl;
 				answer.push_back(vector<int>(graphsize));

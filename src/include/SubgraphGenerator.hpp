@@ -43,14 +43,14 @@ namespace sg {
 					if (i < j)continue;
 				}
 				const auto node = bigGraph.getNode(temp);
-				for (const auto edge : node.getInEdges()) {
-					const auto ver = edge.getSourceNodeID();
+				for (const auto edge : node.inEdges()) {
+					const auto ver = edge.source();
 					if (inSmall.find(ver) == inSmall.end()) {
 						inquery.insert(ver);
 					}
 				}
-				for (const auto edge : node.getOutEdges()) {
-					const auto ver = edge.getTargetNodeID();
+				for (const auto edge : node.outEdges()) {
+					const auto ver = edge.target();
 					if (inSmall.find(ver) == inSmall.end()) {
 						inquery.insert(ver);
 					}
@@ -78,15 +78,15 @@ namespace sg {
 				s.reserve(midG.size());
 				const auto &protoNode = bigGraph.getNode(midG[i]);
 				const auto sourceID = turner(protoNode.id());
-				smallGraph.setNodeLabel(sourceID, protoNode.getLabel());
-				for (auto edge : protoNode.getOutEdges()) {
-					const auto targetID = edge.getTargetNodeID();
+				smallGraph.setNodeLabel(sourceID, protoNode.label());
+				for (auto edge : protoNode.outEdges()) {
+					const auto targetID = edge.target();
 					if (turner.exist(targetID) == false) continue;
 					if (IN_SET(s, targetID)) {
 						int a=0;
 						cout << "sgfesgsgsegs" << endl;
 					}
-					smallGraph.addEdge(sourceID, turner(targetID), edge.getLabel());	
+					smallGraph.addEdge(sourceID, turner(targetID), edge.label());	
 					s.insert(targetID);
 				}
 

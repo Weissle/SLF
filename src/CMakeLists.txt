@@ -18,7 +18,7 @@ add_subdirectory(tests)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(si si.cpp include/Edge.hpp include/Graph.hpp 
-				include/Node.hpp include/State.hpp include/VF2.hpp 
+				include/Node.hpp include/State.hpp include/SubgraphIosmorphism.hpp 
 				include/Pair.hpp include/GraphReader.hpp include/AnswerReceiver.hpp
 				include/argh.h include/common.h include/NodeSet.hpp include/IndexTurner.hpp include/MatchOrderSelector.hpp)
 

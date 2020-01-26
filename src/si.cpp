@@ -1,5 +1,5 @@
 #include"State.hpp"
-#include"VF2.hpp"
+#include"SubgraphIosmorphism.hpp"
 #include"GraphReader.hpp"
 #include"argh.h"
 #include<time.h>
@@ -8,13 +8,13 @@
 #include"AnswerReceiver.hpp"
 using namespace std;
 static long t = 0;
-
+using namespace wg;
 int main(int argc, char * argv[]) {
 	typedef size_t NodeIDType;
-	typedef EdgeVF2<int> EdgeType;
-	typedef NodeVF2<EdgeType> NodeType;
-	typedef GraphVF2<NodeType, EdgeType> GraphType;
-	typedef StateVF2<GraphType> StateType;
+	typedef Edge<int> EdgeType;
+	typedef Node<EdgeType> NodeType;
+	typedef Graph<NodeType, EdgeType> GraphType;
+	typedef State<GraphType> StateType;
 	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
 
 
@@ -29,7 +29,7 @@ int main(int argc, char * argv[]) {
 
     cmdl({"-self-order","-so"})>>matchOrderPath;
     matchOrder = !matchOrderPath.empty();
-#define MOS_NORMAL
+#define MOS_VF3
 #ifdef MOS_TEST
     typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_NORMAL)
@@ -47,7 +47,7 @@ int main(int argc, char * argv[]) {
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
 
-    typedef VF2<StateType, AnswerReceiverType,MatchOrderSelectorType> VF2Type;
+    typedef SubgraphIsomorphism<StateType, AnswerReceiverType,MatchOrderSelectorType> VF2Type;
 	auto t1 = clock();
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
@@ -61,7 +61,7 @@ int main(int argc, char * argv[]) {
 	queryGraph->graphBuildFinish();
 
 	TIME_COST_PRINT("sort edge time : ",clock()- t1);
-	AnswerReceiverType answerReceiver;
+	AnswerReceiverType answerReceiver("D:\\data\\vsProject\\subgraph - isomorphism\\build\\Solutions.txt");
 
 	vector<NodeIDType> ms;
 	ms.resize(queryGraph->size());
@@ -92,6 +92,7 @@ int main(int argc, char * argv[]) {
 	delete queryGraph;
 	delete targetGraph;
 	delete vf2;
+	answerReceiver.finish();
 	return 0;
 }
 

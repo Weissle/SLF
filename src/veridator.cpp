@@ -1,5 +1,4 @@
 #include"include/State.hpp"
-#include"include/VF2.hpp"
 #include"include/GraphReader.hpp"
 #include"include/argh.h"
 #include<time.h>
@@ -9,15 +8,15 @@
 #include"AnswerChecker.hpp"
 #include"SolutionReader.hpp"
 using namespace std;
-
+using namespace wg;
 static long t = 0;
 
 int main(int argc, char* argv[]) {
 	typedef size_t NodeIDType;
-	typedef EdgeVF2<int> EdgeType;
-	typedef NodeVF2<EdgeType> NodeType;
-	typedef GraphVF2<NodeType, EdgeType> GraphType;
-	typedef StateVF2<GraphType> StateType;
+	typedef Edge<int> EdgeType;
+	typedef Node<EdgeType> NodeType;
+	typedef Graph<NodeType, EdgeType> GraphType;
+	typedef State<GraphType> StateType;
 	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
 
 

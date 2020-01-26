@@ -6,7 +6,7 @@
 #include<memory>
 // only use bool[] or unordered_set cost much time
 using namespace std;
-
+namespace wg {
 template<class _GraphType = void>
 class NodeSet {
 	typedef size_t NodeIDType;
@@ -82,7 +82,7 @@ private:
 public:
 
 	NodeSetWithLabel(const GraphType& _graph) :graph(&_graph) {
-		const auto LQinform = _graph.getLQinform();
+		const auto LQinform = _graph.LQinform();
 		v.resize(LQinform.size());
 		vSize.resize(LQinform.size());
 		for (auto it = LQinform.begin(); it != LQinform.end(); ++it) {
@@ -98,7 +98,7 @@ public:
 	}
 	void insert(const NodeIDType id) {
 		if (belong[id] == false) {
-			const auto label = graph->getNode(id).getLabel();
+			const auto label = graph->getNode(id).label();
 			vSize[label]++;
 			v[label].insert(id);
 			belong[id] = true;
@@ -107,7 +107,7 @@ public:
 	}
 	void erase(const NodeIDType id) {
 		if (belong[id] == true) {
-			const auto label = graph->getNode(id).getLabel();
+			const auto label = graph->getNode(id).label();
 			vSize[label]--;
 			v[label].erase(id);
 			belong[id] = false;
@@ -157,3 +157,5 @@ public:
 	}
 	NodeSetWithLabel() = default;
 };
+
+}
