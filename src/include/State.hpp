@@ -16,7 +16,7 @@
 #include<cstring>
 #define INDUCE_ISO
 //#define NORMAL_ISO
-#define NO_MAP SIZE_MAX
+
 
 using namespace std;
 
@@ -54,7 +54,7 @@ public:
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
 	typedef const NodeType* NodeCPointer;
-	typedef KVPair<NodeIDType, NodeIDType> MapPair;
+	typedef pair<NodeIDType, NodeIDType> MapPair;
 	typedef vector<NodeIDType> MapType;
 
 	typedef NodeSetWithLabel<GraphType> NodeSetType;
@@ -77,7 +77,7 @@ private:
 	int** DRin, ** DRout;
 #endif
 	inline void seePairID(const MapPair& cp)const {
-		cout << "Ready To Mapping" << "(" << cp.getKey() << "," << cp.getValue() << ")" << endl;
+		cout << "Ready To Mapping" << "(" << cp.first << "," << cp.second << ")" << endl;
 	}
 	inline void seeMappingContent()const {
 		for (const auto it : mapping) {
@@ -93,8 +93,8 @@ private:
 	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair& cp)
 	{
-		const auto& querySourceNodeID = cp.getKey();
-		const auto& targetSourceNodeID = cp.getValue();
+		const auto& querySourceNodeID = cp.first;
+		const auto& targetSourceNodeID = cp.second;
 
 		const auto& querySourceNode = queryGraph.getNode(querySourceNodeID);
 		const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
@@ -239,8 +239,8 @@ private:
 	}
 	bool targetRule(const MapPair& cp)
 	{
-		const auto& queryTargetNodeID = cp.getKey();
-		const auto& targetTargetNodeID = cp.getValue();
+		const auto& queryTargetNodeID = cp.first;
+		const auto& targetTargetNodeID = cp.second;
 
 		const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
 		const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
@@ -385,7 +385,7 @@ private:
 	}
 
 public:
-	State(const GraphType& _t, const GraphType& _q) :queryGraph(_q), targetGraph(_t) {
+	State(const GraphType& _q, const GraphType& _t) :queryGraph(_q), targetGraph(_t) {
 
 		const auto queryGraphSize = queryGraph.size();
 		const auto targetGraphSize = targetGraph.size();
@@ -505,8 +505,8 @@ public:
 	}
 	void addCanditatePairToMapping(const MapPair& cp)
 	{
-		const auto targetNodeID = cp.getValue();
-		const auto queryNodeID = cp.getKey();
+		const auto targetNodeID = cp.second;
+		const auto queryNodeID = cp.first;
 		mapping[queryNodeID] = targetNodeID;
 		mappingAux[targetNodeID] = queryNodeID;
 
@@ -599,8 +599,8 @@ public:
 	void deleteCanditatePairToMapping(const MapPair& cp)
 	{
 
-		const auto& queryNodeID = cp.getKey();
-		const auto& targetNodeID = cp.getValue();
+		const auto& queryNodeID = cp.first;
+		const auto& targetNodeID = cp.second;
 		const auto& queryNode = queryGraph.getNode(queryNodeID);
 		const auto& targetNode = targetGraph.getNode(targetNodeID);
 

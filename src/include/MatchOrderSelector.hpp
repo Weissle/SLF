@@ -5,6 +5,7 @@
 #include<map>
 #include"Graph.hpp"
 #include"Pair.hpp"
+#include<utility>
 using namespace std;
 namespace wg {
 template<class _GraphType>
@@ -187,7 +188,7 @@ public:
 		vector<NodeIDType> matchSequence;
 		matchSequence.reserve(graph.size() + 1);
 		unordered_map<NodeLabelType, size_t> pgLQ = graph.LQinform(), tgLQ = targetGraph.LQinform();
-		unordered_map<NodeLabelType, FSPair<size_t, size_t>>  pgLD = graph.LDinform(), tgLD = targetGraph.LDinform();
+		unordered_map<NodeLabelType, pair<size_t, size_t>>  pgLD = graph.LDinform(), tgLD = targetGraph.LDinform();
 		vector< vector< size_t > > tgin, tgout;
 		assert(pgLQ.size() <= tgLQ.size() && " pattern graph is not a subgraph of target graph owing to the label type");
 

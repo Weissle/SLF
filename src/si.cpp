@@ -61,7 +61,7 @@ int main(int argc, char * argv[]) {
 	queryGraph->graphBuildFinish();
 
 	TIME_COST_PRINT("sort edge time : ",clock()- t1);
-	AnswerReceiverType answerReceiver("D:\\data\\vsProject\\subgraph - isomorphism\\build\\Solutions.txt");
+	AnswerReceiverType answerReceiver;
 
 	vector<NodeIDType> ms;
 	ms.resize(queryGraph->size());
@@ -77,11 +77,11 @@ int main(int argc, char * argv[]) {
             f>>ms[i];
         }
         f.close();
-        vf2 = new VF2Type(*targetGraph, *queryGraph, answerReceiver,ms, induceGraph, onlyNeedOneSolution);
+        vf2 = new VF2Type(*queryGraph, *targetGraph, answerReceiver, induceGraph, onlyNeedOneSolution,ms);
 
     }
     else{
-        vf2 =new  VF2Type(*targetGraph, *queryGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
+        vf2 =new  VF2Type(*queryGraph, *targetGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
     }
 
 	t1 = clock();
@@ -89,9 +89,10 @@ int main(int argc, char * argv[]) {
 
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
+	delete vf2;
 	delete queryGraph;
 	delete targetGraph;
-	delete vf2;
+	
 	answerReceiver.finish();
 	return 0;
 }

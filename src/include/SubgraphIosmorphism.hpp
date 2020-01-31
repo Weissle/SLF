@@ -1,3 +1,4 @@
+#pragma once
 #include"Edge.hpp"
 #include"Graph.hpp"
 #include"Node.hpp"
@@ -9,6 +10,7 @@
 #include<fstream>
 #include<MatchOrderSelector.hpp>
 #include<typeinfo>
+#include<utility>
 #define TIME_COUNT
 using namespace std;
 /*
@@ -26,18 +28,20 @@ class SubgraphIsomorphism {
 
 	typedef typename StateType::MapType MapType;
 	typedef typename StateType::MapPair MapPair;
-	map<int, int> midGraph;
+	
 	const GraphType& targetGraph, & queryGraph;
 	vector<NodeIDType> matchSequence;
 	size_t searchDepth;
-
+	StateType mapState;
 	AnswerReceiver& answerReceiver;
+	unique_ptr< vector< MapPair>[] > allDepthCanditatePairs;
+
 	bool onlyNeedOneSolution = true;
 	bool induceGraph = true;
-	bool goDeeper(StateType& s)
+	bool goDeeper()
 	{
-		if (s.isCoverQueryGraph()) {
-			this->ToDoAfterFindASolution(s);
+		if (mapState.isCoverQueryGraph()) {
+			this->ToDoAfterFindASolution();
 			return true;
 		}
 #ifdef TIME_COUNT
@@ -46,7 +50,7 @@ class SubgraphIsomorphism {
 			cout << hitTime << endl;
 		}
 		auto t1 = clock();
-		const auto canditarePairs = s.calCandidatePairs(matchSequence[searchDepth]);
+		const auto canditarePairs = mapState.calCandidatePairs(matchSequence[searchDepth]);
 		auto t2 = clock();
 		cal += t2 - t1;
 		if (canditarePairs.empty())return false;
@@ -55,24 +59,24 @@ class SubgraphIsomorphism {
 
 
 		for (const auto& tempCanditatePair : canditarePairs) {
-			const auto queryNodeID = tempCanditatePair.getKey();
-			const auto targetNodeID = tempCanditatePair.getValue();
+			const auto queryNodeID = tempCanditatePair.first;
+			const auto targetNodeID = tempCanditatePair.second;
 
 			t1 = clock();
 
-			bool suitable = s.checkCanditatePairIsAddable(tempCanditatePair);
+			bool suitable = mapState.checkCanditatePairIsAddable(tempCanditatePair);
 
 			t2 = clock();
 			check += t2 - t1;
 			if (suitable) {
 				t1 = clock();
-				s.addCanditatePairToMapping(tempCanditatePair);
+				mapState.addCanditatePairToMapping(tempCanditatePair);
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
-				if (goDeeper(s) && this->onlyNeedOneSolution) return true;
+				if (goDeeper() && this->onlyNeedOneSolution) return true;
 				t1 = clock();
-				s.deleteCanditatePairToMapping(tempCanditatePair);
+				mapState.deleteCanditatePairToMapping(tempCanditatePair);
 				--searchDepth;
 				t2 = clock();
 				del += t2 - t1;
@@ -80,53 +84,54 @@ class SubgraphIsomorphism {
 		}
 
 #else
-		if (s.isCoverQueryGraph()) {
-			this->ToDoAfterFindASolution(s);
+		if (mapState.isCoverQueryGraph()) {
+			this->ToDoAfterFindASolution(mapState);
 			return true;
 		}
-		for (const auto& tempCanditatePair : s.calCandidatePairs(matchSequence[searchDepth])) {
-			if (s.checkCanditatePairIsAddable(tempCanditatePair)) {
-				s.addCanditatePairToMapping(tempCanditatePair);
-				if (goDeeper(s) && this->onlyNeedOneSolution) return true;
-				s.deleteCanditatePairToMapping(tempCanditatePair);
+		for (const auto& tempCanditatePair : mapState.calCandidatePairs(matchSequence[searchDepth])) {
+			if (mapState.checkCanditatePairIsAddable(tempCanditatePair)) {
+				mapState.addCanditatePairToMapping(tempCanditatePair);
+				if (goDeeper(mapState) && this->onlyNeedOneSolution) return true;
+				mapState.deleteCanditatePairToMapping(tempCanditatePair);
 			}
 		}
 #endif
 		return false;
 	}
-	void ToDoAfterFindASolution(const StateType& s) {
-		answerReceiver << s.getMap();
+	void ToDoAfterFindASolution() {
+		answerReceiver << mapState.getMap();
 	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
 	long long canditatePairCount = 0;
+private:
+
 public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _targetGraph, const GraphType& _queryGraph, AnswerReceiver& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
-		:targetGraph(_targetGraph), queryGraph(_queryGraph), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver)
+	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiver& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence= vector<NodeIDType>())
+		:targetGraph(_targetGraph), queryGraph(_queryGraph), matchSequence(_matchSequence), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph)
 	{
 		auto t1 = clock();
-		if (typeid(_MatchOrderSelector) != typeid(void))matchSequence = _MatchOrderSelector::run(_queryGraph, _targetGraph);
-		else matchSequence = MatchOrderSelectorVF3<GraphType>::run(_queryGraph, _targetGraph);
+		if (matchSequence.size() == 0) {
+			if (typeid(_MatchOrderSelector) != typeid(void))matchSequence = _MatchOrderSelector::run(_queryGraph, _targetGraph);
+			else matchSequence = MatchOrderSelectorVF3<GraphType>::run(_queryGraph, _targetGraph);
+		}
 		TIME_COST_PRINT("match order selete time : ", clock() - t1);
-		TRAVERSE_SET(s, matchSequence) cout << s << " ";
+		TRAVERSE_SET(mapState, matchSequence) cout << mapState << " ";
 		cout << endl;
 		searchDepth = 0;
+	//	searchTree = SearchTree<NodeIDType, MapPair>(queryGraph.size());
 
-	};
-	SubgraphIsomorphism(const GraphType& _targetGraph, const GraphType& _queryGraph, AnswerReceiver& _answerReceiver, vector<NodeIDType>& _matchSequence, bool _induceGraph = true, bool _onlyNeedOneSolution = true)
-		:targetGraph(_targetGraph), queryGraph(_queryGraph), matchSequence(_matchSequence), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver)
-	{
-		searchDepth = 0;
 
 	};
 	void run()
 	{
 		cout << "start match" << endl;
-		//		StateType initialState = std::move(StateType(targetGraph, queryGraph));
-		StateType initialState(targetGraph, queryGraph);
-		if (queryGraph.size() <= targetGraph.size()) goDeeper(initialState);
+		bool notFinish = (queryGraph.size()==0)? false:true;
+		bool topOK = false,popOK=false;
+		//goDeeper();
+	
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;

@@ -7,6 +7,7 @@
 #include<assert.h>
 #include<map>
 #include<unordered_map>
+#include<utility>
 using namespace std;
 namespace wg {
 template<typename _NodeType, typename _EdgeType>
@@ -30,7 +31,7 @@ private:
 	size_t _size;
 
 	// NodeLabel -> the maximum out and in degrees of this kind of nodes have;
-	unordered_map<NodeLabelType, FSPair<size_t, size_t>> auxLDinform;
+	unordered_map<NodeLabelType, pair<size_t, size_t>> auxLDinform;
 	// NodeLabel -> quantity of nodes have this label
 	unordered_map<NodeLabelType, size_t> auxLQinform;
 public:
@@ -88,7 +89,7 @@ public:
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
-	unordered_map<NodeLabelType, FSPair<size_t, size_t>> LDinform()const {
+	unordered_map<NodeLabelType, pair<size_t, size_t>> LDinform()const {
 		return auxLDinform;
 	}
 	unordered_map<NodeLabelType, size_t> LQinform()const {
