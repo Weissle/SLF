@@ -109,7 +109,7 @@ int main(int argc,char *argv[]) {
 			int edgeNum = min(max(0,(int)randomer->getOne()),bNeed-2);
 			rg::NoRepeatIntRandomGenerator irg(bNeed);
 
-			auto outEdges = graph->getNode(i).outEdges();
+			auto outEdges = graph->node(i).outEdges();
 			unordered_set<NodeIDType> exclude;
 			exclude.reserve(bNeed);
 			for (const auto& edge : outEdges) exclude.insert(edge.target());

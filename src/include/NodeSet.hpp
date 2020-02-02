@@ -98,7 +98,7 @@ public:
 	}
 	void insert(const NodeIDType id) {
 		if (belong[id] == false) {
-			const auto label = graph->getNode(id).label();
+			const auto label = graph->node(id).label();
 			vSize[label]++;
 			v[label].insert(id);
 			belong[id] = true;
@@ -107,7 +107,7 @@ public:
 	}
 	void erase(const NodeIDType id) {
 		if (belong[id] == true) {
-			const auto label = graph->getNode(id).label();
+			const auto label = graph->node(id).label();
 			vSize[label]--;
 			v[label].erase(id);
 			belong[id] = false;

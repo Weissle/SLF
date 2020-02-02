@@ -36,7 +36,7 @@ public:
 			double nodePoint = -1;
 			NodeCPointer answer = nullptr;
 			for (const auto& tempNodeID : s) {
-				const auto& tempNode = graph.getNode(tempNodeID);
+				const auto& tempNode = graph.node(tempNodeID);
 				const auto tempPoint = calNodeMatchPoint(tempNode);
 				if (tempPoint > nodePoint) {
 					answer = &tempNode;
@@ -111,12 +111,12 @@ public:
 			double p1 = node.inEdgesNum() + node.outEdgesNum() + ioMap[node.id()] * 2;
 			for (const auto& edge : node.inEdges()) {
 				const auto nodeID = edge.source();
-				const auto& tempNode = graph.getNode(nodeID);
+				const auto& tempNode = graph.node(nodeID);
 				p1 += tempNode.inEdgesNum() + tempNode.outEdgesNum();
 			}
 			for (const auto& edge : node.outEdges()) {
 				const auto nodeID = edge.target();
-				const auto& tempNode = graph.getNode(nodeID);
+				const auto& tempNode = graph.node(nodeID);
 				p1 += tempNode.inEdgesNum() + tempNode.outEdgesNum();
 			}
 			return p1;
@@ -126,7 +126,7 @@ public:
 			NodeCPointer answer = nullptr;
 			for (const auto& tempNodeID : s) {
 
-				const auto& tempNode = graph.getNode(tempNodeID);
+				const auto& tempNode = graph.node(tempNodeID);
 				//			if (ioMap[tempNodeID] == tempNode.inEdgesNum() + tempNode.outEdgesNum()) return NodeMatchPointPair(&tempNode, nodePoint);
 				const auto tempPoint = calNodeMatchPoint(tempNode);
 				if (tempPoint > nodePoint) {
@@ -263,8 +263,8 @@ public:
 					}
 					else if (it->second == maxDegreeInSeq) {
 						if (fabs(nowposs - possibility[it->second]) < 1E-20) {
-							auto nownode = graph.getNode(nowid);
-							auto thisnode = graph.getNode(it->first);
+							auto nownode = graph.node(nowid);
+							auto thisnode = graph.node(it->first);
 							if (nownode.outEdgesNum() + nownode.inEdgesNum() < thisnode.outEdgesNum() + thisnode.inEdgesNum()) {
 								nowid = it->first;
 								nowposs = possibility[nowid];
@@ -294,7 +294,7 @@ public:
 			matchSequence.push_back(seqID);
 			notInSeq.erase(seqID);
 			ioMap.erase(seqID);
-			auto node = graph.getNode(seqID);
+			auto node = graph.node(seqID);
 			for (auto& edge : node.inEdges()) {
 				auto temp = edge.source();
 				if (IN_SET(notInSeq, temp)) ioMap[temp]++;

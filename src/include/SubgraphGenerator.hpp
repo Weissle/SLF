@@ -42,7 +42,7 @@ namespace sg {
 					temp = k;
 					if (i < j)continue;
 				}
-				const auto node = bigGraph.getNode(temp);
+				const auto node = bigGraph.node(temp);
 				for (const auto edge : node.inEdges()) {
 					const auto ver = edge.source();
 					if (inSmall.find(ver) == inSmall.end()) {
@@ -76,7 +76,7 @@ namespace sg {
 			for (auto i = 0; i < midG.size(); ++i) {
 				unordered_set<size_t> s;
 				s.reserve(midG.size());
-				const auto &protoNode = bigGraph.getNode(midG[i]);
+				const auto &protoNode = bigGraph.node(midG[i]);
 				const auto sourceID = turner(protoNode.id());
 				smallGraph.setNodeLabel(sourceID, protoNode.label());
 				for (auto edge : protoNode.outEdges()) {

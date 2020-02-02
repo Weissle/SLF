@@ -81,11 +81,11 @@ public:
 		return _size;
 	};
 	const vector<NodeType>& nodes()const { return _nodes; }
-	const NodeType* getNodePointer(const NodeIDType& nodeID) const {
+	const NodeType* nodePointer(const NodeIDType& nodeID) const {
 		assert((nodeID < _size) && "node ID overflow");
 		return &_nodes[nodeID];
 	}
-	const NodeType& getNode(const NodeIDType& nodeID) const {
+	const NodeType& node(const NodeIDType& nodeID) const {
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
@@ -123,7 +123,7 @@ public:
 		return _nodes[from].existSameTypeEdgeToNode(to, edgeLabel);
 	}
 	const NodeType& operator[](const NodeIDType& nodeID)const {
-		return getNode(nodeID);
+		return node(nodeID);
 	}
 
 };

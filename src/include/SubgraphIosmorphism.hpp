@@ -40,7 +40,7 @@ class SubgraphIsomorphism {
 	bool induceGraph = true;
 	bool goDeeper()
 	{
-		if (mapState.isCoverQueryGraph()) {
+		if (searchDepth==queryGraph.size()) {
 			this->ToDoAfterFindASolution();
 			return true;
 		}
@@ -50,20 +50,20 @@ class SubgraphIsomorphism {
 			cout << hitTime << endl;
 		}
 		auto t1 = clock();
-		const auto canditarePairs = mapState.calCandidatePairs(matchSequence[searchDepth]);
+		allDepthCanditatePairs[searchDepth] = mapState.calCandidatePairs(matchSequence[searchDepth]);
+		const auto& canditatePairs = allDepthCanditatePairs[searchDepth];
 		auto t2 = clock();
 		cal += t2 - t1;
-		if (canditarePairs.empty())return false;
-		//	cout << canditarePairs.size() << ' ';
-		canditatePairCount += canditarePairs.size();
+		if (canditatePairs.empty())return false;
+		//	cout << canditatePairs.size() << ' ';
+		canditatePairCount += canditatePairs.size();
 
 
-		for (const auto& tempCanditatePair : canditarePairs) {
+		LOOP(i,0,canditatePairs.size()){
+			const auto tempCanditatePair = canditatePairs[i];
 			const auto queryNodeID = tempCanditatePair.first;
 			const auto targetNodeID = tempCanditatePair.second;
-
 			t1 = clock();
-
 			bool suitable = mapState.checkCanditatePairIsAddable(tempCanditatePair);
 
 			t2 = clock();
@@ -118,19 +118,17 @@ public:
 			else matchSequence = MatchOrderSelectorVF3<GraphType>::run(_queryGraph, _targetGraph);
 		}
 		TIME_COST_PRINT("match order selete time : ", clock() - t1);
-		TRAVERSE_SET(mapState, matchSequence) cout << mapState << " ";
+		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";
 		cout << endl;
 		searchDepth = 0;
-	//	searchTree = SearchTree<NodeIDType, MapPair>(queryGraph.size());
+		allDepthCanditatePairs = std::move(unique_ptr<vector<MapPair>[]>(new vector<MapPair>[queryGraph.size()]));
 
 
 	};
 	void run()
 	{
 		cout << "start match" << endl;
-		bool notFinish = (queryGraph.size()==0)? false:true;
-		bool topOK = false,popOK=false;
-		//goDeeper();
+		goDeeper();
 	
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;

@@ -96,8 +96,8 @@ private:
 		const auto& querySourceNodeID = cp.first;
 		const auto& targetSourceNodeID = cp.second;
 
-		const auto& querySourceNode = queryGraph.getNode(querySourceNodeID);
-		const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
+		const auto& querySourceNode = queryGraph.node(querySourceNodeID);
+		const auto& targetSourceNode = targetGraph.node(targetSourceNodeID);
 
 
 #ifdef INDUCE_ISO
@@ -119,7 +119,7 @@ private:
 			if (!IN_NODE_SET(targetUnmap, targetTargetNodeID)) {
 #ifdef INDUCE_ISO
 				const auto queryTargetNodeID = mappingAux[targetTargetNodeID];
-				const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
+				const auto& queryTargetNode = queryGraph.node(queryTargetNodeID);
 				if (querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
 #endif		
 			}
@@ -174,7 +174,7 @@ private:
 			//this tempnode have been mapped
 			if (!IN_NODE_SET(queryUnmap, queryTargetNodeID)) {
 				const auto targetTargetNodeID = mapping[queryTargetNodeID];
-				const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
+				const auto& targetTargetNode = targetGraph.node(targetTargetNodeID);
 				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
 			}
 			else if (queryTargetNodeID == querySourceNodeID) {
@@ -242,8 +242,8 @@ private:
 		const auto& queryTargetNodeID = cp.first;
 		const auto& targetTargetNodeID = cp.second;
 
-		const auto& queryTargetNode = queryGraph.getNode(queryTargetNodeID);
-		const auto& targetTargetNode = targetGraph.getNode(targetTargetNodeID);
+		const auto& queryTargetNode = queryGraph.node(queryTargetNodeID);
+		const auto& targetTargetNode = targetGraph.node(targetTargetNodeID);
 
 #ifdef INDUCE_ISO
 		typedef FSPair<size_t, size_t> DRPair;
@@ -264,7 +264,7 @@ private:
 			if (!IN_NODE_SET(targetUnmap, targetSourceNodeID)) {
 #ifdef INDUCE_ISO
 				const auto& querySourceNodeID = mappingAux[targetSourceNodeID];
-				const auto& querySourceNode = queryGraph.getNode(querySourceNodeID);
+				const auto& querySourceNode = queryGraph.node(querySourceNodeID);
 				if (queryTargetNode.existSameTypeEdgeFromNode(querySourceNode, tempEdge) == false) return false;
 #endif
 			}
@@ -320,7 +320,7 @@ private:
 			if (!IN_NODE_SET(queryUnmap, querySourceNodeID)) {
 
 				const auto& targetSourceNodeID = mapping[querySourceNodeID];
-				const auto& targetSourceNode = targetGraph.getNode(targetSourceNodeID);
+				const auto& targetSourceNode = targetGraph.node(targetSourceNodeID);
 				if (targetTargetNode.existSameTypeEdgeFromNode(targetSourceNode, tempEdge) == false) return false;
 			}
 			else if (queryTargetNodeID == querySourceNodeID) {
@@ -449,7 +449,7 @@ public:
 		const auto& queryNodeToMatchID = id;
 		const bool queryNodeInIn = IN_NODE_SET(queryIn, queryNodeToMatchID);
 		const bool queryNodeInOut = IN_NODE_SET(queryOut, queryNodeToMatchID);
-		const auto& queryNode = queryGraph.getNode(queryNodeToMatchID);
+		const auto& queryNode = queryGraph.node(queryNodeToMatchID);
 		const auto queryNodeInRefTimes = queryMappingInRefTimes[queryNodeToMatchID];
 		const auto queryNodeOutRefTimes = queryMappingOutRefTimes[queryNodeToMatchID];
 		const auto queryNodeInDepth = queryMappingInDepth[queryNodeToMatchID];
@@ -471,7 +471,7 @@ public:
 
 			TRAVERSE_SET(targetNodeToMatchID, targetNodeToMatchSet)
 			{
-				const auto& targetNode = targetGraph.getNode(targetNodeToMatchID);
+				const auto& targetNode = targetGraph.node(targetNodeToMatchID);
 				if (/*queryNode.isSameType(targetNode) == false || */queryNode > targetNode) continue;
 
 #ifdef INDUCE_ISO
@@ -523,8 +523,8 @@ public:
 
 
 
-		const auto& targetNodePointer = targetGraph.getNodePointer(targetNodeID);
-		const auto& queryNodePointer = queryGraph.getNodePointer(queryNodeID);
+		const auto& targetNodePointer = targetGraph.nodePointer(targetNodeID);
+		const auto& queryNodePointer = queryGraph.nodePointer(queryNodeID);
 		searchDepth++;
 
 		// there is a variables' name using error about [In/Out]RefTimesCla
@@ -601,8 +601,8 @@ public:
 
 		const auto& queryNodeID = cp.first;
 		const auto& targetNodeID = cp.second;
-		const auto& queryNode = queryGraph.getNode(queryNodeID);
-		const auto& targetNode = targetGraph.getNode(targetNodeID);
+		const auto& queryNode = queryGraph.node(queryNodeID);
+		const auto& targetNode = targetGraph.node(targetNodeID);
 
 		for (const auto& tempEdge : queryNode.inEdges()) {
 			const auto& nodeID = tempEdge.source();
