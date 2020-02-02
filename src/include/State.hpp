@@ -21,27 +21,7 @@
 using namespace std;
 
 namespace wg {
-#ifdef INDUCE_ISO
-template<typename T>
-void new_two_dim_array(T**& p, size_t one, size_t two = -1) {
-	if (two == -1)two = one;
-	p = new T * [one];
-	for (auto i = 0; i < one; ++i) p[i] = new T[two]();
-	return;
-}
-template<typename T>
-void delete_two_dim_array(T**& p, size_t one) {
-	for (auto i = 0; i < one; ++i) delete[](p[i]);
-	delete[]p;
-	return;
-}
-template<typename T>
-void clear_two_dim_array(T**& p, size_t one, size_t two = -1) {
-	if (two == -1)two = one;
-	for (auto i = 0; i < one; ++i) memset(p[i], 0, sizeof(int) * two);
-	return;
-}
-#endif
+
 template<typename _GraphType>
 class State {
 public:
@@ -73,22 +53,6 @@ private:
 		queryMappingInDepth, queryMappingOutDepth;
 	vector<size_t> targetMappingInRefTimes, targetMappingOutRefTimes,
 		queryMappingInRefTimes, queryMappingOutRefTimes;
-#ifdef INDUCE_ISO
-	int** DRin, ** DRout;
-#endif
-	inline void seePairID(const MapPair& cp)const {
-		cout << "Ready To Mapping" << "(" << cp.first << "," << cp.second << ")" << endl;
-	}
-	inline void seeMappingContent()const {
-		for (const auto it : mapping) {
-			if (it.second) {
-				const auto queryNodeID = it.first;
-				const auto targetNodeID = it.second;
-				cout << '(' << queryNodeID << "," << targetNodeID << ')' << endl;
-
-			}
-		}
-	}
 
 	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair& cp)
@@ -100,16 +64,8 @@ private:
 		const auto& targetSourceNode = targetGraph.node(targetSourceNodeID);
 
 
-#ifdef INDUCE_ISO
-		typedef FSPair<size_t, size_t> DRPair;
-		unordered_map< FSPair< DRPair, DRPair>, size_t>  bothIO;
-		bothIO.reserve(calHashSuitableSize(targetSourceNode.outEdgesNum()));
-		clear_two_dim_array(DRin, searchDepth + 1);
-		clear_two_dim_array(DRout, searchDepth + 1);
 
-#elif defined(NORMAL_ISO)
 		size_t inCount = 0, outCount = 0, bothCount = 0;
-#endif
 		size_t notTCount = 0;
 
 
@@ -129,32 +85,10 @@ private:
 #endif
 			}
 			else {
-
 				const bool o = IN_NODE_SET(targetOut, targetTargetNodeID);
 				const bool i = IN_NODE_SET(targetIn, targetTargetNodeID);
 				const bool b = (i && o);
 
-#ifdef INDUCE_ISO
-				size_t inDepth, outDepth, inRef, outRef;
-				if (o) {
-					outDepth = targetMappingOutDepth[targetTargetNodeID];
-					outRef = targetMappingOutRefTimes[targetTargetNodeID];
-				}
-				if (i) {
-					inDepth = targetMappingInDepth[targetTargetNodeID];
-					inRef = targetMappingInRefTimes[targetTargetNodeID];
-				}
-				if (o && !b) {
-					DRout[outDepth][outRef]++;
-				}
-				if (i && !b) {
-					DRin[inDepth][inRef]++;
-
-				}
-				if (b) {
-					bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))]++;
-				}
-#elif defined(NORMAL_ISO)
 				if (o && !b) {
 					++outCount;
 				}
@@ -164,7 +98,7 @@ private:
 				if (b) {
 					++bothCount;
 				}
-#endif				
+			
 				//maybe bug in normal_iso
 				if (!i && !o) ++notTCount;
 			}
@@ -185,34 +119,7 @@ private:
 				const bool o = IN_NODE_SET(queryOut, queryTargetNodeID);
 				const bool i = IN_NODE_SET(queryIn, queryTargetNodeID);
 				const bool b = (o && i);
-#ifdef INDUCE_ISO
-				size_t inDepth, outDepth, inRef, outRef;
-				if (o) {
-					outDepth = queryMappingOutDepth[queryTargetNodeID];
-					outRef = queryMappingOutRefTimes[queryTargetNodeID];
-				}
-				if (i) {
-					inDepth = queryMappingInDepth[queryTargetNodeID];
-					inRef = queryMappingInRefTimes[queryTargetNodeID];
-				}
 
-				if (o && !b) {
-					if (DRout[outDepth][outRef] == 0)return false;
-					else --DRout[outDepth][outRef];
-
-
-				}
-				if (i && !b) {
-					if (DRin[inDepth][inRef] == 0) return false;
-					else --DRin[inDepth][inRef];
-
-				}
-				if (b) {
-					auto& temp = bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))];
-					if (temp)--temp;
-					else return false;
-				}
-#elif defined(NORMAL_ISO)
 				if (o && !b) {
 					if (outCount)--outCount;
 					else return false;
@@ -226,7 +133,7 @@ private:
 					if (bothCount)--bothCount;
 					else return false;
 				}
-#endif
+
 				if (!i && !o) {
 					if (notTCount)--notTCount;
 					else return false;
@@ -245,16 +152,8 @@ private:
 		const auto& queryTargetNode = queryGraph.node(queryTargetNodeID);
 		const auto& targetTargetNode = targetGraph.node(targetTargetNodeID);
 
-#ifdef INDUCE_ISO
-		typedef FSPair<size_t, size_t> DRPair;
-		unordered_map< FSPair< DRPair, DRPair>, size_t>  bothIO;
-		bothIO.reserve(calHashSuitableSize(targetTargetNode.inEdgesNum()));
-		clear_two_dim_array(DRin, searchDepth + 1);
-		clear_two_dim_array(DRout, searchDepth + 1);
 
-#elif defined(NORMAL_ISO)
 		size_t inCount = 0, outCount = 0, bothCount = 0;
-#endif
 		size_t notTCount = 0;
 
 
@@ -278,28 +177,6 @@ private:
 				const bool o = IN_NODE_SET(targetOut, targetSourceNodeID);
 				const bool i = IN_NODE_SET(targetIn, targetSourceNodeID);
 				const bool b = (o && i);
-#ifdef INDUCE_ISO
-				size_t inDepth, outDepth, inRef, outRef;
-				if (o) {
-					outDepth = targetMappingOutDepth[targetSourceNodeID];
-					outRef = targetMappingOutRefTimes[targetSourceNodeID];
-				}
-				if (i) {
-					inRef = targetMappingInRefTimes[targetSourceNodeID];
-					inDepth = targetMappingInDepth[targetSourceNodeID];
-				}
-				if (o && !b) {
-					DRout[outDepth][outRef]++;
-
-				}
-				if (i && !b) {
-					DRin[inDepth][inRef]++;
-
-				}
-				if (b) {
-					bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))]++;
-				}
-#elif defined(NORMAL_ISO)
 				if (o && !b) {
 					++outCount;
 				}
@@ -309,7 +186,6 @@ private:
 				if (b) {
 					++bothCount;
 				}
-#endif
 				if (!i && !o) ++notTCount;
 			}
 		}
@@ -331,33 +207,6 @@ private:
 				const bool o = IN_NODE_SET(queryOut, querySourceNodeID);
 				const bool i = IN_NODE_SET(queryIn, querySourceNodeID);
 				const bool b = (o && i);
-#ifdef INDUCE_ISO
-				size_t inDepth, outDepth, inRef, outRef;
-				if (o) {
-
-					outDepth = queryMappingOutDepth[querySourceNodeID];
-					outRef = queryMappingOutRefTimes[querySourceNodeID];
-				}
-				if (i) {
-					inRef = queryMappingInRefTimes[querySourceNodeID];
-					inDepth = queryMappingInDepth[querySourceNodeID];
-				}
-				if (o && !b) {
-					if (DRout[outDepth][outRef] == 0)return false;
-					else --DRout[outDepth][outRef];
-				}
-				if (i && !b) {
-					if (DRin[inDepth][inRef] == 0) return false;
-					else --DRin[inDepth][inRef];
-
-
-				}
-				if (b) {
-					auto& temp = bothIO[FSPair<DRPair, DRPair>(DRPair(inDepth, inRef), DRPair(outDepth, outRef))];
-					if (temp)--temp;
-					else return false;
-				}
-#elif defined(NORMAL_ISO)
 				if (o && !b) {
 					if (outCount)--outCount;
 					else return false;
@@ -371,7 +220,7 @@ private:
 					if (bothCount)--bothCount;
 					else return false;
 				}
-#endif
+
 				if (!i && !o) {
 					if (notTCount)--notTCount;
 					else return false;
@@ -420,24 +269,11 @@ public:
 
 		for (const auto& node : queryGraph.nodes()) queryUnmap.insert(node.id());
 		for (const auto& node : targetGraph.nodes()) targetUnmap.insert(node.id());
-#ifdef INDUCE_ISO
-		new_two_dim_array(DRin, queryGraphSize + 1);
-		new_two_dim_array(DRout, queryGraphSize + 1);
 
-#elif defined(NORMAL_ISO)
-#endif
 
 	};
 	State() = default;
 	~State() {
-#ifdef INDUCE_ISO
-		const auto queryGraphSize = queryGraph.size();
-		delete_two_dim_array(DRin, queryGraphSize + 1);
-		delete_two_dim_array(DRout, queryGraphSize + 1);
-#elif defined(NORMAL_ISO)
-
-#endif
-
 	}
 
 public:
@@ -491,17 +327,15 @@ public:
 
 			}
 
-			return answer;
+		//	return answer;
+			return std::move(answer);
 
 	}
 	bool checkCanditatePairIsAddable(const MapPair& cp)
 	{
-		//	seeMappingContent();
-		//	seePairID(cp);
 		const bool answer = sourceRule(cp) && targetRule(cp);
 		//	cout << answer << endl;
 		return answer;
-
 	}
 	void addCanditatePairToMapping(const MapPair& cp)
 	{
@@ -516,12 +350,9 @@ public:
 
 		targetIn.erase(targetNodeID);
 		targetOut.erase(targetNodeID);
-		//		targetBoth.erase(targetNodeID);
+	
 		queryIn.erase(queryNodeID);
 		queryOut.erase(queryNodeID);
-		//		queryBoth.erase(queryNodeID);
-
-
 
 		const auto& targetNodePointer = targetGraph.nodePointer(targetNodeID);
 		const auto& queryNodePointer = queryGraph.nodePointer(queryNodeID);
@@ -534,29 +365,23 @@ public:
 		for (const auto& tempEdge : targetNodePointer->inEdges()) {
 			const auto& nodeID = tempEdge.source();
 			// was not be mapped
-			const bool n = IN_NODE_SET(targetUnmap, nodeID);
-			if (!n)continue;
-			const bool o = IN_NODE_SET(targetOut, nodeID);
 			const bool i = IN_NODE_SET(targetIn, nodeID);
-			const bool b = (o && i);
+			const bool n = (i)? true : IN_NODE_SET(targetUnmap, nodeID);
+			if (!n)continue;
 			if (!i) {
 				targetIn.insert(nodeID);
 				targetMappingInDepth[nodeID] = searchDepth;
-				//				if (o)targetBoth.insert(nodeID);
 			}
 			++targetMappingInRefTimes[nodeID];
 		}
 		for (const auto& tempEdge : targetNodePointer->outEdges()) {
 			const auto& nodeID = tempEdge.target();
-			const bool n = IN_NODE_SET(targetUnmap, nodeID);
-			if (!n)continue;
 			const bool o = IN_NODE_SET(targetOut, nodeID);
-			const bool i = IN_NODE_SET(targetIn, nodeID);
-			const bool b = (o && i);
+			const bool n =(o)? true : IN_NODE_SET(targetUnmap, nodeID);
+			if (!n)continue;
 			if (!o) {
 				targetOut.insert(nodeID);
 				targetMappingOutDepth[nodeID] = searchDepth;
-				//				if (i)targetBoth.insert(nodeID);
 			}
 			++targetMappingOutRefTimes[nodeID];
 		}
@@ -564,32 +389,24 @@ public:
 
 		for (const auto& tempEdge : queryNodePointer->inEdges()) {
 			const auto& nodeID = tempEdge.source();
-			//		queryMappingInRefTimes[sourceNodeID]++;
-			const bool n = IN_NODE_SET(queryUnmap, nodeID);
-			if (!n)continue;
-			const bool o = IN_NODE_SET(queryOut, nodeID);
 			const bool i = IN_NODE_SET(queryIn, nodeID);
-			const bool b = (o && i);
-
+			const bool n = (i)? true : IN_NODE_SET(queryUnmap, nodeID);
+			if (!n)continue;
 			if (!i) {
 				queryIn.insert(nodeID);
 				queryMappingInDepth[nodeID] = searchDepth;
-				//				if (o)queryBoth.insert(nodeID);
 			}
 			++queryMappingInRefTimes[nodeID];
 
 		}
 		for (const auto& tempEdge : queryNodePointer->outEdges()) {
 			const auto& nodeID = tempEdge.target();
-			const bool n = IN_NODE_SET(queryUnmap, nodeID);
-			if (!n)continue;
 			const bool o = IN_NODE_SET(queryOut, nodeID);
-			const bool i = IN_NODE_SET(queryIn, nodeID);
-			const bool b = (o && i);
+			const bool n = (o)? true : IN_NODE_SET(queryUnmap, nodeID);
+			if (!n)continue;
 			if (!o) {
 				queryOut.insert(nodeID);
 				queryMappingOutDepth[nodeID] = searchDepth;
-				//				if (i)queryBoth.insert(nodeID);
 			}
 			++queryMappingOutRefTimes[nodeID];
 
@@ -608,14 +425,10 @@ public:
 			const auto& nodeID = tempEdge.source();
 			const bool n = IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
-			//		const bool b = IN_NODE_SET(queryBoth, nodeID);
 			auto& refTimes = queryMappingInRefTimes[nodeID];
 			auto& nodeDepth = queryMappingInDepth[nodeID];
 			if (nodeDepth == searchDepth) {
 				queryIn.erase(nodeID);
-				/*		if (b) {
-			//				queryBoth.erase(nodeID);
-						}*/
 				nodeDepth = 0;
 			}
 			refTimes--;
@@ -623,19 +436,12 @@ public:
 		}
 		for (const auto& tempEdge : queryNode.outEdges()) {
 			const auto& nodeID = tempEdge.target();
-
 			const bool n = IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
-
-			//		const bool b = IN_NODE_SET(queryBoth, nodeID);
-
 			auto& refTimes = queryMappingOutRefTimes[nodeID];
 			auto& nodeDepth = queryMappingOutDepth[nodeID];
 			if (nodeDepth == searchDepth) {
 				queryOut.erase(nodeID);
-				/*		if (b) {
-				//			queryBoth.erase(nodeID);
-						}*/
 				nodeDepth = 0;
 			}
 			refTimes--;
@@ -644,14 +450,10 @@ public:
 			const auto& nodeID = tempEdge.source();
 			const bool n = IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
-			//	const bool b = IN_NODE_SET(targetBoth, nodeID);
 			auto& refTimes = targetMappingInRefTimes[nodeID];
 			auto& nodeDepth = targetMappingInDepth[nodeID];
 			if (nodeDepth == searchDepth) {
-				targetIn.erase(nodeID);
-				/*		if (b) {
-				//			targetBoth.erase(nodeID);
-						}*/
+				targetIn.erase(nodeID);	
 				nodeDepth = 0;
 			}
 			refTimes--;
@@ -660,55 +462,18 @@ public:
 			const auto& nodeID = tempEdge.target();
 			const bool n = IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
-			//	const bool b = IN_NODE_SET(targetBoth, nodeID);
-
 			auto& refTimes = targetMappingOutRefTimes[nodeID];
 			auto& nodeDepth = targetMappingOutDepth[nodeID];
 			if (nodeDepth == searchDepth) {
 				targetOut.erase(nodeID);
-				/*		if (b) {
-				//			targetBoth.erase(nodeID);
-						}*/
 				nodeDepth = 0;
 			}
 			refTimes--;
 		}
-		if (queryMappingInDepth[queryNodeID]) {
-			queryIn.insert(queryNodeID);
-			const auto refTimes = queryMappingInRefTimes[queryNodeID];
-			if (IN_NODE_SET(queryOut, queryNodeID)) {
-				const auto outRefTimes = queryMappingOutRefTimes[queryNodeID];
-				//		queryBoth.insert(queryNodeID);
-			}
-		}
-		if (queryMappingOutDepth[queryNodeID])
-		{
-			queryOut.insert(queryNodeID);
-			const auto refTimes = queryMappingOutRefTimes[queryNodeID];
-			if (IN_NODE_SET(queryIn, queryNodeID)) {
-				const auto inRefTimes = queryMappingInRefTimes[queryNodeID];
-				//		queryBoth.insert(queryNodeID);
-			}
-		}
-		if (targetMappingInDepth[targetNodeID]) {
-			targetIn.insert(targetNodeID);
-			const auto refTimes = targetMappingInRefTimes[targetNodeID];
-			if (IN_NODE_SET(targetOut, targetNodeID)) {
-				const auto outRefTimes = targetMappingOutRefTimes[targetNodeID];
-				//		targetBoth.insert(targetNodeID);
-			}
-		}
-		if (targetMappingOutDepth[targetNodeID])
-		{
-			targetOut.insert(targetNodeID);
-			const auto refTimes = targetMappingOutRefTimes[targetNodeID];
-			if (IN_NODE_SET(targetIn, targetNodeID)) {
-
-				const auto inRefTimes = targetMappingInRefTimes[targetNodeID];
-
-				//		targetBoth.insert(targetNodeID);
-			}
-		}
+		if (queryMappingInDepth[queryNodeID])	queryIn.insert(queryNodeID);		
+		if (queryMappingOutDepth[queryNodeID])	queryOut.insert(queryNodeID);
+		if (targetMappingInDepth[targetNodeID])	targetIn.insert(targetNodeID);
+		if (targetMappingOutDepth[targetNodeID])	targetOut.insert(targetNodeID);
 		mapping[queryNodeID] = NO_MAP;
 		mappingAux[targetNodeID] = NO_MAP;
 		targetUnmap.insert(targetNodeID);

@@ -50,7 +50,8 @@ class SubgraphIsomorphism {
 			cout << hitTime << endl;
 		}
 		auto t1 = clock();
-		allDepthCanditatePairs[searchDepth] = mapState.calCandidatePairs(matchSequence[searchDepth]);
+	//	allDepthCanditatePairs[searchDepth] =mapState.calCandidatePairs(matchSequence[searchDepth]);
+		allDepthCanditatePairs[searchDepth] = std::move(mapState.calCandidatePairs(matchSequence[searchDepth]));
 		const auto& canditatePairs = allDepthCanditatePairs[searchDepth];
 		auto t2 = clock();
 		cal += t2 - t1;
