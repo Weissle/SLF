@@ -114,7 +114,7 @@ public:
 		}
 		return;
 	}
-	bool exist(const NodeIDType id)const {
+	inline bool exist(const NodeIDType id)const {
 		return belong[id];
 	}
 	const unordered_set<NodeIDType>& getSet(NodeLabelType label)const {

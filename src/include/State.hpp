@@ -13,6 +13,8 @@
 #include"common.h"
 #include<si_marcos.h>
 #include<cstring>
+
+//defind INDUCE_ISO or NORMAL_ISO in si_marcos.h
 #if !defined(INDUCE_ISO) && !defined(NORMAL_ISO)
 #error  you should defind INDUCE_ISO or NORMAL_ISO
 #endif
@@ -49,8 +51,8 @@ private:
 	MapType mapping;
 	MapType mappingAux; //from query to target
 
-	NodeSetType targetUnmap, targetIn, targetOut, targetBoth,
-		queryUnmap, queryIn, queryOut, queryBoth;
+	NodeSetType targetUnmap, targetIn, targetOut,
+		queryUnmap, queryIn, queryOut;
 
 	vector<size_t> targetMappingInDepth, targetMappingOutDepth,
 		queryMappingInDepth, queryMappingOutDepth;
@@ -59,7 +61,7 @@ private:
 	size_t labelTypeNum;
 
 	vector<size_t> inNewCount, outNewCount, bothNewCount, notNewCount;
-	//check the mapping is still consistent after add this pair
+	//used in look forward 2 
 	void clearNewCount() {
 		const auto temp = sizeof(size_t) * labelTypeNum;
 		memset(inNewCount.data(), 0, temp);
@@ -69,6 +71,7 @@ private:
 		memset(notNewCount.data(), 0, temp);
 #endif
 	}
+	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair& cp)
 	{
 		const auto& querySourceNodeID = cp.first;
@@ -78,23 +81,13 @@ private:
 		const auto& targetSourceNode = targetGraph.node(targetSourceNodeID);
 
 		clearNewCount();
-
+		// targetSourceNode is the predecessor of three typies of nodes
+		//1. not in map AND not self loop  
+		//2. self loop and 3. in map
 		for (const auto& tempEdge : targetSourceNode.outEdges()) {
 			const auto& targetTargetNodeID = tempEdge.target();
-
-			if (!IN_NODE_SET(targetUnmap, targetTargetNodeID)) {
-#ifdef INDUCE_ISO
-				const auto queryTargetNodeID = mappingAux[targetTargetNodeID];
-				const auto& queryTargetNode = queryGraph.node(queryTargetNodeID);
-				if (querySourceNode.existSameTypeEdgeToNode(queryTargetNode, tempEdge) == false) return false;
-#endif		
-			}
-			else if (targetTargetNodeID == targetSourceNodeID) {
-#ifdef INDUCE_ISO
-				if (querySourceNode.existSameTypeEdgeToNode(querySourceNode, tempEdge) == false)return false;
-#endif
-			}
-			else {
+			const bool notMapped = IN_NODE_SET(targetUnmap, targetTargetNodeID);
+			if (notMapped && targetTargetNodeID != targetSourceNodeID) {
 				const bool o = IN_NODE_SET(targetOut, targetTargetNodeID);
 				const bool i = IN_NODE_SET(targetIn, targetTargetNodeID);
 				const bool b = (i && o);
@@ -102,24 +95,23 @@ private:
 				if (b) 	bothNewCount[label]++;
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
-#ifdef INDUCE_ISO
-				else ++notNewCount[label];
-#endif
+#ifdef NORMAL_ISO
 			}
+#elif defined(INDUCE_ISO)
+				else ++notNewCount[label];
+			}
+			else {
+				const auto queryTargetNodeID = (notMapped) ? querySourceNodeID : mappingAux[targetTargetNodeID];
+				if (queryGraph.existEdge(querySourceNodeID, queryTargetNodeID, tempEdge.label()) == false) return false;
+			}
+#endif
 		}
+
 		for (const auto& tempEdge : querySourceNode.outEdges()) {
 			const auto& queryTargetNodeID = tempEdge.target();
 			//this tempnode have been mapped
-			if (!IN_NODE_SET(queryUnmap, queryTargetNodeID)) {
-				const auto targetTargetNodeID = mapping[queryTargetNodeID];
-				const auto& targetTargetNode = targetGraph.node(targetTargetNodeID);
-				if (targetSourceNode.existSameTypeEdgeToNode(targetTargetNode, tempEdge) == false) return false;
-			}
-			else if (queryTargetNodeID == querySourceNodeID) {
-				if (targetSourceNode.existSameTypeEdgeToNode(targetSourceNode, tempEdge) == false)return false;
-			}
-			else {
-
+			const bool notMapped = IN_NODE_SET(queryUnmap, queryTargetNodeID);
+			if (notMapped && queryTargetNodeID != querySourceNodeID) {
 				const bool o = IN_NODE_SET(queryOut, queryTargetNodeID);
 				const bool i = IN_NODE_SET(queryIn, queryTargetNodeID);
 				const bool b = (o && i);
@@ -136,13 +128,18 @@ private:
 					if (inNewCount[label]--);
 					else return false;
 				}
-#ifdef INDUCE_ISO
-				else{
+#if defined(INDUCE_ISO)
+				else {
 					if (notNewCount[label]--);
 					else return false;
 				}
 #endif
 			}
+			else {
+				const auto targetTargetNodeID = (notMapped) ? targetSourceNodeID : mapping[queryTargetNodeID];
+				if (targetGraph.existEdge(targetSourceNodeID, targetTargetNodeID, tempEdge.label()) == false)return false;
+			}
+
 		}
 
 		return true;
@@ -159,21 +156,8 @@ private:
 		clearNewCount();
 		for (const auto& tempEdge : targetTargetNode.inEdges()) {
 			const auto& targetSourceNodeID = tempEdge.source();
-
-			if (!IN_NODE_SET(targetUnmap, targetSourceNodeID)) {
-#ifdef INDUCE_ISO
-				const auto& querySourceNodeID = mappingAux[targetSourceNodeID];
-				const auto& querySourceNode = queryGraph.node(querySourceNodeID);
-				if (queryTargetNode.existSameTypeEdgeFromNode(querySourceNode, tempEdge) == false) return false;
-#endif
-			}
-			else if (targetTargetNodeID == targetSourceNodeID) {
-#ifdef INDUCE_ISO
-				if (queryTargetNode.existSameTypeEdgeFromNode(queryTargetNode, tempEdge) == false)return false;
-#endif
-			}
-			else {
-
+			const bool notMapped = IN_NODE_SET(targetUnmap, targetSourceNodeID);
+			if (notMapped && targetTargetNodeID != targetSourceNodeID) {
 				const bool o = IN_NODE_SET(targetOut, targetSourceNodeID);
 				const bool i = IN_NODE_SET(targetIn, targetSourceNodeID);
 				const bool b = (o && i);
@@ -181,26 +165,22 @@ private:
 				if (b) 	bothNewCount[label]++;
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
-#ifdef INDUCE_ISO
-				else ++notNewCount[label];
-#endif
+#ifdef NORMAL_ISO
 			}
+#elif defined(INDUCE_ISO)
+				else ++notNewCount[label];
+			}
+			else {
+				const auto querySourceNodeID = (notMapped) ? queryTargetNodeID : mappingAux[targetSourceNodeID];
+				if (queryGraph.existEdge(querySourceNodeID, queryTargetNodeID, tempEdge.label()) == false)return false;
+			}
+#endif
 		}
-
 
 		for (const auto& tempEdge : queryTargetNode.inEdges()) {
 			const auto& querySourceNodeID = tempEdge.source();
-			if (!IN_NODE_SET(queryUnmap, querySourceNodeID)) {
-
-				const auto& targetSourceNodeID = mapping[querySourceNodeID];
-				const auto& targetSourceNode = targetGraph.node(targetSourceNodeID);
-				if (targetTargetNode.existSameTypeEdgeFromNode(targetSourceNode, tempEdge) == false) return false;
-			}
-			else if (queryTargetNodeID == querySourceNodeID) {
-				if (targetTargetNode.existSameTypeEdgeFromNode(targetTargetNode, tempEdge) == false)return false;
-			}
-			else {
-
+			const bool notMapped = IN_NODE_SET(queryUnmap, querySourceNodeID);
+			if (notMapped && queryTargetNodeID != querySourceNodeID) {
 				const bool o = IN_NODE_SET(queryOut, querySourceNodeID);
 				const bool i = IN_NODE_SET(queryIn, querySourceNodeID);
 				const bool b = (o && i);
@@ -217,17 +197,18 @@ private:
 					if (inNewCount[label]--);
 					else return false;
 				}
-#ifdef INDUCE_ISO
+#if defined(INDUCE_ISO)
 				else {
 					if (notNewCount[label]--);
 					else return false;
 				}
 #endif
 			}
+			else {
+				const auto targetSourceNodeID = (notMapped) ? targetTargetNodeID : mapping[querySourceNodeID];
+				if (targetGraph.existEdge(targetSourceNodeID, targetTargetNodeID, tempEdge.label()) == false)return false;
+			}	
 		}
-
-
-
 		return true;
 	}
 
@@ -246,12 +227,10 @@ public:
 
 		targetIn = NodeSetType(targetGraph);
 		targetOut.containerClone(targetIn);
-		targetBoth.containerClone(targetIn);
 		targetUnmap.containerClone(targetIn);
 
 		queryIn = NodeSetType(queryGraph);
 		queryOut.containerClone(queryIn);
-		queryBoth.containerClone(queryIn);
 		queryUnmap.containerClone(queryIn);
 
 		targetMappingInDepth.resize(targetGraphSize);
@@ -332,12 +311,12 @@ public:
 		return std::move(answer);
 
 	}
-	bool checkCanditatePairIsAddable(const MapPair& cp)
+	bool checkCanditatePairIsAddable(const MapPair & cp)
 	{
 		const bool answer = sourceRule(cp) && targetRule(cp);
 		return answer;
 	}
-	void addCanditatePairToMapping(const MapPair& cp)
+	void addCanditatePairToMapping(const MapPair & cp)
 	{
 		const auto targetNodeID = cp.second;
 		const auto queryNodeID = cp.first;
@@ -350,7 +329,7 @@ public:
 
 		targetIn.erase(targetNodeID);
 		targetOut.erase(targetNodeID);
-	
+
 		queryIn.erase(queryNodeID);
 		queryOut.erase(queryNodeID);
 
@@ -366,7 +345,7 @@ public:
 			const auto& nodeID = tempEdge.source();
 			// was not be mapped
 			const bool i = IN_NODE_SET(targetIn, nodeID);
-			const bool n = (i)? true : IN_NODE_SET(targetUnmap, nodeID);
+			const bool n = (i) ? true : IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
 			if (!i) {
 				targetIn.insert(nodeID);
@@ -377,7 +356,7 @@ public:
 		for (const auto& tempEdge : targetNodePointer->outEdges()) {
 			const auto& nodeID = tempEdge.target();
 			const bool o = IN_NODE_SET(targetOut, nodeID);
-			const bool n =(o)? true : IN_NODE_SET(targetUnmap, nodeID);
+			const bool n = (o) ? true : IN_NODE_SET(targetUnmap, nodeID);
 			if (!n)continue;
 			if (!o) {
 				targetOut.insert(nodeID);
@@ -390,7 +369,7 @@ public:
 		for (const auto& tempEdge : queryNodePointer->inEdges()) {
 			const auto& nodeID = tempEdge.source();
 			const bool i = IN_NODE_SET(queryIn, nodeID);
-			const bool n = (i)? true : IN_NODE_SET(queryUnmap, nodeID);
+			const bool n = (i) ? true : IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
 			if (!i) {
 				queryIn.insert(nodeID);
@@ -402,7 +381,7 @@ public:
 		for (const auto& tempEdge : queryNodePointer->outEdges()) {
 			const auto& nodeID = tempEdge.target();
 			const bool o = IN_NODE_SET(queryOut, nodeID);
-			const bool n = (o)? true : IN_NODE_SET(queryUnmap, nodeID);
+			const bool n = (o) ? true : IN_NODE_SET(queryUnmap, nodeID);
 			if (!n)continue;
 			if (!o) {
 				queryOut.insert(nodeID);
@@ -413,7 +392,7 @@ public:
 		}
 		return;
 	}
-	void deleteCanditatePairToMapping(const MapPair& cp)
+	void deleteCanditatePairToMapping(const MapPair & cp)
 	{
 
 		const auto& queryNodeID = cp.first;
@@ -453,7 +432,7 @@ public:
 			auto& refTimes = targetMappingInRefTimes[nodeID];
 			auto& nodeDepth = targetMappingInDepth[nodeID];
 			if (nodeDepth == searchDepth) {
-				targetIn.erase(nodeID);	
+				targetIn.erase(nodeID);
 				nodeDepth = 0;
 			}
 			refTimes--;
@@ -470,7 +449,7 @@ public:
 			}
 			refTimes--;
 		}
-		if (queryMappingInDepth[queryNodeID])	queryIn.insert(queryNodeID);		
+		if (queryMappingInDepth[queryNodeID])	queryIn.insert(queryNodeID);
 		if (queryMappingOutDepth[queryNodeID])	queryOut.insert(queryNodeID);
 		if (targetMappingInDepth[targetNodeID])	targetIn.insert(targetNodeID);
 		if (targetMappingOutDepth[targetNodeID])	targetOut.insert(targetNodeID);
