@@ -10,5 +10,10 @@
 #define IN_NODE_SET(S,K) (S.exist(K))
 #define NOT_IN_SET(S,K) (S.find(K)==S.end())
 
+#define INDUCE_ISO
+//#define NORMAL_ISO
+namespace wg {
+const size_t NO_MAP = SIZE_MAX;
+}
 
 

@@ -94,7 +94,7 @@ public:
 		v = temp.v;
 		vSize = temp.vSize;
 		graph = temp.graph;
-		belong = shared_ptr<bool[]>(new bool[graph->size()]());
+		belong = unique_ptr<bool[]>(new bool[graph->size()]());
 	}
 	void insert(const NodeIDType id) {
 		if (belong[id] == false) {
