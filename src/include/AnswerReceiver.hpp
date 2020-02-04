@@ -4,14 +4,13 @@
 #include<vector>
 #include<iostream>
 #include<string>
-template<typename _NodeIDType>
+template<typename NodeIDType>
 class AnswerReceiver {
-	typedef _NodeIDType NodeIDType;
 	size_t count = 1;
 	std::fstream f;
 public:
 	AnswerReceiver() = default;
-	AnswerReceiver(std::string SolutionPath)
+	AnswerReceiver(const std::string &SolutionPath)
 	{
 	    f.open(SolutionPath.c_str(), std::ios_base::out);
 		if (f.is_open() == false) cout << "solution file open fail" << endl;
@@ -38,4 +37,18 @@ public:
 		if(f.is_open()) f.close();
 	}
 
+};
+
+template<typename NodeIDType>
+class AnswerReceiverThread: AnswerReceiver<NodeIDType> {
+	typedef AnswerReceiver<NodeIDType> ARBaseType;
+public:
+	AnswerReceiverThread() = default;
+	AnswerReceiverThread(const std::string &SolutionPath) :ARBaseType(SolutionPath){}
+	void operator<<(const vector<NodeIDType>& mapping) {
+		ARBaseType::operator<<(mapping);
+	}
+	void finish() {
+		ARBaseType::finish();
+	}
 };

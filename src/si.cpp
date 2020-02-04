@@ -6,6 +6,7 @@
 #include<iostream>
 #include<fstream>
 #include"AnswerReceiver.hpp"
+#include"SubgraphIosmorphismThread.hpp"
 using namespace std;
 static long t = 0;
 using namespace wg;
@@ -15,19 +16,22 @@ int main(int argc, char * argv[]) {
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
 	typedef State<GraphType> StateType;
-	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
 
 
-	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg","self-order","-so" });
+
+	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg","self-order","-so","-thread","-t" });
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath,matchOrderPath;
+	size_t threadNum = 0;
 	bool induceGraph = true, onlyNeedOneSolution = false,matchOrder = false;
 	cmdl({ "-target-graph","-tg" }) >> targetGraphPath;
 	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
 //	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
 	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
-
+	cmdl({ "-thread","-t" }) >> threadNum;
     cmdl({"-self-order","-so"})>>matchOrderPath;
+
+	//match order
     matchOrder = !matchOrderPath.empty();
 #define MOS_VF3
 #ifdef MOS_TEST
@@ -37,7 +41,7 @@ int main(int argc, char * argv[]) {
 #elif defined(MOS_VF3)
 	typedef MatchOrderSelectorVF3<GraphType> MatchOrderSelectorType;
 #endif
-
+	// graph type ( store in files ) and read graph
 #define GRF_L
 #ifdef GRF_L
 	typedef GRFGraphLabel<GraphType> GraphReader;
@@ -47,7 +51,6 @@ int main(int argc, char * argv[]) {
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
 
-    typedef SubgraphIsomorphism<StateType, AnswerReceiverType,MatchOrderSelectorType> VF2Type;
 	auto t1 = clock();
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
@@ -61,11 +64,9 @@ int main(int argc, char * argv[]) {
 	queryGraph->graphBuildFinish();
 
 	TIME_COST_PRINT("sort edge time : ",clock()- t1);
-	AnswerReceiverType answerReceiver;
 
 	vector<NodeIDType> ms;
-	ms.resize(queryGraph->size());
-    VF2Type *vf2=nullptr;
+
     if(matchOrder){
         fstream f;
         f.open(matchOrderPath.c_str(),ios_base::in);
@@ -73,27 +74,34 @@ int main(int argc, char * argv[]) {
             cout<<matchOrderPath<< " open fail"<<endl;
             exit(1);
         }
+		ms.resize(queryGraph->size());
         for (auto i=0;i<ms.size();++i) {
             f>>ms[i];
         }
         f.close();
-        vf2 = new VF2Type(*queryGraph, *targetGraph, answerReceiver, induceGraph, onlyNeedOneSolution,ms);
-
     }
-    else{
-        vf2 =new  VF2Type(*queryGraph, *targetGraph, answerReceiver, induceGraph, onlyNeedOneSolution);
-    }
-
 	t1 = clock();
-	vf2->run();
-
+	if (threadNum > 1) {
+		typedef AnswerReceiverThread<NodeIDType> AnswerReceiverType;
+		typedef SubgraphIsomorphismThread<StateType, AnswerReceiverType, MatchOrderSelectorType> SIType;
+		AnswerReceiverType answerReceiver;
+		SIType si(*queryGraph, *targetGraph, answerReceiver, induceGraph, onlyNeedOneSolution, ms);
+		si.run();
+		answerReceiver.finish();
+	}
+	else {
+		typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
+		typedef SubgraphIsomorphism<StateType, AnswerReceiverType, MatchOrderSelectorType> SIType;
+		AnswerReceiverType answerReceiver;
+		SIType si(*queryGraph, *targetGraph, answerReceiver, induceGraph, onlyNeedOneSolution, ms);
+		si.run();
+		answerReceiver.finish();
+	}
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
-	delete vf2;
 	delete queryGraph;
 	delete targetGraph;
-	
-	answerReceiver.finish();
+
 	return 0;
 }
 

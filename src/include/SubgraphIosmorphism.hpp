@@ -3,6 +3,7 @@
 #include"Graph.hpp"
 #include"Node.hpp"
 #include"State.hpp"
+#include"AnswerReceiver.hpp"
 #include<vector>
 #include<iostream>
 #include<time.h>
@@ -18,9 +19,8 @@ About MatchOrderSelector,if MatchOrderSelector is  void type and you do not spec
 
 */
 namespace wg {
-template<typename StateType, typename _AnswerReceiver, typename _MatchOrderSelector = void >
+template<typename StateType, typename AnswerReceiverType, typename _MatchOrderSelector = void >
 class SubgraphIsomorphism {
-	typedef _AnswerReceiver AnswerReceiver;
 	typedef typename StateType::GraphType GraphType;
 	typedef typename StateType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
@@ -33,7 +33,7 @@ class SubgraphIsomorphism {
 	vector<NodeIDType> matchSequence;
 	size_t searchDepth;
 	StateType mapState;
-	AnswerReceiver& answerReceiver;
+	AnswerReceiverType& answerReceiver;
 	unique_ptr< vector< MapPair>[] > allDepthCanditatePairs;
 
 	bool onlyNeedOneSolution = true;
@@ -107,7 +107,7 @@ public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiver& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence= vector<NodeIDType>())
+	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence= vector<NodeIDType>())
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), matchSequence(_matchSequence), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph)
 	{
 		auto t1 = clock();
@@ -120,8 +120,6 @@ public:
 		cout << endl;
 		searchDepth = 0;
 		allDepthCanditatePairs = std::move(unique_ptr<vector<MapPair>[]>(new vector<MapPair>[queryGraph.size()]));
-
-
 	};
 	void run()
 	{
