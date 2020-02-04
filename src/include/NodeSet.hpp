@@ -72,12 +72,12 @@ public:
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
+	typedef unordered_set<NodeIDType> VUnit;
 private:
-	//	vector< unordered_map<NodeIDType, bool> > v;
-	vector< unordered_set<NodeIDType> > v;
+	
+	vector< VUnit > v;
 	vector<size_t> vSize;
-	unique_ptr<bool[]> belong;
-
+	vector<bool> belong;
 	GraphType const* graph = nullptr;
 public:
 
@@ -88,13 +88,7 @@ public:
 		for (auto it = LQinform.begin(); it != LQinform.end(); ++it) {
 			v[it->first].reserve(calHashSuitableSize(it->second));
 		}
-		belong = unique_ptr<bool[]>(new bool[graph->size()]());
-	}
-	NodeSetWithLabel(const NodeSetWithLabel<GraphType>& temp) {
-		v = temp.v;
-		vSize = temp.vSize;
-		graph = temp.graph;
-		belong = unique_ptr<bool[]>(new bool[graph->size()]());
+		belong.resize(_graph.size());
 	}
 	void insert(const NodeIDType id) {
 		if (belong[id] == false) {
@@ -117,7 +111,7 @@ public:
 	inline bool exist(const NodeIDType id)const {
 		return belong[id];
 	}
-	const unordered_set<NodeIDType>& getSet(NodeLabelType label)const {
+	const VUnit& getSet(NodeLabelType label)const {
 		return v[label];
 	}
 	bool operator>(const NodeSetWithLabel<GraphType>& ns)const {
@@ -127,7 +121,7 @@ public:
 		}
 		return false;
 	}
-	const unordered_set<NodeIDType>& operator[](const NodeLabelType label)const {
+	const VUnit& operator[](const NodeLabelType label)const {
 		return v[label];
 	}
 	size_t size(NodeLabelType label)const {
@@ -137,23 +131,9 @@ public:
 	void containerClone(NodeSetWithLabel<GraphType>& temp) {
 		v = temp.v;
 		for (auto& s : v) s.clear();
-		vSize = temp.vSize;
-		for (auto& i : vSize) i = 0;
+		vSize = vector<size_t>(temp.vSize.size());
 		graph = temp.graph;
-		belong = std::move(unique_ptr<bool[]>(new bool[graph->size()]()));
-	}
-	void completeClone(NodeSetWithLabel<GraphType>& temp) {
-		v = temp.v;
-		vSize = temp.vSize;
-		graph = temp.graph;
-		belong = std::move(unique_ptr<bool[]>(new bool[graph->size()]()));
-		LOOP(i, 0, graph->size()) {
-			belong[i] = temp.belong[i];
-		}
-	}
-	void operator=(NodeSetWithLabel<GraphType>& temp) {
-		this->completeClone(temp);
-		return;
+		belong = vector<bool>(temp.belong.size());
 	}
 	NodeSetWithLabel() = default;
 };

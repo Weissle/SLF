@@ -38,18 +38,17 @@ public:
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef const NodeType* NodeCPointer;
 	typedef pair<NodeIDType, NodeIDType> MapPair;
 	typedef vector<NodeIDType> MapType;
 
 	typedef NodeSetWithLabel<GraphType> NodeSetType;
-
+	typedef typename NodeSetWithLabel<GraphType>::VUnit NodeSetWithLabelUnit;
 
 private:
 	const GraphType& targetGraph, & queryGraph;
 	size_t searchDepth = 0;
 	MapType mapping;
-	MapType mappingAux; //from query to target
+	MapType mappingAux; //from target to query
 
 	NodeSetType targetUnmap, targetIn, targetOut,
 		queryUnmap, queryIn, queryOut;
@@ -255,8 +254,6 @@ public:
 
 	};
 	State() = default;
-	~State() {
-	}
 
 public:
 	//public function
@@ -273,11 +270,8 @@ public:
 		const auto queryNodeInDepth = queryMappingInDepth[queryNodeToMatchID];
 		const auto queryNodeOutDepth = queryMappingOutDepth[queryNodeToMatchID];
 
-
-
 		const auto queryNodeLabel = queryNode.label();
-
-		const unordered_set<NodeIDType>* tempNodeSetPointer;
+		const NodeSetWithLabelUnit* tempNodeSetPointer;
 
 		if (queryNodeInIn) tempNodeSetPointer = &targetIn[queryNodeLabel];
 		else if (queryNodeInOut)tempNodeSetPointer = &targetOut[queryNodeLabel];
@@ -462,9 +456,8 @@ public:
 		return;
 
 	}
-	bool isCoverQueryGraph()const {
-		if (queryGraph.size() == searchDepth)	return true;
-		return false;
+	inline bool isCoverQueryGraph()const {
+		return (queryGraph.size() == searchDepth);
 	}
 	MapType getMap(bool showNotCoverWarning = true) const {
 		if (isCoverQueryGraph() == false && showNotCoverWarning) {

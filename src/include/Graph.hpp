@@ -22,11 +22,9 @@ public:
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	//	typedef const NodeType* NodeCPointer;
 private:
 
 	vector<NodeType> _nodes;
-	//	unordered_map<NodeIDType, size_t> index;
 	GRAPH_TYPE graphType;
 	size_t _size;
 
