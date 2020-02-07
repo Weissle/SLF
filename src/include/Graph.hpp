@@ -10,15 +10,15 @@
 #include<utility>
 using namespace std;
 namespace wg {
-template<typename _NodeType, typename _EdgeType>
+template<typename NodeType, typename EdgeType>
 class Graph
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
 	typedef size_t NodeIDType;
-	typedef _NodeType NodeType;
-	typedef _EdgeType EdgeType;
-	typedef Graph<_NodeType, _EdgeType> GraphType;
+	typedef Graph<NodeType, EdgeType> GraphType;
+	typedef NodeType NodeType;
+	typedef EdgeType EdgeType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 

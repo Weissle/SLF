@@ -19,32 +19,31 @@ About MatchOrderSelector,if MatchOrderSelector is  void type and you do not spec
 
 */
 namespace wg {
-template<typename StateType, typename AnswerReceiverType, typename _MatchOrderSelector = void >
+template<typename GraphType, typename AnswerReceiverType, typename _MatchOrderSelector = void >
 class SubgraphIsomorphism {
-	typedef typename StateType::GraphType GraphType;
-	typedef typename StateType::NodeType NodeType;
+	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
-	typedef typename StateType::EdgeType EdgeType;
+	typedef typename GraphType::EdgeType EdgeType;
 
+	typedef State<GraphType> StateType;
 	typedef typename StateType::MapType MapType;
 	typedef typename StateType::MapPair MapPair;
 	
-	const GraphType& targetGraph, & queryGraph;
+	GraphType& targetGraph, & queryGraph;
 	vector<NodeIDType> matchSequence;
 	size_t searchDepth;
 	StateType mapState;
 	AnswerReceiverType& answerReceiver;
-	unique_ptr< vector< MapPair>[] > allDepthCanditatePairs;
-
+	vector< vector< MapPair> > allDepthCanditatePairs;
+	bool timeCount = true;
 	bool onlyNeedOneSolution = true;
 	bool induceGraph = true;
-	bool goDeeper()
+	bool goDeeper_timeCount()
 	{
 		if (searchDepth==queryGraph.size()) {
 			this->ToDoAfterFindASolution();
 			return true;
 		}
-#ifdef TIME_COUNT
 		++hitTime;
 		if ((int)hitTime % (int)1E4 == 0) {
 			cout << hitTime << endl;
@@ -59,10 +58,8 @@ class SubgraphIsomorphism {
 
 		LOOP(i,0,canditatePairs.size()){
 			const auto tempCanditatePair = canditatePairs[i];
-			const auto queryNodeID = tempCanditatePair.first;
-			const auto targetNodeID = tempCanditatePair.second;
 			t1 = clock();
-			bool suitable = mapState.checkCanditatePairIsAddable(tempCanditatePair);
+			const bool suitable = mapState.checkCanditatePairIsAddable(tempCanditatePair);
 
 			t2 = clock();
 			check += t2 - t1;
@@ -72,7 +69,7 @@ class SubgraphIsomorphism {
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
-				if (goDeeper() && this->onlyNeedOneSolution) return true;
+				if (goDeeper_timeCount() && this->onlyNeedOneSolution) return true;
 				t1 = clock();
 				mapState.deleteCanditatePairToMapping(tempCanditatePair);
 				--searchDepth;
@@ -80,20 +77,28 @@ class SubgraphIsomorphism {
 				del += t2 - t1;
 			}
 		}
-
-#else
-		if (mapState.isCoverQueryGraph()) {
-			this->ToDoAfterFindASolution(mapState);
+		return false;
+	}
+	bool goDeeper() {
+		if (searchDepth == queryGraph.size()) {
+			this->ToDoAfterFindASolution();
 			return true;
 		}
-		for (const auto& tempCanditatePair : mapState.calCandidatePairs(matchSequence[searchDepth])) {
-			if (mapState.checkCanditatePairIsAddable(tempCanditatePair)) {
+		allDepthCanditatePairs[searchDepth] = mapState.calCandidatePairs(matchSequence[searchDepth]);
+		const auto& canditatePairs = allDepthCanditatePairs[searchDepth];
+		if (canditatePairs.empty())return false;
+		LOOP(i, 0, canditatePairs.size()) {
+			const auto tempCanditatePair = canditatePairs[i];
+			const bool suitable = mapState.checkCanditatePairIsAddable(tempCanditatePair);
+			if (suitable) {
 				mapState.addCanditatePairToMapping(tempCanditatePair);
-				if (goDeeper(mapState) && this->onlyNeedOneSolution) return true;
+				++searchDepth;
+				if (goDeeper() && this->onlyNeedOneSolution) return true;
 				mapState.deleteCanditatePairToMapping(tempCanditatePair);
+				--searchDepth;
 			}
 		}
-#endif
+
 		return false;
 	}
 	void ToDoAfterFindASolution() {
@@ -107,7 +112,7 @@ public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence= vector<NodeIDType>())
+	SubgraphIsomorphism(GraphType& _queryGraph, GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence= vector<NodeIDType>())
 		:targetGraph(_targetGraph), queryGraph(_queryGraph), matchSequence(_matchSequence), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph)
 	{
 		auto t1 = clock();
@@ -119,19 +124,31 @@ public:
 		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";
 		cout << endl;
 		searchDepth = 0;
-		allDepthCanditatePairs = std::move(unique_ptr<vector<MapPair>[]>(new vector<MapPair>[queryGraph.size()]));
+		allDepthCanditatePairs.resize(queryGraph.size());
 	};
+	SubgraphIsomorphism(GraphType& _queryGraph,GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution, vector<NodeIDType>& _matchSequence,const StateType &_mapState,size_t _searchDepth):
+	queryGraph(_queryGraph),targetGraph(_targetGraph),answerReceiver(_answerReceiver),onlyNeedOneSolution(_onlyNeedOneSolution),mapState(_mapState),matchSequence(_matchSequence),searchDepth(_searchDepth)
+	{
+		timeCount = false;
+		allDepthCanditatePairs.resize(queryGraph.size());
+	}
 	void run()
 	{
-		cout << "start match" << endl;
-		goDeeper();
-	
-		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
-		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
-		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
-		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
-		cout << "hit times " << hitTime << endl;
-		cout << "canditate Pair Count " << canditatePairCount << endl;
+#ifdef TIME_COUNT
+		if (timeCount) {
+			cout << "start match" << endl;
+			goDeeper_timeCount();
+			cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
+			cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
+			cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
+			cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
+			cout << "hit times " << hitTime << endl;
+			cout << "canditate Pair Count " << canditatePairCount << endl;
+		}
+		else
+#endif
+	 goDeeper();
+
 	}
 
 };

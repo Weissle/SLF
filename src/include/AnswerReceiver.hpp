@@ -4,6 +4,7 @@
 #include<vector>
 #include<iostream>
 #include<string>
+#include<mutex>
 template<typename NodeIDType>
 class AnswerReceiver {
 	size_t count = 1;
@@ -42,10 +43,12 @@ public:
 template<typename NodeIDType>
 class AnswerReceiverThread: AnswerReceiver<NodeIDType> {
 	typedef AnswerReceiver<NodeIDType> ARBaseType;
+	mutex m;
 public:
 	AnswerReceiverThread() = default;
 	AnswerReceiverThread(const std::string &SolutionPath) :ARBaseType(SolutionPath){}
 	void operator<<(const vector<NodeIDType>& mapping) {
+		lock_guard<mutex> lg(m);
 		ARBaseType::operator<<(mapping);
 	}
 	void finish() {
