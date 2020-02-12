@@ -5,7 +5,10 @@
 #include<unordered_set>
 #include<unordered_map>
 #include<time.h>
-#include<IndexTurner.hpp>
+#include<tools/IndexTurner.hpp>
+#include"graph/Edge.hpp"
+#include"graph/Graph.hpp"
+#include"graph/Node.hpp"
 #define FLOAT_ZERO 1E-6
 namespace sg {
 

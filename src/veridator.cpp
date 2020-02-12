@@ -1,23 +1,18 @@
-#include"include/State.hpp"
-#include"include/GraphReader.hpp"
-#include"include/argh.h"
+#include"tools/GraphReader.hpp"
+#include"tools/argh.h"
 #include<time.h>
 #include<iostream>
 #include<fstream>
-#include"include/AnswerReceiver.hpp"
-#include"AnswerChecker.hpp"
-#include"SolutionReader.hpp"
+#include"tools/AnswerChecker.hpp"
+#include"tools/SolutionReader.hpp"
 using namespace std;
 using namespace wg;
 static long t = 0;
 
 int main(int argc, char* argv[]) {
-	typedef size_t NodeIDType;
 	typedef Edge<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
-	typedef State<GraphType> StateType;
-	typedef AnswerReceiver<NodeIDType> AnswerReceiverType;
 
 
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-solution","-induce","-qg" });

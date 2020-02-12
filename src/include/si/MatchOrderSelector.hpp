@@ -3,8 +3,7 @@
 #include<vector>
 #include<set>
 #include<map>
-#include"Graph.hpp"
-#include"Pair.hpp"
+#include"graph/Graph.hpp"
 #include<utility>
 using namespace std;
 namespace wg {
@@ -223,7 +222,7 @@ public:
 			}
 		}
 		double* possibility = new double[graph.size()];
-		FSPair<NodeIDType, FSPair<double, size_t>>* sortPoss = new FSPair<NodeIDType, FSPair<double, size_t>>[graph.size()];
+		pair<NodeIDType, pair<double, size_t>>* sortPoss = new pair<NodeIDType, pair<double, size_t>>[graph.size()];
 
 		unordered_set<NodeIDType> notInSeq;
 		for (auto node : graph.nodes()) {
@@ -232,11 +231,11 @@ public:
 			auto label = node.label();
 			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()]) / (targetGraph.size() * targetGraph.size());
 
-			sortPoss[id] = FSPair<NodeIDType, FSPair<double, size_t>>(id, FSPair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
+			sortPoss[id] = pair<NodeIDType, pair<double, size_t>>(id, pair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
 
 		}
 
-		sort(sortPoss, sortPoss + graph.size(), [](const FSPair<NodeIDType, FSPair<double, size_t>>& a, const FSPair<NodeIDType, FSPair<double, size_t>>& b)
+		sort(sortPoss, sortPoss + graph.size(), [](const pair<NodeIDType, pair<double, size_t>>& a, const pair<NodeIDType, pair<double, size_t>>& b)
 			{
 				if (fabs(a.second.first - b.second.first) < 1E-20) {
 					return a.second.second > b.second.second;

@@ -1,6 +1,7 @@
 #include<iostream>
 #include<string>
-
+#include<fstream>
+#include<vector>
 using namespace std;
 class SolutionReader {
 public:
@@ -8,6 +9,10 @@ public:
 		fstream f;
 		size_t solutionNum = 0;
 		f.open(path.c_str(), ios_base::in);
+		if (f.is_open() == false) {
+			cout << "open fail" << endl;
+			exit(0);
+		}
 		vector<vector<int>> answer;
 		while (f.eof() == false) {
 			string temp;

@@ -1,8 +1,7 @@
 #pragma once
 #include<vector>
 #include<time.h>
-#include"Graph.hpp"
-#include"Pair.hpp"
+#include"graph/Graph.hpp"
 #include"NodeSet.hpp"
 #include<assert.h>
 #include<iostream>
@@ -11,7 +10,7 @@
 #include<algorithm>
 #include<limits>
 #include"common.h"
-#include<si_marcos.h>
+#include<si/si_marcos.h>
 #include<cstring>
 
 //defind INDUCE_ISO or NORMAL_ISO in si_marcos.h
@@ -91,7 +90,13 @@ private:
 				const bool i = IN_NODE_SET(targetIn, targetTargetNodeID);
 				const bool b = (i && o);
 				const auto label = targetGraph[targetTargetNodeID].label();
-				if (b) 	bothNewCount[label]++;
+				if (b) {
+					bothNewCount[label]++;
+#if defined(NORMAL_ISO)
+					outNewCount[label]++;
+					inNewCount[label]++;
+#endif
+				}
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
 #ifdef NORMAL_ISO
@@ -116,7 +121,11 @@ private:
 				const bool b = (o && i);
 				const auto label = queryGraph[queryTargetNodeID].label();
 				if (b) {
+#ifdef INDUCE_ISO
 					if (bothNewCount[label]--);
+#elif defined(NORMAL_ISO)
+					if (bothNewCount[label]-- && outNewCount[label]-- && inNewCount[label]--);
+#endif
 					else return false;
 				}
 				else if (o) {
@@ -161,7 +170,13 @@ private:
 				const bool i = IN_NODE_SET(targetIn, targetSourceNodeID);
 				const bool b = (o && i);
 				const auto label = targetGraph[targetSourceNodeID].label();
-				if (b) 	bothNewCount[label]++;
+				if (b) {
+					bothNewCount[label]++;
+#if defined(NORMAL_ISO)
+					outNewCount[label]++;
+					inNewCount[label]++;
+#endif
+				}
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
 #ifdef NORMAL_ISO
@@ -185,7 +200,11 @@ private:
 				const bool b = (o && i);
 				const auto label = queryGraph[querySourceNodeID].label();
 				if (b) {
+#ifdef INDUCE_ISO
 					if (bothNewCount[label]--);
+#elif defined(NORMAL_ISO)
+					if (bothNewCount[label]-- && outNewCount[label]-- && inNewCount[label]--);
+#endif
 					else return false;
 				}
 				else if (o) {
@@ -464,6 +483,41 @@ public:
 			cout << "WARNING : Map is not covering the whole quert graph\n";
 		}
 		return mapping;
+	}
+	State<GraphType>& operator=(const State<GraphType>& s) {
+		assert(addressof(targetGraph) == addressof(s.targetGraph) && addressof(queryGraph) == addressof(s.queryGraph));
+		if (this == &s) return *this;
+		else {
+			searchDepth = s.searchDepth;
+			mapping = s.mapping;
+			mappingAux = s.mappingAux;
+
+			targetUnmap = s.targetUnmap;
+			targetIn = s.targetIn;
+			targetOut = s.targetOut;
+
+			queryUnmap = s.queryUnmap;
+			queryIn = s.queryIn;
+			queryOut = s.queryOut;
+
+			targetMappingInDepth = s.targetMappingInDepth;
+			targetMappingOutDepth = s.targetMappingOutDepth;
+			queryMappingInDepth = s.queryMappingInDepth;
+			queryMappingOutDepth = s.queryMappingOutDepth;
+
+			targetMappingInRefTimes = s.targetMappingInRefTimes;
+			targetMappingOutRefTimes = s.targetMappingOutRefTimes;
+			queryMappingInRefTimes = s.queryMappingInRefTimes;
+			queryMappingOutRefTimes = s.queryMappingOutRefTimes;
+
+			labelTypeNum = s.labelTypeNum;
+			if (inNewCount.size() != labelTypeNum) {
+				inNewCount.resize(labelTypeNum);
+				outNewCount.resize(labelTypeNum);
+				bothNewCount.resize(labelTypeNum);
+				notNewCount.resize(labelTypeNum);
+			}
+		}
 	}
 };
 

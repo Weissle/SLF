@@ -11,14 +11,14 @@ template<class _GraphType = void>
 class NodeSet {
 	typedef size_t NodeIDType;
 	unordered_set<NodeIDType> s;
-	shared_ptr<bool[]> belong = shared_ptr<bool[]>(nullptr);
+	vector<bool> belong;
 	size_t _max_size, _size = 0;
 public:
 	NodeSet() = default;
 	~NodeSet() = default;
 	NodeSet(size_t need) :_max_size(need) {
 		s.reserve(calHashSuitableSize(need));
-		belong = move(shared_ptr<bool[]>(new bool[need]()));
+		belong = move(vector<bool>(need));
 	}
 	NodeSet(const _GraphType& _g) :NodeSet(_g.size()) {}
 	void insert(NodeIDType id) {

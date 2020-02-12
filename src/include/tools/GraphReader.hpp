@@ -1,13 +1,13 @@
 #define _CRT_SECURE_NO_WARNING
-#include"Graph.hpp"
-#include"Pair.hpp"
+#include"graph/Graph.hpp"
 #include<string>
 #include<fstream>
 #include<iostream>
 #include<typeinfo>
 #include<unordered_set>
-#include"si_marcos.h"
+#include"si/si_marcos.h"
 #include "IndexTurner.hpp"
+#include<utility>
 using namespace std;
 /*
 fstream& openGraphFile(string graphPath,ios_base::openmode mode) {
@@ -15,7 +15,15 @@ fstream& openGraphFile(string graphPath,ios_base::openmode mode) {
 	f.open(graphPath.c_str(), mode);
 
 }*/
-
+template<typename F, typename S>
+struct hash<pair<F, S> >
+{
+	size_t operator()(const pair<F, S>& p)const {
+		auto hash1 = hash<F>()(p.first);
+		auto hash2 = hash<S>()(p.second);
+		return ((hash1 << 2) + 0x9e3779b9) ^ (hash2);
+	}
+};
 
 template<class GraphType>
 class LADReader {
@@ -163,13 +171,13 @@ public:
 		f >> nodeNum;
 
 		GraphType* graph = new GraphType(nodeNum);
-		unordered_set< FSPair<size_t, size_t> > s;
+		unordered_set< pair<size_t, size_t> > s;
 		s.reserve(nodeNum * nodeNum);
 
 		while (f.eof() == false) {
 			size_t source = INT32_MAX, target = INT32_MAX;
 			f >> source >> target;
-			FSPair<size_t, size_t> p(source, target);
+			pair<size_t, size_t> p(source, target);
 
 			if (IN_SET(s, p))continue;
 			s.insert(p);
@@ -210,14 +218,14 @@ public:
 		while (f.eof() == false) {
 			int edges = 0;
 			f >> edges;
-			unordered_set< FSPair<size_t, size_t> > s;
+			unordered_set< pair<size_t, size_t> > s;
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
 
 				size_t source = INT32_MAX, target = INT32_MAX;
 
 				f >> source >> target;
-				FSPair<size_t, size_t> p(source, target);
+				pair<size_t, size_t> p(source, target);
 				if (IN_SET(s, p))continue;
 				if (pp[source] == false) {
 					graph->edgeVectorReserve(source, edges);

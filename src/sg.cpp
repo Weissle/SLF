@@ -1,8 +1,8 @@
-#include"GraphReader.hpp"
-#include"SubgraphGenerator.hpp"
+#include"tools/GraphReader.hpp"
+#include"tools/SubgraphGenerator.hpp"
 #include<string>
-#include<RandomGenerator.hpp>
-#include"argh.h"
+#include<tools/RandomGenerator.hpp>
+#include"tools/argh.h"
 using namespace std;
 using namespace wg;
 template<class GraphType>

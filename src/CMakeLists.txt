@@ -12,20 +12,11 @@ if(CC_COMPILER)
 SET(CMAKE_CXX_COMPILER ${CC_COMPILER})
 endif()
 
-
-
 add_subdirectory(tests)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-add_executable(si si.cpp include/Edge.hpp include/Graph.hpp 
-				include/Node.hpp include/State.hpp include/SubgraphIosmorphism.hpp 
-				include/Pair.hpp include/GraphReader.hpp include/AnswerReceiver.hpp
-				include/argh.h include/common.h include/NodeSet.hpp include/IndexTurner.hpp include/MatchOrderSelector.hpp
-				include/SubgraphIosmorphismThread.hpp
-				)
+add_executable(si si.cpp include/si/si_marcos.h)
+add_executable(sg sg.cpp include/tools/SubgraphGenerator.hpp )
 
-add_executable(sg sg.cpp include/SubgraphGenerator.hpp include/Graph.hpp
-			include/Node.hpp include/Edge.hpp include/GraphReader.hpp include/argh.h include/RandomGenerator.hpp)
-
-add_executable(veridator veridator.cpp include/AnswerChecker.hpp include/SolutionReader.hpp)
+add_executable(veridator veridator.cpp include/tools/AnswerChecker.hpp include/tools/SolutionReader.hpp)
 

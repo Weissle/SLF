@@ -1,14 +1,27 @@
 #pragma once
-#include"Pair.hpp"
 #include<algorithm>
 #include<vector>
 #include<iostream>
 #include<string>
 #include<mutex>
-template<typename NodeIDType>
+#include<fstream>
 class AnswerReceiver {
+protected:
+	typedef size_t NodeIDType;
 	size_t count = 1;
 	std::fstream f;
+	void put_f(fstream& s, const vector<NodeIDType>& mapping) {
+		s << "solution " << count << endl;
+		s << mapping.size() << endl;
+		for (auto i = 0; i < mapping.size(); ++i) {
+			s << i << ' ' << mapping[i] << endl;
+		}
+	}
+	void put_cout( ostream & s, const vector<NodeIDType> & mapping){
+		s << "solution " << count << endl;
+		for (auto i = 0; i < mapping.size(); ++i) cout << "(" << i << ',' << mapping[i] << ") ";
+		cout << endl;
+	}
 public:
 	AnswerReceiver() = default;
 	AnswerReceiver(const std::string &SolutionPath)
@@ -17,21 +30,11 @@ public:
 		if (f.is_open() == false) cout << "solution file open fail" << endl;
 	}
 	~AnswerReceiver() = default;
-	void operator<<(const vector<NodeIDType> &mapping) {	
+	virtual void operator<<(const vector<NodeIDType> &mapping) {	
 		if (f.is_open()) {
-			f << "solution " << count  << endl;
-			f << mapping.size() << endl;
-			for (auto i = 0; i < mapping.size(); ++i) {
-				f << i << ' ' << mapping[i] << endl;
-			}
+			put_f(f, mapping);
 		}
-	
-		std::cout << "Solution : " << count++ << std::endl;
-		for (auto i = 0; i < mapping.size();++i) {
-
-			std::cout << '(' << i << ',' << mapping[i] << ") ";
-		}
-		std::cout << std::endl;
+		put_cout(cout, mapping);
 		return;
 	}
 	void finish() {
@@ -40,9 +43,8 @@ public:
 
 };
 
-template<typename NodeIDType>
-class AnswerReceiverThread: AnswerReceiver<NodeIDType> {
-	typedef AnswerReceiver<NodeIDType> ARBaseType;
+class AnswerReceiverThread:public AnswerReceiver {
+	typedef AnswerReceiver ARBaseType;
 	mutex m;
 public:
 	AnswerReceiverThread() = default;
