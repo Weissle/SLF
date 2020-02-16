@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
 
-	vector< vector<int> > solutions = SolutionReader::readSolutions(solutionPath);
+	vector< vector<size_t> > solutions = SolutionReader::readSolutions(solutionPath);
 
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),

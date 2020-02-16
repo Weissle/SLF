@@ -7,8 +7,8 @@ size_t calHashSuitableSize(const size_t need)
 	else return i << 1;
 };
 
-#define TIME_COST_PRINT(INFO,T) std::cout<< INFO<< double(T)/CLOCKS_PER_SEC<<endl
+#define PRINT_TIME_COST_S(INFO,T) std::cout<< INFO<< double(T)/CLOCKS_PER_SEC<<endl
+#define PRINT_TIME_COST_MS(INFO,T) std::cout<< INFO<< double(T)/(CLOCKS_PER_SEC/1000)<<endl
 #define LOOP(V,H,T) for(int V = H ;V<T;++V)
-
 
 

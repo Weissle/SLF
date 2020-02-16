@@ -1,11 +1,11 @@
-#include"si/SubgraphIosmorphism.hpp"
+#include"si/SubgraphIsomorphism.hpp"
 #include"tools/GraphReader.hpp"
 #include"tools/argh.h"
 #include<time.h>
 #include<iostream>
 #include<fstream>
 #include"si/AnswerReceiver.hpp"
-#include"si/SubgraphIosmorphismThread.hpp"
+#include"si/SubgraphIsomorphismThread.hpp"
 using namespace std;
 static long t = 0;
 using namespace wg;
@@ -32,7 +32,6 @@ int main(int argc, char * argv[]) {
 	typedef Edge<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
-//	typedef State<GraphType> StateType;
 
 
 
@@ -71,7 +70,7 @@ int main(int argc, char * argv[]) {
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		        *targetGraph = GraphReader::readGraph(targetGraphPath);
-	TIME_COST_PRINT("read graph time : ", clock() - t1);
+	PRINT_TIME_COST_S("read graph time : ", clock() - t1);
 	cout << "read graph finish" << endl;
 
 	t1 = clock();
@@ -79,22 +78,24 @@ int main(int argc, char * argv[]) {
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
 
-	TIME_COST_PRINT("sort edge time : ",clock()- t1);
+	PRINT_TIME_COST_S("sort edge time : ",clock()- t1);
 	vector<NodeIDType> ms =move(readMatchSequence(matchOrderPath));
-	SubgraphIsomorphism<GraphType> *si;
-	AnswerReceiver *answerReceiver;
 	t1 = clock();
-	if (threadNum > 1) {
-		auto answerReceiverThreadPointer = new AnswerReceiverThread(answerPath);
-		answerReceiver = answerReceiverThreadPointer;
-		si = new SubgraphIsomorphismThread<GraphType, AnswerReceiverThread, MatchOrderSelectorType>(*queryGraph, *targetGraph, *answerReceiverThreadPointer, threadNum, induceGraph, onlyNeedOneSolution, ms);
+	if (threadNum > 0) {
+		AnswerReceiverThread answerReceiver(answerPath);
+//		thread aT(&AnswerReceiverThread::run, &answerReceiver);
+		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
+		si.run();
+		cout << "ok\n";
+		answerReceiver.finish();
+//		aT.join();
 	}
 	else {
-		answerReceiver=new AnswerReceiver(answerPath);
-		si =new SubgraphIsomorphism_One<GraphType,AnswerReceiver,MatchOrderSelectorType>(*queryGraph, *targetGraph, *answerReceiver, induceGraph, onlyNeedOneSolution, ms);
+		AnswerReceiver answerReceiver(answerPath);
+		SubgraphIsomorphism<GraphType, AnswerReceiver, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms);
+		si.run();
+		answerReceiver.finish();
 	}
-	si->run();
-	answerReceiver->finish();
 	auto t2 = clock();
 	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
 	delete queryGraph;

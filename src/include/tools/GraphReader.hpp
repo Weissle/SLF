@@ -192,13 +192,9 @@ public:
 template<class GraphType>
 class GRFGraphLabel {
 public:
-	static GraphType* readGraph(string graphPath, bool clearMap = false) {
-		/*	static IndexTurner<int, map<int, size_t> > labelTurner;
-			if (clearMap) labelTurner.clear();
-		*/
+	static GraphType* readGraph(string graphPath) {
 		fstream f;
 		f.open(graphPath.c_str(), ios_base::in);
-		//		auto f = openGraphFile(graphPath, ios_base::in);
 		if (f.is_open() == false) {
 			cout << graphPath << " open fail" << endl;
 			exit(0);

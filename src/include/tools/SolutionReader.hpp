@@ -5,7 +5,7 @@
 using namespace std;
 class SolutionReader {
 public:
-	static vector<vector<int>> readSolutions(string path) {
+	static vector<vector<size_t>> readSolutions(string path) {
 		fstream f;
 		size_t solutionNum = 0;
 		f.open(path.c_str(), ios_base::in);
@@ -13,7 +13,7 @@ public:
 			cout << "open fail" << endl;
 			exit(0);
 		}
-		vector<vector<int>> answer;
+		vector<vector<size_t>> answer;
 		while (f.eof() == false) {
 			string temp;
 			f >> temp;
@@ -21,9 +21,9 @@ public:
 				int snum, graphsize = 0;
 				f >> snum >> graphsize;
 				if (answer.size() != snum - 1) cout << "solution num error ?" << endl;
-				answer.push_back(vector<int>(graphsize));
+				answer.push_back(vector<size_t>(graphsize));
 				LOOP(i, 0, graphsize) {
-					int a, b;
+					size_t a, b;
 					f >> a >> b;
 					answer[solutionNum][a] = b;
 				}

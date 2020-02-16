@@ -25,12 +25,12 @@ public:
 	}
 
 	const NodeIDType& source() const {
-		if (recordType == NODE_RECORD_TYPE::TARGET) throw "this is a edge record target node!!";
+		assert(recordType != NODE_RECORD_TYPE::TARGET&&  "this is a edge record target node!!");
 		return _source;
 	}
 	const NodeIDType& target()const
 	{
-		if (recordType == NODE_RECORD_TYPE::SOURCE)throw "this is a edge record source node!!";
+		assert (recordType != NODE_RECORD_TYPE::SOURCE && "this is a edge record source node!!");
 		return _target;
 	}
 	const EdgeLabelType& label()const

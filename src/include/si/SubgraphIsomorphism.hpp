@@ -12,15 +12,15 @@
 #include<si/MatchOrderSelector.hpp>
 #include<typeinfo>
 #include<utility>
-#define DETAILS_TIME_COUNT
+//#define DETAILS_TIME_COUNT
 using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
 
 */
 namespace wg {
-template<typename GraphType>
-class SubgraphIsomorphism {
+template<class GraphType, class MatchOrderSelectorType = MatchOrderSelectorVF3<GraphType>>
+class SubgraphIsomorphismBase {
 protected:
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
@@ -30,22 +30,30 @@ protected:
 	typedef typename StateType::MapType MapType;
 	typedef typename StateType::MapPair MapPair;
 	GraphType& targetGraph, & queryGraph;
+	vector<NodeIDType> matchSequence;
+	bool needOneSolution;
 public:
-	virtual void run() = 0;
-	SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(GraphType& _q, GraphType& _t) :queryGraph(_q), targetGraph(_t) {}
+	SubgraphIsomorphismBase() = default;
+	SubgraphIsomorphismBase(GraphType& _q, GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraph(_q), targetGraph(_t), matchSequence(_mS), needOneSolution(needOS)
+	{
+		auto t1 = clock();
+		if (matchSequence.size() == 0) 	matchSequence = MatchOrderSelectorType::run(_q, _t);
+
+		/*
+#ifdef DETAILS_TIME_COUNT
+		TIME_COST_PRINT("match order selete time : ", clock() - t1);
+#endif
+	*/
+	}
 };
 //for single thread
 template<typename GraphType, typename AnswerReceiverType, typename _MatchOrderSelector = void >
-class SubgraphIsomorphism_One : public SubgraphIsomorphism<GraphType> {
+class SubgraphIsomorphism : public SubgraphIsomorphismBase<GraphType, _MatchOrderSelector> {
 
 protected:
-	vector<NodeIDType> matchSequence;
 	size_t searchDepth;
 	StateType mapState;
 	AnswerReceiverType& answerReceiver;
-	bool onlyNeedOneSolution = true;
-	bool induceGraph = true;
 	bool goDeeper_timeCount()
 	{
 		if (searchDepth == queryGraph.size()) {
@@ -74,7 +82,7 @@ protected:
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
-				if (goDeeper_timeCount() && this->onlyNeedOneSolution) return true;
+				if (goDeeper_timeCount() && this->needOneSolution) return true;
 				t1 = clock();
 				mapState.deleteCanditatePairToMapping(tempCanditatePair);
 				--searchDepth;
@@ -95,7 +103,7 @@ protected:
 			if (suitable) {
 				mapState.addCanditatePairToMapping(tempCanditatePair);
 				++searchDepth;
-				if (goDeeper() && this->onlyNeedOneSolution) return true;
+				if (goDeeper() && this->needOneSolution) return true;
 				mapState.deleteCanditatePairToMapping(tempCanditatePair);
 				--searchDepth;
 			}
@@ -112,19 +120,11 @@ private:
 
 public:
 
-	SubgraphIsomorphism_One() = default;
-	~SubgraphIsomorphism_One() = default;
-	SubgraphIsomorphism_One(GraphType& _queryGraph, GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _induceGraph = true, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphism<GraphType>(_queryGraph,_targetGraph), matchSequence(_matchSequence), onlyNeedOneSolution(_onlyNeedOneSolution), induceGraph(_induceGraph), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph)
+	SubgraphIsomorphism() = default;
+	~SubgraphIsomorphism() = default;
+	SubgraphIsomorphism(GraphType& _queryGraph, GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
+		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph)
 	{
-		auto t1 = clock();
-		if (matchSequence.size() == 0) {
-			if (typeid(_MatchOrderSelector) != typeid(void))matchSequence = _MatchOrderSelector::run(_queryGraph, _targetGraph);
-			else matchSequence = MatchOrderSelectorVF3<GraphType>::run(_queryGraph, _targetGraph);
-		}
-#ifdef DETAILS_TIME_COUNT
-		TIME_COST_PRINT("match order selete time : ", clock() - t1);
-#endif
 #ifdef OUTPUT_MATCH_SEQUENCE
 		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";
 		cout << endl;
@@ -147,6 +147,6 @@ public:
 #endif
 	}
 
-};
+	};
 
 }

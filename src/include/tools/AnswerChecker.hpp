@@ -19,7 +19,7 @@ class  AnswerChecker {
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-	typedef vector<int> SolutionType;
+	typedef vector<size_t> SolutionType;
 	typedef vector<SolutionType> SolutionsType;
 
 	const GraphType& bigGraph, & smallGraph;

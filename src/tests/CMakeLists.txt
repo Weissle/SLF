@@ -14,8 +14,7 @@ find_package(Boost COMPONENTS regex graph system)
 set_target_properties(testi PROPERTIES FOLDER "Test")
 #target_link_libraries(testi Boost::graph Boost::regex Boost::system)
 
-include_directories(${CMAKE_SOURCE_DIR})
-
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 if (BOOST_SOURCE)
 	add_executable(boost-si boost-si-test.cpp)
