@@ -22,7 +22,7 @@ public:
 		Set ioSet;
 
 		typedef const NodeType* NodeCPointer;
-		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
+		typedef pair<NodeCPointer, double> NodeMatchPointPair;
 		vector<int>  ioMap;
 
 		ioMap.resize(graph.size() + 1);
@@ -55,8 +55,8 @@ public:
 				nodePointPair = pair;
 			}
 			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
-			assert(nodePointPair.getKey() != nullptr && "error happened");
-			const auto& node = *nodePointPair.getKey();
+			assert(nodePointPair.first != nullptr && "error happened");
+			const auto& node = *nodePointPair.first;
 
 			const auto nodeID = node.id();
 			matchSequence.push_back(nodeID);
@@ -146,8 +146,8 @@ public:
 				nodePointPair = pair;
 			}
 			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
-			assert(nodePointPair.getKey() != nullptr && "error happened");
-			const auto& node = *nodePointPair.getKey();
+			assert(nodePointPair.first != nullptr && "error happened");
+			const auto& node = *nodePointPair.first;
 
 			const auto nodeID = node.id();
 			matchSequence.push_back(nodeID);

@@ -21,20 +21,20 @@ protected:
 			s << i << ' ' << mapping[i] << endl;
 		}
 	}
-	void put_cout( ostream & s, const vector<NodeIDType> & mapping){
+	void put_cout(ostream& s, const vector<NodeIDType>& mapping) {
 		s << "solution " << count << endl;
 		for (auto i = 0; i < mapping.size(); ++i) cout << "(" << i << ',' << mapping[i] << ") ";
 		cout << endl;
 	}
 public:
 	AnswerReceiver() = default;
-	AnswerReceiver(const std::string &SolutionPath)
+	AnswerReceiver(const std::string& SolutionPath)
 	{
-	    f.open(SolutionPath.c_str(), std::ios_base::out);
+		f.open(SolutionPath.c_str(), std::ios_base::out);
 		if (f.is_open() == false) cout << "solution file open fail" << endl;
 	}
 	~AnswerReceiver() = default;
-	void operator<<(const vector<NodeIDType> &mapping) {	
+	void operator<<(const vector<NodeIDType>& mapping) {
 		if (f.is_open()) {
 			put_f(f, mapping);
 		}
@@ -43,13 +43,15 @@ public:
 		return;
 	}
 	void finish() {
-		if(f.is_open()) f.close();
+		if (f.is_open()) f.close();
 	}
 
 };
-//After subgraph-isomorphism 
-class AnswerReceiverThread:public AnswerReceiver {
-	mutex m;
+
+class AnswerReceiverThread :public AnswerReceiver {
+#define OUTPUT_ONCE
+	mutex m, output;
+	size_t has = 0;
 	queue<vector<NodeIDType>> answerQueue;
 	bool isFinish = false;
 	condition_variable cv;
@@ -61,24 +63,20 @@ class AnswerReceiverThread:public AnswerReceiver {
 	}
 public:
 	AnswerReceiverThread() = default;
-	AnswerReceiverThread(const std::string &SolutionPath) :AnswerReceiver(SolutionPath){}
+	AnswerReceiverThread(const std::string& SolutionPath) :AnswerReceiver(SolutionPath) {}
 	void operator<<(const vector<NodeIDType>& mapping) {
 		assert(isFinish == false && "is not finish?");
 		lock_guard<mutex> lg(m);
-		static size_t c = 0;
-		if (c++ % 1000 == 0) {
-			cout << " " << c++ << " " << answerQueue.size() * (sizeof(vector<NodeIDType>) + sizeof(NodeIDType) * mapping.size()) << endl;
-		}
 		answerQueue.push(mapping);
+		if (answerQueue.size())cout << answerQueue.size();
+#ifdef OUTPUT_ONCE
+#else
 		cv.notify_one();
+#endif 
 	}
 	void finish() {
 		lock_guard<mutex> lg(m);
 		isFinish = true;
-
-		outputAll(answerQueue);
-		AnswerReceiver::finish();
-
 		cv.notify_one();
 	}
 	bool empty() {
@@ -90,6 +88,10 @@ public:
 		unique_lock<mutex> ul(m1);
 		while (true) {
 			cv.wait(ul, [&] {return isFinish || answerQueue.empty() == false; });
+			outputAll(answerQueue);
+#ifdef OUTPUT_ONCE
+			break;
+#else
 			if (isFinish) {
 				lock_guard<mutex> lg(m);
 				outputAll(answerQueue);
@@ -97,12 +99,19 @@ public:
 			}
 			else {
 				m.lock();
-				queue<vector<NodeIDType>> newQ;
-				swap(newQ, answerQueue);
-				m.unlock();
-				outputAll(newQ);
+				if (answerQueue.size() >= 10000) {
+					outputAll(answerQueue);
+					m.unlock();
+				}
+				else {
+					queue<vector<NodeIDType>> newQ;
+					swap(newQ, answerQueue);
+					outputAll(newQ);
+					m.unlock();
+				}
 			}
+#endif
 		}
-		AnswerReceiver::finish();
+		if (f.is_open()) f.close();
 	}
 };

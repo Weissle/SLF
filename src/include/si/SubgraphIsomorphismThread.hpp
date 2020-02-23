@@ -18,7 +18,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	vector_mutex& freeThreads;
 	condition_variable& cv;
 	vector<NodeIDType> targetGraphMapSequence;
-	bool& end;
+	volatile bool& end;
 	void ToDoAfterFindASolution() {
 		answerReceiver << state.getMap();
 	}
@@ -28,7 +28,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 			this->ToDoAfterFindASolution();
 			return true;
 		}
-		if (searchTree.empty(searchDepth))searchTree.setTree(searchDepth, move(state.calCandidatePairs(matchSequence[searchDepth])));
+		if (searchTree.empty(searchDepth))searchTree.setTree(searchDepth, move(state.calCandidatePairs(matchSequence [searchDepth])));
 		while (searchTree.empty(searchDepth) == false) {
 			const auto tempCanditatePair = searchTree.pop(searchDepth);
 			const bool suitable = state.checkCanditatePairIsAddable(tempCanditatePair);
@@ -94,14 +94,8 @@ public:
 	}
 	void run() {
 		bool end = false;
-		siUnits.reserve(threadNum);
-		LOOP(i, 0, threadNum) siUnits.push_back(SIUnit(i, queryGraph, targetGraph, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end));
 		vector<pair<NodeIDType, NodeIDType>> tempCPs = state.calCandidatePairs(matchSequence[0]);
 		vector<vector<pair<NodeIDType, NodeIDType>>> vvp(threadNum);
-
-	//	auto it = find(tempCPs.begin(), tempCPs.end(), pair<size_t, size_t>(598, 6226));
-	//	vvp[0].assign(it, tempCPs.end());
-
 		{
 			size_t oneSIhave = tempCPs.size() / threadNum;
 			auto it = tempCPs.begin();
@@ -115,7 +109,6 @@ public:
 		LOOP(i, 0, threadNum) threads[i] = thread(&SIUnit::run, &siUnits[i]);
 		LOOP(i, 0, threadNum) threads[i].join();
 		return;
-
 	}
 
 private:

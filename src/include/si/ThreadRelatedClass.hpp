@@ -12,8 +12,8 @@ class SearchTree {
 	size_t maxDepth, minDepth;
 public:
 	SearchTree() = default;
-	SearchTree(size_t _size) :maxDepth(_size),minDepth(0) { tree.resize(_size); }
-	bool empty(size_t depth) const {
+	SearchTree(size_t _size) :maxDepth(_size), minDepth(0) { tree.resize(_size); }
+	bool empty(size_t depth)  const {
 		assert(depth < maxDepth && "depth >= maxDepth");
 		return tree[depth].empty();
 	}
@@ -28,8 +28,17 @@ public:
 		if (depth == minDepth && tree[depth].empty()) ++minDepth;
 		return answer;
 	}
-
-	void setTree(size_t depth, const vector<MapPair>& v,bool resetOther = false) {
+	void workDistribute(SearchTree& s) {
+		vector<MapPair>& pairs = tree[minDepth];
+		assert(pairs.size() != 0);
+		s.minDepth = minDepth;
+		LOOP(i, 0, maxDepth)  s.tree[i].clear();
+		auto it = pairs.begin() + pairs.size() % 2 + pairs.size() / 2;
+		s.tree[minDepth].assign(pairs.begin(), it);
+		tree[minDepth].assign(it, pairs.end());
+	}
+	void setTree(size_t depth, const vector<MapPair>& v, bool resetOther = false) {
+		assert(false);
 		assert(depth < maxDepth && "depth >= maxDepth");
 		tree[depth] = v;
 		if (resetOther) {
@@ -37,7 +46,7 @@ public:
 			LOOP(i, 0, maxDepth) if (i != depth) tree[depth].clear();
 		}
 	}
-	pair<size_t, size_t> minDepth_and_restPair() {
+	pair<size_t, size_t> minDepth_and_restPair()const {
 		return pair<size_t, size_t>(minDepth, tree[minDepth].size());
 	}
 };
@@ -52,18 +61,23 @@ public:
 		LOCK_TO_END;
 		q.push_back(t);
 	}
-	void pop(size_t t) {
+	size_t pop() {
 		LOCK_TO_END;
-		t = q.front();
+		auto t = q.front();
 		q.pop_back();
+		return t;
 	}
-	void empty() {
+	bool empty() {
 		LOCK_TO_END;
-		q.empty();
+		return q.empty();
 	}
 	size_t size() {
 		LOCK_TO_END;
 		return q.size();
+	}
+	size_t operator[](size_t t) {
+		LOCK_TO_END;
+		return q[t];
 	}
 };
 
