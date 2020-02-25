@@ -8,6 +8,7 @@
 #include<unordered_set>
 #include<unordered_map>
 #include<algorithm>
+#include<memory>
 #include<limits>
 #include"common.h"
 #include<si/si_marcos.h>
@@ -25,11 +26,9 @@
 using namespace std;
 
 namespace wg {
-
-template<typename _GraphType>
-class State {
+template <typename GraphType>
+class StateClassName {
 public:
-	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeIDType NodeIDType;
 
@@ -42,22 +41,109 @@ public:
 
 	typedef NodeSetWithLabel<GraphType> NodeSetType;
 	typedef typename NodeSetWithLabel<GraphType>::VUnit NodeSetWithLabelUnit;
+};
+template<typename GraphType>
+class State;
+template<typename GraphType>
+class GraphMatchState :public StateClassName<GraphType> {
+	const GraphType* graphPointer =nullptr;
+	size_t searchDepth = 0;
+	NodeSetType unmap, in, out;
+	vector<size_t> inDepth, outDepth;
+	vector<size_t> inRefTimes, outRefTimes;
+public:
+	friend class State<GraphType>;
+	GraphMatchState() = default;
+	GraphMatchState(const GraphType& g) :graphPointer(&g) {
+		in = NodeSetType(g);
+		out.containerClone(in);
+		unmap.containerClone(in);
 
+		size_t graphSize = g.size();
+		inDepth.resize(graphSize);
+		outDepth.resize(graphSize);
+
+		inRefTimes.resize(graphSize);
+		outRefTimes.resize(graphSize);
+		for (const auto& node : g.nodes()) unmap.insert(node.id());
+	}
+	void addNode(NodeIDType id) {	
+		const GraphType& graph = *graphPointer;
+		unmap.erase(id);
+		in.erase(id);
+		out.erase(id);
+		searchDepth++;
+		const auto& node = graph.node(id);
+		for (const auto& tempEdge : node.inEdges()) {
+			const auto& nodeID = tempEdge.source();
+			// was not be mapped
+			const bool i = IN_NODE_SET(in, nodeID);
+			const bool n = (i) ? true : IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			if (!i) {
+				in.insert(nodeID);
+				inDepth[nodeID] = searchDepth;
+			}
+			++inRefTimes[nodeID];
+		}
+		for (const auto& tempEdge : node.outEdges()) {
+			const auto& nodeID = tempEdge.target();
+			const bool o = IN_NODE_SET(out, nodeID);
+			const bool n = (o) ? true : IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			if (!o) {
+				out.insert(nodeID);
+				outDepth[nodeID] = searchDepth;
+			}
+			++outRefTimes[nodeID];
+		}
+		return;
+	}
+	void deleteNode(NodeIDType id) {
+		const GraphType& graph = *graphPointer;
+		const auto& node = graph.node(id);
+		for (const auto& tempEdge : node.inEdges()) {
+			const auto& nodeID = tempEdge.source();
+			const bool n = IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			auto& refTimes = inRefTimes[nodeID];
+			auto& nodeDepth = inDepth[nodeID];
+			if (nodeDepth == searchDepth) {
+				in.erase(nodeID);
+				nodeDepth = 0;
+			}
+			refTimes--;
+		}
+		for (const auto& tempEdge : node.outEdges()) {
+			const auto& nodeID = tempEdge.target();
+			const bool n = IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			auto& refTimes = outRefTimes[nodeID];
+			auto& nodeDepth = outDepth[nodeID];
+			if (nodeDepth == searchDepth) {
+				out.erase(nodeID);
+				nodeDepth = 0;
+			}
+			refTimes--;
+		}
+		if (inDepth[id])	in.insert(id);
+		if (outDepth[id])	out.insert(id);
+		unmap.insert(id);
+		--searchDepth;
+	}
+};
+template<typename GraphType>
+class State:public StateClassName<GraphType> {
 private:
+	GraphMatchState<GraphType> targetState;
+	shared_ptr<GraphMatchState<GraphType>[]> queryStates;
 	const GraphType& targetGraph, & queryGraph;
 	size_t searchDepth = 0;
 	MapType mapping;
 	MapType mappingAux; //from target to query
 
-	NodeSetType targetUnmap, targetIn, targetOut,
-		queryUnmap, queryIn, queryOut;
-
-	vector<size_t> targetMappingInDepth, targetMappingOutDepth,
-		queryMappingInDepth, queryMappingOutDepth;
-	vector<size_t> targetMappingInRefTimes, targetMappingOutRefTimes,
-		queryMappingInRefTimes, queryMappingOutRefTimes;
 	size_t labelTypeNum;
-
+	
 	vector<size_t> inNewCount, outNewCount, bothNewCount, notNewCount;
 	//used in look forward 2 
 	void clearNewCount() {
@@ -82,12 +168,13 @@ private:
 		// targetSourceNode is the predecessor of three typies of nodes
 		//1. not in map AND not self loop  
 		//2. self loop and 3. in map
+		
 		for (const auto& tempEdge : targetSourceNode.outEdges()) {
 			const auto& targetTargetNodeID = tempEdge.target();
-			const bool notMapped = IN_NODE_SET(targetUnmap, targetTargetNodeID);
+			const bool notMapped = IN_NODE_SET(targetState.unmap, targetTargetNodeID);
 			if (notMapped && targetTargetNodeID != targetSourceNodeID) {
-				const bool o = IN_NODE_SET(targetOut, targetTargetNodeID);
-				const bool i = IN_NODE_SET(targetIn, targetTargetNodeID);
+				const bool o = IN_NODE_SET(targetState.out, targetTargetNodeID);
+				const bool i = IN_NODE_SET(targetState.in, targetTargetNodeID);
 				const bool b = (i && o);
 				const auto label = targetGraph[targetTargetNodeID].label();
 				if (b) {
@@ -110,14 +197,14 @@ private:
 			}
 #endif
 		}
-
+		
 		for (const auto& tempEdge : querySourceNode.outEdges()) {
 			const auto& queryTargetNodeID = tempEdge.target();
 			//this tempnode have been mapped
-			const bool notMapped = IN_NODE_SET(queryUnmap, queryTargetNodeID);
+			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, queryTargetNodeID);
 			if (notMapped && queryTargetNodeID != querySourceNodeID) {
-				const bool o = IN_NODE_SET(queryOut, queryTargetNodeID);
-				const bool i = IN_NODE_SET(queryIn, queryTargetNodeID);
+				const bool o = IN_NODE_SET(queryStates[searchDepth].out, queryTargetNodeID);
+				const bool i = IN_NODE_SET(queryStates[searchDepth].in, queryTargetNodeID);
 				const bool b = (o && i);
 				const auto label = queryGraph[queryTargetNodeID].label();
 				if (b) {
@@ -164,10 +251,10 @@ private:
 		clearNewCount();
 		for (const auto& tempEdge : targetTargetNode.inEdges()) {
 			const auto& targetSourceNodeID = tempEdge.source();
-			const bool notMapped = IN_NODE_SET(targetUnmap, targetSourceNodeID);
+			const bool notMapped = IN_NODE_SET(targetState.unmap, targetSourceNodeID);
 			if (notMapped && targetTargetNodeID != targetSourceNodeID) {
-				const bool o = IN_NODE_SET(targetOut, targetSourceNodeID);
-				const bool i = IN_NODE_SET(targetIn, targetSourceNodeID);
+				const bool o = IN_NODE_SET(targetState.out, targetSourceNodeID);
+				const bool i = IN_NODE_SET(targetState.in, targetSourceNodeID);
 				const bool b = (o && i);
 				const auto label = targetGraph[targetSourceNodeID].label();
 				if (b) {
@@ -190,13 +277,13 @@ private:
 			}
 #endif
 		}
-
+		
 		for (const auto& tempEdge : queryTargetNode.inEdges()) {
 			const auto& querySourceNodeID = tempEdge.source();
-			const bool notMapped = IN_NODE_SET(queryUnmap, querySourceNodeID);
+			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, querySourceNodeID);
 			if (notMapped && queryTargetNodeID != querySourceNodeID) {
-				const bool o = IN_NODE_SET(queryOut, querySourceNodeID);
-				const bool i = IN_NODE_SET(queryIn, querySourceNodeID);
+				const bool o = IN_NODE_SET(queryStates[searchDepth].out, querySourceNodeID);
+				const bool i = IN_NODE_SET(queryStates[searchDepth].in, querySourceNodeID);
 				const bool b = (o && i);
 				const auto label = queryGraph[querySourceNodeID].label();
 				if (b) {
@@ -229,9 +316,8 @@ private:
 		}
 		return true;
 	}
-
-public:
-	State(const GraphType& _q, const GraphType& _t) :queryGraph(_q), targetGraph(_t) {
+	State(const GraphType& _q, const GraphType& _t) :queryGraph(_q), targetGraph(_t), targetState(_t)
+	{
 
 		const auto queryGraphSize = queryGraph.size();
 		const auto targetGraphSize = targetGraph.size();
@@ -243,34 +329,17 @@ public:
 		mapping.resize(queryGraphSize);
 		for (auto& i : mapping) i = NO_MAP;
 
-		targetIn = NodeSetType(targetGraph);
-		targetOut.containerClone(targetIn);
-		targetUnmap.containerClone(targetIn);
-
-		queryIn = NodeSetType(queryGraph);
-		queryOut.containerClone(queryIn);
-		queryUnmap.containerClone(queryIn);
-
-		targetMappingInDepth.resize(targetGraphSize);
-		targetMappingOutDepth.resize(targetGraphSize);
-		queryMappingInDepth.resize(queryGraphSize);
-		queryMappingOutDepth.resize(queryGraphSize);
-
-
-		targetMappingInRefTimes.resize(targetGraphSize);
-		targetMappingOutRefTimes.resize(targetGraphSize);
-		queryMappingInRefTimes.resize(queryGraphSize);
-		queryMappingOutRefTimes.resize(queryGraphSize);
-
 		labelTypeNum = max(queryGraph.LQinform().size(), targetGraph.LQinform().size());
 		inNewCount.resize(labelTypeNum);
 		outNewCount.resize(labelTypeNum);
 		bothNewCount.resize(labelTypeNum);
 		notNewCount.resize(labelTypeNum);
-		for (const auto& node : queryGraph.nodes()) queryUnmap.insert(node.id());
-		for (const auto& node : targetGraph.nodes()) targetUnmap.insert(node.id());
 
-
+	};
+public:
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<GraphMatchState<GraphType>[]> _queryStates) :State(_q,_t),queryStates(_queryStates){};
+	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType> &ms) :State(_q, _t) {
+		queryStates = State<GraphType>::makeSubgraphState(_q, ms);
 	};
 	State() = default;
 
@@ -279,22 +348,23 @@ public:
 	vector<MapPair> calCandidatePairs(const NodeIDType id)const
 	{
 		vector<MapPair> answer;
-
+		
 		const auto& queryNodeToMatchID = id;
-		const bool queryNodeInIn = IN_NODE_SET(queryIn, queryNodeToMatchID);
-		const bool queryNodeInOut = IN_NODE_SET(queryOut, queryNodeToMatchID);
+
+		const bool queryNodeInIn = IN_NODE_SET(queryStates[searchDepth].in, queryNodeToMatchID);
+		const bool queryNodeInOut = IN_NODE_SET(queryStates[searchDepth].out, queryNodeToMatchID);
 		const auto& queryNode = queryGraph.node(queryNodeToMatchID);
-		const auto queryNodeInRefTimes = queryMappingInRefTimes[queryNodeToMatchID];
-		const auto queryNodeOutRefTimes = queryMappingOutRefTimes[queryNodeToMatchID];
-		const auto queryNodeInDepth = queryMappingInDepth[queryNodeToMatchID];
-		const auto queryNodeOutDepth = queryMappingOutDepth[queryNodeToMatchID];
+		const auto queryNodeInRefTimes = queryStates[searchDepth].inRefTimes[queryNodeToMatchID];
+		const auto queryNodeOutRefTimes = queryStates[searchDepth].outRefTimes[queryNodeToMatchID];
+		const auto queryNodeInDepth = queryStates[searchDepth].inDepth[queryNodeToMatchID];
+		const auto queryNodeOutDepth = queryStates[searchDepth].outDepth[queryNodeToMatchID];
 
 		const auto queryNodeLabel = queryNode.label();
 		const NodeSetWithLabelUnit* tempNodeSetPointer;
 
-		if (queryNodeInIn) tempNodeSetPointer = &targetIn[queryNodeLabel];
-		else if (queryNodeInOut)tempNodeSetPointer = &targetOut[queryNodeLabel];
-		else tempNodeSetPointer = &targetUnmap[queryNodeLabel];
+		if (queryNodeInIn) tempNodeSetPointer = &targetState.in[queryNodeLabel];
+		else if (queryNodeInOut)tempNodeSetPointer = &targetState.out[queryNodeLabel];
+		else tempNodeSetPointer = &targetState.unmap[queryNodeLabel];
 
 		answer.reserve(tempNodeSetPointer->size());
 		const auto& targetNodeToMatchSet = *tempNodeSetPointer;
@@ -306,15 +376,15 @@ public:
 
 #ifdef INDUCE_ISO
 			// it will be ditched because of sourceRule in next depth .
-			if (queryNodeInRefTimes != targetMappingInRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeOutRefTimes != targetMappingOutRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeInDepth != targetMappingInDepth[targetNodeToMatchID])continue;
-			if (queryNodeOutDepth != targetMappingOutDepth[targetNodeToMatchID])continue;
+			if (queryNodeInRefTimes != targetState.inRefTimes[targetNodeToMatchID]) continue;
+			if (queryNodeOutRefTimes != targetState.outRefTimes[targetNodeToMatchID]) continue;
+			if (queryNodeInDepth != targetState.inDepth[targetNodeToMatchID])continue;
+			if (queryNodeOutDepth != targetState.outDepth[targetNodeToMatchID])continue;
 #elif defined(NORMAL_ISO)
-			if (queryNodeInRefTimes > targetMappingInRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeOutRefTimes > targetMappingOutRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeInDepth < targetMappingInDepth[targetNodeToMatchID])continue;
-			if (queryNodeOutDepth < targetMappingOutDepth[targetNodeToMatchID])continue;
+			if (queryNodeInRefTimes > targetState.inRefTimes[targetNodeToMatchID]) continue;
+			if (queryNodeOutRefTimes > targetState.outRefTimes[targetNodeToMatchID]) continue;
+			if (queryNodeInDepth < targetState.inDepth[targetNodeToMatchID])continue;
+			if (queryNodeOutDepth < targetState.outDepth[targetNodeToMatchID])continue;
 #endif
 
 			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
@@ -329,80 +399,16 @@ public:
 		const bool answer = sourceRule(cp) && targetRule(cp);
 		return answer;
 	}
+
 	void addCanditatePairToMapping(const MapPair & cp)
 	{
 		const auto targetNodeID = cp.second;
 		const auto queryNodeID = cp.first;
 		mapping[queryNodeID] = targetNodeID;
 		mappingAux[targetNodeID] = queryNodeID;
-
-
-		targetUnmap.erase(targetNodeID);
-		queryUnmap.erase(queryNodeID);
-
-		targetIn.erase(targetNodeID);
-		targetOut.erase(targetNodeID);
-
-		queryIn.erase(queryNodeID);
-		queryOut.erase(queryNodeID);
-
-		const auto& targetNodePointer = targetGraph.nodePointer(targetNodeID);
-		const auto& queryNodePointer = queryGraph.nodePointer(queryNodeID);
+		targetState.addNode(targetNodeID);
 		searchDepth++;
 
-		// there is a variables' name using error about [In/Out]RefTimesCla
-		// like below  inEdges should use targetOutRefTimesCla to record info
-		// but for coding convenience , I use targetInRefTimesCla 
-		// so you can see the swap function in the construct function .(??? Where is the swap function ?? I forget ...)
-		for (const auto& tempEdge : targetNodePointer->inEdges()) {
-			const auto& nodeID = tempEdge.source();
-			// was not be mapped
-			const bool i = IN_NODE_SET(targetIn, nodeID);
-			const bool n = (i) ? true : IN_NODE_SET(targetUnmap, nodeID);
-			if (!n)continue;
-			if (!i) {
-				targetIn.insert(nodeID);
-				targetMappingInDepth[nodeID] = searchDepth;
-			}
-			++targetMappingInRefTimes[nodeID];
-		}
-		for (const auto& tempEdge : targetNodePointer->outEdges()) {
-			const auto& nodeID = tempEdge.target();
-			const bool o = IN_NODE_SET(targetOut, nodeID);
-			const bool n = (o) ? true : IN_NODE_SET(targetUnmap, nodeID);
-			if (!n)continue;
-			if (!o) {
-				targetOut.insert(nodeID);
-				targetMappingOutDepth[nodeID] = searchDepth;
-			}
-			++targetMappingOutRefTimes[nodeID];
-		}
-
-
-		for (const auto& tempEdge : queryNodePointer->inEdges()) {
-			const auto& nodeID = tempEdge.source();
-			const bool i = IN_NODE_SET(queryIn, nodeID);
-			const bool n = (i) ? true : IN_NODE_SET(queryUnmap, nodeID);
-			if (!n)continue;
-			if (!i) {
-				queryIn.insert(nodeID);
-				queryMappingInDepth[nodeID] = searchDepth;
-			}
-			++queryMappingInRefTimes[nodeID];
-
-		}
-		for (const auto& tempEdge : queryNodePointer->outEdges()) {
-			const auto& nodeID = tempEdge.target();
-			const bool o = IN_NODE_SET(queryOut, nodeID);
-			const bool n = (o) ? true : IN_NODE_SET(queryUnmap, nodeID);
-			if (!n)continue;
-			if (!o) {
-				queryOut.insert(nodeID);
-				queryMappingOutDepth[nodeID] = searchDepth;
-			}
-			++queryMappingOutRefTimes[nodeID];
-
-		}
 		return;
 	}
 	void deleteCanditatePairToMapping(const MapPair & cp)
@@ -410,66 +416,9 @@ public:
 
 		const auto& queryNodeID = cp.first;
 		const auto& targetNodeID = cp.second;
-		const auto& queryNode = queryGraph.node(queryNodeID);
-		const auto& targetNode = targetGraph.node(targetNodeID);
-
-		for (const auto& tempEdge : queryNode.inEdges()) {
-			const auto& nodeID = tempEdge.source();
-			const bool n = IN_NODE_SET(queryUnmap, nodeID);
-			if (!n)continue;
-			auto& refTimes = queryMappingInRefTimes[nodeID];
-			auto& nodeDepth = queryMappingInDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				queryIn.erase(nodeID);
-				nodeDepth = 0;
-			}
-			refTimes--;
-
-		}
-		for (const auto& tempEdge : queryNode.outEdges()) {
-			const auto& nodeID = tempEdge.target();
-			const bool n = IN_NODE_SET(queryUnmap, nodeID);
-			if (!n)continue;
-			auto& refTimes = queryMappingOutRefTimes[nodeID];
-			auto& nodeDepth = queryMappingOutDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				queryOut.erase(nodeID);
-				nodeDepth = 0;
-			}
-			refTimes--;
-		}
-		for (const auto& tempEdge : targetNode.inEdges()) {
-			const auto& nodeID = tempEdge.source();
-			const bool n = IN_NODE_SET(targetUnmap, nodeID);
-			if (!n)continue;
-			auto& refTimes = targetMappingInRefTimes[nodeID];
-			auto& nodeDepth = targetMappingInDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				targetIn.erase(nodeID);
-				nodeDepth = 0;
-			}
-			refTimes--;
-		}
-		for (const auto& tempEdge : targetNode.outEdges()) {
-			const auto& nodeID = tempEdge.target();
-			const bool n = IN_NODE_SET(targetUnmap, nodeID);
-			if (!n)continue;
-			auto& refTimes = targetMappingOutRefTimes[nodeID];
-			auto& nodeDepth = targetMappingOutDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				targetOut.erase(nodeID);
-				nodeDepth = 0;
-			}
-			refTimes--;
-		}
-		if (queryMappingInDepth[queryNodeID])	queryIn.insert(queryNodeID);
-		if (queryMappingOutDepth[queryNodeID])	queryOut.insert(queryNodeID);
-		if (targetMappingInDepth[targetNodeID])	targetIn.insert(targetNodeID);
-		if (targetMappingOutDepth[targetNodeID])	targetOut.insert(targetNodeID);
+		targetState.deleteNode(targetNodeID);
 		mapping[queryNodeID] = NO_MAP;
 		mappingAux[targetNodeID] = NO_MAP;
-		targetUnmap.insert(targetNodeID);
-		queryUnmap.insert(queryNodeID);
 		searchDepth--;
 
 		return;
@@ -491,25 +440,8 @@ public:
 			searchDepth = s.searchDepth;
 			mapping = s.mapping;
 			mappingAux = s.mappingAux;
-
-			targetUnmap = s.targetUnmap;
-			targetIn = s.targetIn;
-			targetOut = s.targetOut;
-
-			queryUnmap = s.queryUnmap;
-			queryIn = s.queryIn;
-			queryOut = s.queryOut;
-
-			targetMappingInDepth = s.targetMappingInDepth;
-			targetMappingOutDepth = s.targetMappingOutDepth;
-			queryMappingInDepth = s.queryMappingInDepth;
-			queryMappingOutDepth = s.queryMappingOutDepth;
-
-			targetMappingInRefTimes = s.targetMappingInRefTimes;
-			targetMappingOutRefTimes = s.targetMappingOutRefTimes;
-			queryMappingInRefTimes = s.queryMappingInRefTimes;
-			queryMappingOutRefTimes = s.queryMappingOutRefTimes;
-
+			targetState = s.targetState;
+			queryStates = s.queryStates;
 			labelTypeNum = s.labelTypeNum;
 			if (inNewCount.size() != labelTypeNum) {
 				inNewCount.resize(labelTypeNum);
@@ -519,6 +451,19 @@ public:
 			}
 		}
 	}
+
+	template<class GraphType>
+	static shared_ptr<GraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, const vector<NodeIDType>& ms) {
+		assert(g.size() == ms.size());
+		shared_ptr<GraphMatchState<GraphType>[]> p(new GraphMatchState<GraphType>[ms.size()]);// = std::make_shared<GraphMatchState<GraphType>[]>(new GraphMatchState<GraphType>[ms.size()]);
+		p[0] =move( GraphMatchState<GraphType>(g));
+		LOOP(i, 1, ms.size()) {
+			p[i] = p[i - 1];
+			p[i].addNode(ms[i - 1]);
+		}
+		return p;
+	}
 };
+
 
 }

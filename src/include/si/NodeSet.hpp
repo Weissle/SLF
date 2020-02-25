@@ -122,6 +122,7 @@ public:
 		return false;
 	}
 	const VUnit& operator[](const NodeLabelType label)const {
+		if (label >= v.size()) return move(VUnit());
 		return v[label];
 	}
 	size_t size(NodeLabelType label)const {

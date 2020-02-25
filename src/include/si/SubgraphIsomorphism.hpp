@@ -12,7 +12,7 @@
 #include<si/MatchOrderSelector.hpp>
 #include<typeinfo>
 #include<utility>
-//#define DETAILS_TIME_COUNT
+#define DETAILS_TIME_COUNT
 using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
@@ -123,7 +123,7 @@ public:
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(GraphType& _queryGraph, GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph)
+		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph,matchSequence)
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
 		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";

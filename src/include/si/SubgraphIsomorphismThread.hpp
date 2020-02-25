@@ -88,7 +88,7 @@ public:
 	SubgraphIsomorphismThread(GraphType& _queryGraph, GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t _threadN,
 		bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
 		:SubgraphIsomorphismBase<GraphType, MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver),
-		threadNum(_threadN), state(queryGraph, targetGraph)
+		threadNum(_threadN), state(queryGraph, targetGraph,matchSequence)
 	{
 		threads.resize(_threadN);
 	}
