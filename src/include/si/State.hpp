@@ -10,9 +10,11 @@
 #include<algorithm>
 #include<memory>
 #include<limits>
+#include<functional>
 #include"common.h"
 #include<si/si_marcos.h>
 #include<cstring>
+#include"tools/AdaptiveStateChanger.hpp"
 
 //defind INDUCE_ISO or NORMAL_ISO in si_marcos.h
 #if !defined(INDUCE_ISO) && !defined(NORMAL_ISO)
@@ -36,9 +38,6 @@ public:
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef pair<NodeIDType, NodeIDType> MapPair;
-	typedef vector<NodeIDType> MapType;
-
 	typedef NodeSetWithLabel<GraphType> NodeSetType;
 	typedef typename NodeSetWithLabel<GraphType>::VUnit NodeSetWithLabelUnit;
 };
@@ -46,7 +45,7 @@ template<typename GraphType>
 class State;
 template<typename GraphType>
 class GraphMatchState :public StateClassName<GraphType> {
-	const GraphType* graphPointer =nullptr;
+	const GraphType* graphPointer = nullptr;
 	size_t searchDepth = 0;
 	NodeSetType unmap, in, out;
 	vector<size_t> inDepth, outDepth;
@@ -67,7 +66,7 @@ public:
 		outRefTimes.resize(graphSize);
 		for (const auto& node : g.nodes()) unmap.insert(node.id());
 	}
-	void addNode(NodeIDType id) {	
+	void addNode(NodeIDType id) {
 		const GraphType& graph = *graphPointer;
 		unmap.erase(id);
 		in.erase(id);
@@ -133,17 +132,17 @@ public:
 	}
 };
 template<typename GraphType>
-class State:public StateClassName<GraphType> {
+class State :public StateClassName<GraphType> {
 private:
 	GraphMatchState<GraphType> targetState;
 	shared_ptr<GraphMatchState<GraphType>[]> queryStates;
-	const GraphType& targetGraph, & queryGraph;
+	const GraphType* targetGraphPtr, * queryGraphPtr;
 	size_t searchDepth = 0;
 	MapType mapping;
 	MapType mappingAux; //from target to query
 
 	size_t labelTypeNum;
-	
+
 	vector<size_t> inNewCount, outNewCount, bothNewCount, notNewCount;
 	//used in look forward 2 
 	void clearNewCount() {
@@ -158,6 +157,8 @@ private:
 	//check the mapping is still consistent after add this pair
 	bool sourceRule(const MapPair& cp)
 	{
+		const GraphType& targetGraph = *targetGraphPtr;
+		const GraphType& queryGraph = *queryGraphPtr;
 		const auto& querySourceNodeID = cp.first;
 		const auto& targetSourceNodeID = cp.second;
 
@@ -168,7 +169,7 @@ private:
 		// targetSourceNode is the predecessor of three typies of nodes
 		//1. not in map AND not self loop  
 		//2. self loop and 3. in map
-		
+
 		for (const auto& tempEdge : targetSourceNode.outEdges()) {
 			const auto& targetTargetNodeID = tempEdge.target();
 			const bool notMapped = IN_NODE_SET(targetState.unmap, targetTargetNodeID);
@@ -197,7 +198,7 @@ private:
 			}
 #endif
 		}
-		
+
 		for (const auto& tempEdge : querySourceNode.outEdges()) {
 			const auto& queryTargetNodeID = tempEdge.target();
 			//this tempnode have been mapped
@@ -242,6 +243,8 @@ private:
 	}
 	bool targetRule(const MapPair& cp)
 	{
+		const GraphType& targetGraph = *targetGraphPtr;
+		const GraphType& queryGraph = *queryGraphPtr;
 		const auto& queryTargetNodeID = cp.first;
 		const auto& targetTargetNodeID = cp.second;
 
@@ -277,7 +280,7 @@ private:
 			}
 #endif
 		}
-		
+
 		for (const auto& tempEdge : queryTargetNode.inEdges()) {
 			const auto& querySourceNodeID = tempEdge.source();
 			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, querySourceNodeID);
@@ -312,24 +315,19 @@ private:
 			else {
 				const auto targetSourceNodeID = (notMapped) ? targetTargetNodeID : mapping[querySourceNodeID];
 				if (targetGraph.existEdge(targetSourceNodeID, targetTargetNodeID, tempEdge.label()) == false)return false;
-			}	
+			}
 		}
 		return true;
 	}
-	State(const GraphType& _q, const GraphType& _t) :queryGraph(_q), targetGraph(_t), targetState(_t)
+	State(const GraphType& _q, const GraphType& _t) :StateClassName<GraphType>(), queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t)
 	{
 
-		const auto queryGraphSize = queryGraph.size();
-		const auto targetGraphSize = targetGraph.size();
-		const auto queryHashSize = calHashSuitableSize(queryGraphSize);
-		const auto targetHashSize = calHashSuitableSize(targetGraphSize);
+		const auto queryGraphSize = _q.size();
+		const auto targetGraphSize = _t.size();
 
-		mappingAux.resize(targetGraphSize);
-		for (auto& i : mappingAux) i = NO_MAP;
-		mapping.resize(queryGraphSize);
-		for (auto& i : mapping) i = NO_MAP;
-
-		labelTypeNum = max(queryGraph.LQinform().size(), targetGraph.LQinform().size());
+		mappingAux.resize(targetGraphSize, NO_MAP);
+		mapping.resize(queryGraphSize, NO_MAP);
+		labelTypeNum = max(_q.LQinform().size(), _q.LQinform().size());
 		inNewCount.resize(labelTypeNum);
 		outNewCount.resize(labelTypeNum);
 		bothNewCount.resize(labelTypeNum);
@@ -337,8 +335,11 @@ private:
 
 	};
 public:
-	State(const GraphType& _q, const GraphType& _t, shared_ptr<GraphMatchState<GraphType>[]> _queryStates) :State(_q,_t),queryStates(_queryStates){};
-	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType> &ms) :State(_q, _t) {
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<GraphMatchState<GraphType>[]> _queryStates) :State(_q, _t)
+	{
+		queryStates = _queryStates;
+	};
+	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& ms) :State(_q, _t) {
 		queryStates = State<GraphType>::makeSubgraphState(_q, ms);
 	};
 	State() = default;
@@ -348,7 +349,8 @@ public:
 	vector<MapPair> calCandidatePairs(const NodeIDType id)const
 	{
 		vector<MapPair> answer;
-		
+		const GraphType& targetGraph = *targetGraphPtr;
+		const GraphType& queryGraph = *queryGraphPtr;
 		const auto& queryNodeToMatchID = id;
 
 		const bool queryNodeInIn = IN_NODE_SET(queryStates[searchDepth].in, queryNodeToMatchID);
@@ -394,13 +396,13 @@ public:
 		return std::move(answer);
 
 	}
-	bool checkCanditatePairIsAddable(const MapPair & cp)
+	bool checkPair(const MapPair & cp)
 	{
 		const bool answer = sourceRule(cp) && targetRule(cp);
 		return answer;
 	}
 
-	void addCanditatePairToMapping(const MapPair & cp)
+	void pushPair(const MapPair & cp)
 	{
 		const auto targetNodeID = cp.second;
 		const auto queryNodeID = cp.first;
@@ -411,21 +413,20 @@ public:
 
 		return;
 	}
-	void deleteCanditatePairToMapping(const MapPair & cp)
+	void popPair(const MapPair & cp)
 	{
-
-		const auto& queryNodeID = cp.first;
-		const auto& targetNodeID = cp.second;
+		popPair(cp.first);
+	}
+	void popPair(const NodeIDType queryNodeID)  //query node id
+	{
+		NodeIDType& targetNodeID = mapping[queryNodeID];
 		targetState.deleteNode(targetNodeID);
-		mapping[queryNodeID] = NO_MAP;
 		mappingAux[targetNodeID] = NO_MAP;
+		targetNodeID = NO_MAP;
 		searchDepth--;
-
-		return;
-
 	}
 	inline bool isCoverQueryGraph()const {
-		return (queryGraph.size() == searchDepth);
+		return (queryGraphPtr->size() == searchDepth);
 	}
 	MapType getMap(bool showNotCoverWarning = true) const {
 		if (isCoverQueryGraph() == false && showNotCoverWarning) {
@@ -433,34 +434,44 @@ public:
 		}
 		return mapping;
 	}
-	State<GraphType>& operator=(const State<GraphType>& s) {
-		assert(addressof(targetGraph) == addressof(s.targetGraph) && addressof(queryGraph) == addressof(s.queryGraph));
-		if (this == &s) return *this;
-		else {
-			searchDepth = s.searchDepth;
-			mapping = s.mapping;
-			mappingAux = s.mappingAux;
-			targetState = s.targetState;
-			queryStates = s.queryStates;
-			labelTypeNum = s.labelTypeNum;
-			if (inNewCount.size() != labelTypeNum) {
-				inNewCount.resize(labelTypeNum);
-				outNewCount.resize(labelTypeNum);
-				bothNewCount.resize(labelTypeNum);
-				notNewCount.resize(labelTypeNum);
-			}
-		}
-	}
 
 	template<class GraphType>
-	static shared_ptr<GraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, const vector<NodeIDType>& ms) {
+	static shared_ptr<GraphMatchState<GraphType>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
+#define ASC
+		auto t1 = clock();
 		assert(g.size() == ms.size());
-		shared_ptr<GraphMatchState<GraphType>[]> p(new GraphMatchState<GraphType>[ms.size()]);// = std::make_shared<GraphMatchState<GraphType>[]>(new GraphMatchState<GraphType>[ms.size()]);
-		p[0] =move( GraphMatchState<GraphType>(g));
-		LOOP(i, 1, ms.size()) {
-			p[i] = p[i - 1];
-			p[i].addNode(ms[i - 1]);
+		auto ptr = new GraphMatchState<GraphType>[ms.size()];
+		if (ptr == nullptr) {
+			cout << "allocate memory fail" << endl;
+			exit(1);
 		}
+		function<void(size_t)> assignFunc = [&](size_t depth) {
+			cout << "assignF ";
+			ptr[depth] = ptr[depth - 1];
+			ptr[depth].addNode(ms[depth - 1]);
+			return;
+		};
+#ifdef ASC
+		function<void(size_t)> iterationFunc = [&](size_t depth) {
+			cout << "iterationF ";
+			ptr[depth] = move(GraphMatchState<GraphType>(g));
+			LOOP(i, 0, depth) ptr[depth].addNode(ms[i]);
+			return;
+		};
+		AdaptiveStateChanger asc(ms.size());
+#endif
+		shared_ptr<GraphMatchState<GraphType>[]> p(ptr);
+		p[0] = move(GraphMatchState<GraphType>(g));
+		LOOP(i, 1, ms.size()) {
+			auto t2 = clock();
+#ifndef ASC
+			assignFunc(i);
+#else
+			asc.stateTurn(assignFunc, iterationFunc, i);
+#endif
+			PRINT_TIME_COST_MS("unit cost : ", clock() - t2);
+		}
+		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
 	}
 };

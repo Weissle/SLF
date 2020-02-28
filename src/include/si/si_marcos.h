@@ -13,6 +13,9 @@
 #define INDUCE_ISO
 //#define NORMAL_ISO
 namespace wg {
+typedef size_t NodeIDType;
+typedef pair<NodeIDType, NodeIDType> MapPair;
+typedef vector<NodeIDType> MapType;
 const size_t NO_MAP = SIZE_MAX;
 }
 
