@@ -1,19 +1,16 @@
 #pragma once
-#include"graph/Edge.hpp"
-#include"graph/Graph.hpp"
-#include"graph/Node.hpp"
 #include"State.hpp"
 #include"AnswerReceiver.hpp"
 #include"ThreadRelatedClass.hpp"
+#include"SearchTree.hpp"
+#include<si/MatchOrderSelector.hpp>
 #include<vector>
 #include<iostream>
 #include<time.h>
-#include<map>
 #include<fstream>
-#include<si/MatchOrderSelector.hpp>
 #include<typeinfo>
 #include<utility>
-#include<stack>
+
 //#define DETAILS_TIME_COUNT
 using namespace std;
 /*
@@ -29,15 +26,12 @@ protected:
 	typedef typename GraphType::EdgeType EdgeType;
 
 	typedef State<GraphType> StateType;
-	//	typedef typename StateType::MapType MapType;
-	//	typedef typename StateType::MapPair MapPair;
-	GraphType& targetGraph, & queryGraph;
+	const GraphType* targetGraphPtr, * queryGraphPtr;
 	vector<NodeIDType> matchSequence;
 	bool needOneSolution;
-	SearchTree searchTree;
 public:
 	SubgraphIsomorphismBase() = default;
-	SubgraphIsomorphismBase(GraphType& _q, GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraph(_q), targetGraph(_t), matchSequence(_mS), needOneSolution(needOS), searchTree(_q.size())
+	SubgraphIsomorphismBase(const GraphType& _q,const GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), matchSequence(_mS), needOneSolution(needOS)
 	{
 		auto t1 = clock();
 		if (matchSequence.size() == 0) 	matchSequence = MatchOrderSelectorType::run(_q, _t);
@@ -109,8 +103,38 @@ protected:
 
 		return false;
 	}
-	void ToDoAfterFindASolution() {
+	inline void ToDoAfterFindASolution() {
 		answerReceiver << mapState.getMap();
+	}
+	void run_no_recursive() {
+
+		const auto queryGraphSize = queryGraphPtr->size();
+		SearchTree searchTree(queryGraphSize);
+		searchTree.setTree(0, move(mapState.calCandidatePairs(matchSequence[0])));
+
+		auto popOperation = [&]() {
+			searchDepth--;
+			mapState.popPair(matchSequence[searchDepth]);
+		};
+		auto pushOperation = [&](MapPair& p) {
+			mapState.pushPair(p);
+			searchDepth++;
+		};
+		while (true) {
+			while (searchTree.empty(searchDepth) == false) {
+				auto tempPair = searchTree.pop(searchDepth);
+				if (!mapState.checkPair(tempPair)) continue;
+				pushOperation(tempPair);
+				if (searchDepth == queryGraphSize) {	//find a solution, just pop last pair ,it will not effect the correction of answer;
+					ToDoAfterFindASolution();
+					if (needOneSolution) return;
+					popOperation();
+				}
+				else	searchTree.setTree(searchDepth, move(mapState.calCandidatePairs(matchSequence[searchDepth])));
+			}
+			if (searchDepth == 0)return;
+			else popOperation();
+		}
 	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
 	long long canditatePairCount = 0;
@@ -120,7 +144,7 @@ public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(GraphType& _queryGraph, GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
+	SubgraphIsomorphism(const GraphType& _queryGraph,const GraphType& _targetGraph,AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
 		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence)
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
@@ -128,8 +152,8 @@ public:
 		cout << endl;
 #endif
 		searchDepth = 0;
-	};
-	void run1()
+};
+	void run()
 	{
 #ifdef DETAILS_TIME_COUNT
 		cout << "start match" << endl;
@@ -141,55 +165,10 @@ public:
 		cout << "hit times " << hitTime << endl;
 		cout << "canditate Pair Count " << canditatePairCount << endl;
 #else
-		goDeeper();
+		//	goDeeper();
+		run_no_recursive();
 #endif
-	}
-	void run() {
-		searchTree.setTree(0, move(mapState.calCandidatePairs(matchSequence[0])));
-		const auto queryGraphSize = queryGraph.size();
-		bool pop = false;
-		auto popOperation = [&]() {
-			searchDepth--;
-			mapState.popPair(matchSequence[searchDepth]);
-		};
-		auto pushOperation = [&](MapPair& p) {
-			mapState.pushPair(p);
-			searchDepth++;
-		};
-		while (searchDepth <= queryGraphSize) {
-			if (pop == false) {
-				MapPair addPair(NO_MAP, NO_MAP);
-				while (searchTree.empty(searchDepth) == false) {
-					auto tempPair = searchTree.pop(searchDepth);
-					if (mapState.checkPair(tempPair)) {
-						addPair = tempPair;
-						break;
-					}
-				}
-				if (addPair.first == NO_MAP) {
-					pop = true;
-					continue;
-				}
-				else pushOperation(addPair);
-				if (searchDepth == queryGraphSize) {
-					ToDoAfterFindASolution();
-					if (needOneSolution)break;
-					popOperation();
-				}
-				else {
-					searchTree.setTree(searchDepth, move(mapState.calCandidatePairs(matchSequence[searchDepth])));
-				}
-			}
-			else {
-				if (searchDepth == 0)break;
-				else {
-					pop = false;
-					popOperation();
-				}
-			}
-		}
-		return;
-	}
+}
 
 };
 

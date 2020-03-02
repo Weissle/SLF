@@ -81,14 +81,12 @@ int main(int argc, char * argv[]) {
 	PRINT_TIME_COST_S("sort edge time : ",clock()- t1);
 	vector<NodeIDType> ms =move(readMatchSequence(matchOrderPath));
 	t1 = clock();
-	if (threadNum > 0) {
+	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(answerPath);
-//		thread aT(&AnswerReceiverThread::run, &answerReceiver);
 		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
 		si.run();
 		cout << "ok\n";
 		answerReceiver.finish();
-//		aT.join();
 	}
 	else {
 		AnswerReceiver answerReceiver(answerPath);
