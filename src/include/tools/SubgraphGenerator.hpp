@@ -70,7 +70,7 @@ namespace sg {
 				++num;
 			}
 
-			IndexTurner<size_t> turner(nodeNum);
+			wg::IndexTurner<size_t> turner(nodeNum);
 			for (auto i = 0; i < midG.size(); ++i) {
 				turner(midG[i]);
 			}

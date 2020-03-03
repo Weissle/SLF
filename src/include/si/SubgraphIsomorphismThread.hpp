@@ -21,7 +21,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	vector<NodeIDType> targetGraphMapSequence;
 	SearchTreeThread searchTree;
 	volatile bool& end;
-	void ToDoAfterFindASolution() {
+	inline void ToDoAfterFindASolution() {
 		answerReceiver << state.getMap();
 	}
 	bool goDeeper() {
@@ -100,18 +100,14 @@ public:
 		searchTree.setTree(_nD, ps);
 	}
 	void run() {
-	//	cout <<"unit "<< id << endl;
 		auto t1 = clock();
-//		goDeeper();
 		run_no_recursive();
 		lock_guard<mutex> lg(freeThreads.m);
 		freeThreads.push_back(id);
 		finish_cv.notify_one();
-	//	PRINT_TIME_COST_S(to_string(id) + " :", clock() - t1);
 	}
 	pair<size_t, size_t> minDepth_and_restPair() {
 		auto p = searchTree.minDepth_and_restPair();
-
 		if (p.first == NO_MAP || maxDepth - p.first <= 30 || p.second==0)return pair<size_t, size_t>(NO_MAP, 0);
 		return move(p);
 	}
@@ -141,59 +137,37 @@ public:
 		bool end = false;
 		const GraphType& targetGraph = *targetGraphPtr;
 		const GraphType& queryGraph = *queryGraphPtr;
-		vector<SIUnit> siUnits;
+		vector<unique_ptr<SIUnit>> siUnits(4);
 		vector_mutex freeThreads;
 		vector<thread> threads(threadNum);
 
-	/*	vector<pair<NodeIDType, NodeIDType>> tasks = state.calCandidatePairs(matchSequence[0]);
+		vector<pair<NodeIDType, NodeIDType>> tasks = state.calCandidatePairs(matchSequence[0]);
 		auto tasksDistribute = [&](size_t freeUnit) {
-	//		cout <<"main"<< freeUnit << endl;
 			if (tasks.empty() == false) {
 				if(threads[freeUnit].joinable()) threads[freeUnit].join();
 				auto tempP = tasks.back();
 				tasks.pop_back();
-				siUnits[freeUnit].prepare(tempP);
-				threads[freeUnit] = thread(&SIUnit::run, &siUnits[freeUnit]);
+				siUnits[freeUnit]->prepare(tempP);
+				threads[freeUnit] = thread(&SIUnit::run,siUnits[freeUnit].get());
 			}
 		};
 		LOOP(i, 0, threadNum) {
-			siUnits.emplace_back(i, queryGraph, targetGraph, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end, subgraphStates);
-	//		tasksDistribute(i);
-			freeThreads.push_back(i);
+			auto p=make_unique<SIUnit>(i, queryGraph, targetGraph, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end, subgraphStates);
+			siUnits[i]=move(p);
+			tasksDistribute(i);
 		}
 		while (tasks.size()) {
 			unique_lock<mutex> ul(freeThreads.m);
 			work_cv.wait(ul, [&freeThreads]() {return !freeThreads.empty(); });
 			auto freeUnit = freeThreads.pop();
-			ul.unlock();
 			tasksDistribute(freeUnit);
 		}
+		
+		LOOP(i, 0, threadNum) 	if(threads[i].joinable())	threads[i].join();
+		
 
-		LOOP(i, 0, threadNum) {
-			if(threads[i].joinable())	threads[i].join();
-		}*/
-
-		LOOP(i, 0, threadNum) {
-			siUnits.emplace_back(i, queryGraph, targetGraph, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end, subgraphStates);
-		}
-		vector<pair<NodeIDType, NodeIDType>> tempCPs = state.calCandidatePairs(matchSequence[0]);
-		vector<vector<pair<NodeIDType, NodeIDType>>> vvp(threadNum);
-		{
-			size_t oneSIhave = tempCPs.size() / threadNum;
-			auto it = tempCPs.begin();
-			LOOP(i, 0, threadNum - 1) {
-				vvp[i].assign(it, it + oneSIhave);
-				it += oneSIhave;
-			}
-			vvp[threadNum - 1].assign(it, tempCPs.end());
-		}
-		LOOP(i, 0, threadNum) siUnits[i].prepare(state, 0, vvp[i]);
-		LOOP(i, 0, threadNum) threads[i] = thread(&SIUnit::run, &siUnits[i]);
-		LOOP(i, 0, threadNum) threads[i].join();
-		return;
 		return;
 	}
 
-private:
 };
 }

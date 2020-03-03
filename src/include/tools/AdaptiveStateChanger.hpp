@@ -4,6 +4,7 @@
 #include<time.h>
 #include<assert.h>
 using namespace std;
+//A test class. It may not work well.
 //state change has two ways, one is assignment,the other is iterating from initial state
 //assumping the time of assignment cost  is constant or changeless
 //and the time of FluctuatingFunc cost usually depend on the number of steps

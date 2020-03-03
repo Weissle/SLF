@@ -44,10 +44,16 @@ public:
 template<typename GraphType>
 class State;
 template<typename GraphType>
-class GraphMatchState :public StateClassName<GraphType> {
+class GraphMatchState{
+
+    typedef typename GraphType::NodeType NodeType;
+    typedef typename NodeType::NodeIDType NodeIDType;
+    typedef typename NodeType::NodeLabelType NodeLabelType;
+    typedef NodeSetWithLabel<GraphType> NodeSetType;
+
 	const GraphType* graphPointer = nullptr;
 	size_t searchDepth = 0;
-	NodeSetType unmap, in, out;
+    NodeSetType unmap, in, out;
 	vector<size_t> inDepth, outDepth;
 	vector<size_t> inRefTimes, outRefTimes;
 public:
@@ -435,25 +441,25 @@ public:
 		return mapping;
 	}
 
-	template<class GraphType>
-	static shared_ptr<GraphMatchState<GraphType>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
+	template<class _GraphType>
+	static shared_ptr<GraphMatchState<_GraphType>[]> makeSubgraphState(const _GraphType & g, const vector<NodeIDType> & ms) {
 #define ASC
 		auto t1 = clock();
 		assert(g.size() == ms.size());
-		auto ptr = new GraphMatchState<GraphType>[ms.size()];
+		auto ptr = new GraphMatchState<_GraphType>[ms.size()];
 		if (ptr == nullptr) {
 			cout << "allocate memory fail" << endl;
 			exit(1);
 		}
 		function<void(size_t)> assignFunc = [&](size_t depth) {
-			cout << "assignF ";
+//			cout << "assignF ";
 			ptr[depth] = ptr[depth - 1];
 			ptr[depth].addNode(ms[depth - 1]);
 			return;
 		};
 #ifdef ASC
 		function<void(size_t)> iterationFunc = [&](size_t depth) {
-			cout << "iterationF ";
+	//		cout << "iterationF ";
 			ptr[depth] = move(GraphMatchState<GraphType>(g));
 			LOOP(i, 0, depth) ptr[depth].addNode(ms[i]);
 			return;
@@ -469,7 +475,7 @@ public:
 #else
 			asc.stateTurn(assignFunc, iterationFunc, i);
 #endif
-			PRINT_TIME_COST_MS("unit cost : ", clock() - t2);
+//			PRINT_TIME_COST_MS("unit cost : ", clock() - t2);
 		}
 		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
