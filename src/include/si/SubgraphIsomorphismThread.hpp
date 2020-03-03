@@ -80,7 +80,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	}
 public:
 	SubgraphIsomorphismThreadUnit(size_t _id,const GraphType& _q,const GraphType& _t, AnswerReceiverType &_answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution, vector_mutex& _freeThreads,
-		condition_variable& _cv, bool& _end,shared_ptr<GraphMatchState<GraphType>[]> _sp) :
+		condition_variable& _cv, bool& _end,shared_ptr<GraphMatchState<GraphType,NodeSetWithLabelSimple<GraphType>>[]> _sp) :
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _mS, _oneSolution), id(_id), answerReceiver(_answerReceiver), maxDepth(_q.size()), 
 		state(_q, _t,_sp), freeThreads(_freeThreads), finish_cv(_cv), end(_end),searchTree(_q.size())
 	{
@@ -121,7 +121,7 @@ class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType, Matc
 	AnswerReceiverType &answerReceiver;
 	size_t threadNum;
 	condition_variable work_cv;
-	shared_ptr<GraphMatchState<GraphType>[]> subgraphStates;
+	shared_ptr<GraphMatchState<GraphType, NodeSetWithLabelSimple<GraphType>>[]> subgraphStates;
 	State<GraphType> state;
 public:
 	SubgraphIsomorphismThread() = default;
@@ -144,11 +144,11 @@ public:
 		vector<pair<NodeIDType, NodeIDType>> tasks = state.calCandidatePairs(matchSequence[0]);
 		auto tasksDistribute = [&](size_t freeUnit) {
 			if (tasks.empty() == false) {
-				if(threads[freeUnit].joinable()) threads[freeUnit].join();
+				if (threads[freeUnit].joinable()) threads[freeUnit].join();
 				auto tempP = tasks.back();
 				tasks.pop_back();
 				siUnits[freeUnit]->prepare(tempP);
-				threads[freeUnit] = thread(&SIUnit::run,siUnits[freeUnit].get());
+				threads[freeUnit] = thread(&SIUnit::run, siUnits[freeUnit].get());
 			}
 		};
 		LOOP(i, 0, threadNum) {

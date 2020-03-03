@@ -65,35 +65,47 @@ public:
 	}
 
 };
-template<class _GraphType>
-class NodeSetWithLabel {
-public:
-	typedef _GraphType GraphType;
+template<class GraphType>
+class NodeSetWithLabelSimple {
 	typedef typename GraphType::NodeType NodeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
-	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef unordered_set<NodeIDType> VUnit;
-private:
-	
-	vector< VUnit > v;
-	vector<size_t> vSize;
-	vector<bool> belong;
+protected:
 	GraphType const* graph = nullptr;
+	vector<bool> belong;
+
+public:
+	NodeSetWithLabelSimple() = default;
+	NodeSetWithLabelSimple(const GraphType& _g) :graph(&_g) {
+		belong.resize(_g.size());
+	}
+	inline void insert(const NodeIDType id) {
+		belong[id] = true;
+	}
+	inline void erase(const NodeIDType id) {
+		belong[id] = false;
+	}
+	inline bool exist(const NodeIDType id)const {
+		return belong[id];
+	}
+};
+template<class GraphType>
+class NodeSetWithLabel:NodeSetWithLabelSimple<GraphType> {
+public:
+	typedef size_t NodeLabelType;
+	typedef unordered_set<NodeIDType> Nodes;
+private:
+	vector< Nodes > v;
 public:
 
-	NodeSetWithLabel(const GraphType& _graph) :graph(&_graph) {
+	NodeSetWithLabel(const GraphType& _graph) :NodeSetWithLabelSimple<GraphType>(_graph) {
 		const auto LQinform = _graph.LQinform();
 		v.resize(LQinform.size());
-		vSize.resize(LQinform.size());
 		for (auto it = LQinform.begin(); it != LQinform.end(); ++it) {
 			v[it->first].reserve(calHashSuitableSize(it->second));
 		}
-		belong.resize(_graph.size());
 	}
 	void insert(const NodeIDType id) {
 		if (belong[id] == false) {
 			const auto label = graph->node(id).label();
-			vSize[label]++;
 			v[label].insert(id);
 			belong[id] = true;
 		}
@@ -102,7 +114,6 @@ public:
 	void erase(const NodeIDType id) {
 		if (belong[id] == true) {
 			const auto label = graph->node(id).label();
-			vSize[label]--;
 			v[label].erase(id);
 			belong[id] = false;
 		}
@@ -111,31 +122,14 @@ public:
 	inline bool exist(const NodeIDType id)const {
 		return belong[id];
 	}
-	const VUnit& getSet(NodeLabelType label)const {
-		return v[label];
-	}
-	bool operator>(const NodeSetWithLabel<GraphType>& ns)const {
-		if (vSize.size() > ns.vSize.size())return true;
-		LOOP(i, 0, vSize.size()) {
-			if (vSize[i] > ns.vSize[i])return true;
-		}
-		return false;
-	}
-	const VUnit& operator[](const NodeLabelType label)const {
-		if (label >= v.size()) return move(VUnit());
+	const Nodes& getSet(NodeLabelType label)const {
+		if (label >= v.size()) return move(Nodes());
 		return v[label];
 	}
 	size_t size(NodeLabelType label)const {
-		return vSize[label];
+		return v[label].size();
 	}
 
-	void containerClone(NodeSetWithLabel<GraphType>& temp) {
-		v = temp.v;
-		for (auto& s : v) s.clear();
-		vSize = vector<size_t>(temp.vSize.size());
-		graph = temp.graph;
-		belong = vector<bool>(temp.belong.size());
-	}
 	NodeSetWithLabel() = default;
 };
 

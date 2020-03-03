@@ -38,8 +38,9 @@ public:
 	Node() = default;
 	~Node() = default;
 	Node(const NodeIDType _i, const NodeLabelType _l = NodeLabelType()) :_id(_i), _label(_l) {}
-	Node(const NodeIDType _i, const vector<EdgeType>& _inEdges, const vector<EdgeType>& _outEdges, const NodeLabelType _l = NodeLabelType()) :NodeType(_i, _l), _inEdges(_iE), _outEdges(_oE) {
-
+	Node(const NodeIDType _i, const vector<EdgeType>& _iE, const vector<EdgeType>& _oE, const NodeLabelType _l = NodeLabelType()) :Node(_i, _l) {
+        _inEdges =_iE;
+        _outEdges = _oE;
 	}
 	const NodeIDType id()const {
 		return _id;

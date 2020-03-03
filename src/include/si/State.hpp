@@ -28,28 +28,15 @@
 using namespace std;
 
 namespace wg {
-template <typename GraphType>
-class StateClassName {
-public:
-	typedef typename GraphType::NodeType NodeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
 
-	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef typename GraphType::EdgeType EdgeType;
-	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-
-	typedef NodeSetWithLabel<GraphType> NodeSetType;
-	typedef typename NodeSetWithLabel<GraphType>::VUnit NodeSetWithLabelUnit;
-};
 template<typename GraphType>
 class State;
-template<typename GraphType>
+template<typename GraphType,class NodeSetType>
 class GraphMatchState{
 
     typedef typename GraphType::NodeType NodeType;
     typedef typename NodeType::NodeIDType NodeIDType;
     typedef typename NodeType::NodeLabelType NodeLabelType;
-    typedef NodeSetWithLabel<GraphType> NodeSetType;
 
 	const GraphType* graphPointer = nullptr;
 	size_t searchDepth = 0;
@@ -61,8 +48,8 @@ public:
 	GraphMatchState() = default;
 	GraphMatchState(const GraphType& g) :graphPointer(&g) {
 		in = NodeSetType(g);
-		out.containerClone(in);
-		unmap.containerClone(in);
+		out = in;
+		unmap = in;
 
 		size_t graphSize = g.size();
 		inDepth.resize(graphSize);
@@ -138,10 +125,19 @@ public:
 	}
 };
 template<typename GraphType>
-class State :public StateClassName<GraphType> {
+class State  {
+	typedef typename GraphType::NodeType NodeType;
+
+	typedef typename NodeType::NodeLabelType NodeLabelType;
+	typedef typename GraphType::EdgeType EdgeType;
+	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
+
+	typedef typename NodeSetWithLabelSimple<GraphType> QueryStateNodeSet;
+	typedef typename NodeSetWithLabel<GraphType> TargetStateNodeState;
+	typedef typename NodeSetWithLabel<GraphType>::Nodes NodeSetWithLabelUnit;
 private:
-	GraphMatchState<GraphType> targetState;
-	shared_ptr<GraphMatchState<GraphType>[]> queryStates;
+	GraphMatchState<GraphType,TargetStateNodeState> targetState;
+	shared_ptr<GraphMatchState<GraphType,QueryStateNodeSet>[]> queryStates;
 	const GraphType* targetGraphPtr, * queryGraphPtr;
 	size_t searchDepth = 0;
 	MapType mapping;
@@ -325,7 +321,7 @@ private:
 		}
 		return true;
 	}
-	State(const GraphType& _q, const GraphType& _t) :StateClassName<GraphType>(), queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t)
+	State(const GraphType& _q, const GraphType& _t) : queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t)
 	{
 
 		const auto queryGraphSize = _q.size();
@@ -341,7 +337,7 @@ private:
 
 	};
 public:
-	State(const GraphType& _q, const GraphType& _t, shared_ptr<GraphMatchState<GraphType>[]> _queryStates) :State(_q, _t)
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> _queryStates) :State(_q, _t)
 	{
 		queryStates = _queryStates;
 	};
@@ -370,9 +366,9 @@ public:
 		const auto queryNodeLabel = queryNode.label();
 		const NodeSetWithLabelUnit* tempNodeSetPointer;
 
-		if (queryNodeInIn) tempNodeSetPointer = &targetState.in[queryNodeLabel];
-		else if (queryNodeInOut)tempNodeSetPointer = &targetState.out[queryNodeLabel];
-		else tempNodeSetPointer = &targetState.unmap[queryNodeLabel];
+		if (queryNodeInIn) tempNodeSetPointer = &targetState.in.getSet(queryNodeLabel);
+		else if (queryNodeInOut)tempNodeSetPointer = &targetState.out.getSet(queryNodeLabel);
+		else tempNodeSetPointer = &targetState.unmap.getSet(queryNodeLabel);
 
 		answer.reserve(tempNodeSetPointer->size());
 		const auto& targetNodeToMatchSet = *tempNodeSetPointer;
@@ -441,41 +437,21 @@ public:
 		return mapping;
 	}
 
-	template<class _GraphType>
-	static shared_ptr<GraphMatchState<_GraphType>[]> makeSubgraphState(const _GraphType & g, const vector<NodeIDType> & ms) {
-#define ASC
+
+	static shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
 		auto t1 = clock();
 		assert(g.size() == ms.size());
-		auto ptr = new GraphMatchState<_GraphType>[ms.size()];
+		auto ptr = new GraphMatchState<GraphType,QueryStateNodeSet>[ms.size()];
 		if (ptr == nullptr) {
 			cout << "allocate memory fail" << endl;
 			exit(1);
 		}
-		function<void(size_t)> assignFunc = [&](size_t depth) {
-//			cout << "assignF ";
-			ptr[depth] = ptr[depth - 1];
-			ptr[depth].addNode(ms[depth - 1]);
-			return;
-		};
-#ifdef ASC
-		function<void(size_t)> iterationFunc = [&](size_t depth) {
-	//		cout << "iterationF ";
-			ptr[depth] = move(GraphMatchState<GraphType>(g));
-			LOOP(i, 0, depth) ptr[depth].addNode(ms[i]);
-			return;
-		};
-		AdaptiveStateChanger asc(ms.size());
-#endif
-		shared_ptr<GraphMatchState<GraphType>[]> p(ptr);
-		p[0] = move(GraphMatchState<GraphType>(g));
+
+		shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> p(ptr);
+		p[0] = move(GraphMatchState<GraphType, QueryStateNodeSet>(g));
 		LOOP(i, 1, ms.size()) {
-			auto t2 = clock();
-#ifndef ASC
-			assignFunc(i);
-#else
-			asc.stateTurn(assignFunc, iterationFunc, i);
-#endif
-//			PRINT_TIME_COST_MS("unit cost : ", clock() - t2);
+			ptr[i] = ptr[i - 1];
+			ptr[i].addNode(ms[i - 1]);		
 		}
 		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
