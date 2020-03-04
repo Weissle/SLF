@@ -72,7 +72,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 					}
 					popOperation();
 				}
-				else	searchTree.setTree(searchDepth, move(state.calCandidatePairs(matchSequence[searchDepth])));
+				else	searchTree.setTree(searchDepth, move(state.calCandidatePairs(matchSequence[searchDepth])),false);
 			}
 			if (searchDepth == 0)return;
 			else popOperation();
@@ -91,7 +91,7 @@ public:
 	void prepare(MapPair p) {
 		vector<MapPair> temp(1);
 		temp[0] = p;
-		searchTree.setTree(0, temp);
+		searchTree.setTree(0, temp,true);
 		return;
 	}
 	void prepare(State<GraphType>& s, size_t _nD, vector<MapPair>& ps) {

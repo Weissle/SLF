@@ -51,6 +51,7 @@ public:
 	MapPair pop(size_t depth) {
 		LOCK_TO_END(m);
 		assert(depth < maxDepth && "depth >= maxDepth");
+//		if (SearchTree::empty(depth) == true)return error_pair;
 		auto answer = tree[depth].back();
 		tree[depth].pop_back();
 		if (depth == minDepth && tree[depth].empty()) ++minDepth;
@@ -71,7 +72,7 @@ public:
 		m.unlock();
 		s.setTree(minDepth, move(pairsToGive), true);
 	} 
-	void setTree(size_t depth, const vector<MapPair>& v, bool resetOther=false) {
+	void setTree(size_t depth, const vector<MapPair>& v, bool resetOther) {
 		LOCK_TO_END(m);
 		assert(depth < maxDepth && "depth >= maxDepth");
 		if (resetOther) {
@@ -82,7 +83,7 @@ public:
 	}
 	pair<size_t, size_t> minDepth_and_restPair(){
 		LOCK_TO_END(m);
-		if (tree[minDepth].size() != 0) {
+		if (tree[minDepth].size() == 0) {
 			return pair<size_t, size_t>(NO_MAP, 0);
 		}
 		return pair<size_t, size_t>(minDepth, tree[minDepth].size());

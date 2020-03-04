@@ -436,7 +436,7 @@ public:
 		}
 		return mapping;
 	}
-
+	size_t depth() const { return searchDepth; }
 
 	static shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
 		auto t1 = clock();
