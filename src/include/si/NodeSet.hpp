@@ -66,15 +66,15 @@ public:
 
 };
 template<class GraphType>
-class NodeSetWithLabelSimple {
+class NodeSetSimple {
 	typedef typename GraphType::NodeType NodeType;
 protected:
 	GraphType const* graph = nullptr;
 	vector<bool> belong;
 
 public:
-	NodeSetWithLabelSimple() = default;
-	NodeSetWithLabelSimple(const GraphType& _g) :graph(&_g) {
+	NodeSetSimple() = default;
+	NodeSetSimple(const GraphType& _g) :graph(&_g) {
 		belong.resize(_g.size());
 	}
 	inline void insert(const NodeIDType id) {
@@ -88,39 +88,48 @@ public:
 	}
 };
 template<class GraphType>
-class NodeSetWithLabel:NodeSetWithLabelSimple<GraphType> {
+class NodeSetWithLabel:NodeSetSimple<GraphType> {
 public:
 	typedef size_t NodeLabelType;
-	typedef unordered_set<NodeIDType> Nodes;
+	typedef vector<NodeIDType> Nodes;
 private:
-	vector< Nodes > v;
+	vector<size_t> place;
+	vector<Nodes> v;
 public:
 
-	NodeSetWithLabel(const GraphType& _graph) :NodeSetWithLabelSimple<GraphType>(_graph) {
+	NodeSetWithLabel(const GraphType& _graph) :NodeSetSimple<GraphType>(_graph) {
 		const auto labelsNum = _graph.labelNum();
+		place.resize(_graph.size(), NO_MAP);
 		v.resize(_graph.maxLabel()+1);
 		for (auto it = labelsNum.begin(); it != labelsNum.end(); ++it) {
-			v[it->first].reserve(calHashSuitableSize(it->second));
+			v[it->first].reserve(it->second + 1);
 		}
 	}
 	void insert(const NodeIDType id) {
-		if (belong[id] == false) {
+	
+		if (place[id] == NO_MAP) {
 			const auto label = graph->node(id).label();
-			v[label].insert(id);
-			belong[id] = true;
+			place[id] = v[label].size();
+			v[label].push_back(id);
 		}
 		return;
 	}
 	void erase(const NodeIDType id) {
-		if (belong[id] == true) {
+		if (place[id] != NO_MAP) {
 			const auto label = graph->node(id).label();
-			v[label].erase(id);
-			belong[id] = false;
+			auto& vl = v[label];
+			size_t swapPlace = vl.size() - 1;
+			size_t swapID = vl[swapPlace];
+			size_t id_place = place[id];
+			swap(vl[id_place], vl[swapPlace]);
+			swap(place[id], place[swapID]);
+			place[id] = NO_MAP;
+			vl.pop_back();
 		}
 		return;
 	}
 	inline bool exist(const NodeIDType id)const {
-		return belong[id];
+		return place[id]!=NO_MAP;
 	}
 	const Nodes& getSet(NodeLabelType label)const {
 //		if (label >= v.size()) return move(Nodes());

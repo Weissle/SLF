@@ -48,8 +48,8 @@ public:
 	GraphMatchState() = default;
 	GraphMatchState(const GraphType& g) :graphPointer(&g) {
 		in = NodeSetType(g);
-		out = in;
-		unmap = in;
+		out = NodeSetType(g);
+		unmap = NodeSetType(g);
 
 		size_t graphSize = g.size();
 		inDepth.resize(graphSize);
@@ -132,7 +132,7 @@ class State  {
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef typename NodeSetWithLabelSimple<GraphType> QueryStateNodeSet;
+	typedef typename NodeSetSimple<GraphType> QueryStateNodeSet;
 	typedef typename NodeSetWithLabel<GraphType> TargetStateNodeState;
 	typedef typename NodeSetWithLabel<GraphType>::Nodes NodeSetWithLabelUnit;
 private:
@@ -372,12 +372,11 @@ public:
 		else tempNodeSetPointer = &targetState.unmap.getSet(queryNodeLabel);
 
 		answer.reserve(tempNodeSetPointer->size());
-		const auto& targetNodeToMatchSet = *tempNodeSetPointer;
 
-		TRAVERSE_SET(targetNodeToMatchID, targetNodeToMatchSet)
+		TRAVERSE_SET(targetNodeToMatchID, *tempNodeSetPointer)
 		{
 			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
-			if (/*queryNode.isSameType(targetNode) == false || */queryNode > targetNode) continue;
+			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
 
 #ifdef INDUCE_ISO
 			// it will be ditched because of sourceRule in next depth .

@@ -29,7 +29,8 @@ vector<size_t> readMatchSequence(string &matchOrderPath) {
 }
 int main(int argc, char * argv[]) {
 	typedef size_t NodeIDType;
-	typedef Edge<int> EdgeType;
+//	typedef Edge<int> EdgeType;
+	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
 
@@ -70,22 +71,22 @@ int main(int argc, char * argv[]) {
 
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
 		        *targetGraph = GraphReader::readGraph(targetGraphPath);
-	PRINT_TIME_COST_S("read graph time : ", clock() - t1);
-	cout << "read graph finish" << endl;
+//	PRINT_TIME_COST_S("read graph time : ", clock() - t1);
+//	cout << "read graph finish" << endl;
 
 	t1 = clock();
 
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
 
-	PRINT_TIME_COST_S("sort edge time : ",clock()- t1);
+//	PRINT_TIME_COST_S("sort edge time : ",clock()- t1);
 	vector<NodeIDType> ms =move(readMatchSequence(matchOrderPath));
-	t1 = clock();
+//	t1 = clock();
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(answerPath);
 		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
 		si.run();
-		cout << "ok\n";
+//		cout << "ok\n";
 		answerReceiver.finish();
 	}
 	else {
@@ -94,8 +95,8 @@ int main(int argc, char * argv[]) {
 		si.run();
 		answerReceiver.finish();
 	}
-	auto t2 = clock();
-	cout << "time cost : " << (double)(t2 - t1) / CLOCKS_PER_SEC << endl;
+	double TimeC = clock()-t1;
+	cout << "time cost : " << (TimeC) / CLOCKS_PER_SEC<<" s  "<< (TimeC) / (CLOCKS_PER_SEC/1000)<<" ms" << endl;
 	delete queryGraph;
 	delete targetGraph;
 
