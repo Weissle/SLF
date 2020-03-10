@@ -143,12 +143,12 @@ private:
 	MapType mapping;
 	MapType mappingAux; //from target to query
 
-	size_t labelTypeNum;
+	size_t labelNum;
 
 	vector<size_t> inNewCount, outNewCount, bothNewCount, notNewCount;
 	//used in look forward 2 
 	void clearNewCount() {
-		const auto temp = sizeof(size_t) * labelTypeNum;
+		const auto temp = sizeof(size_t) * labelNum;
 		memset(inNewCount.data(), 0, temp);
 		memset(outNewCount.data(), 0, temp);
 		memset(bothNewCount.data(), 0, temp);
@@ -329,11 +329,12 @@ private:
 
 		mappingAux.resize(targetGraphSize, NO_MAP);
 		mapping.resize(queryGraphSize, NO_MAP);
-		labelTypeNum = max(_q.LQinform().size(), _q.LQinform().size());
-		inNewCount.resize(labelTypeNum);
-		outNewCount.resize(labelTypeNum);
-		bothNewCount.resize(labelTypeNum);
-		notNewCount.resize(labelTypeNum);
+		labelNum = max(_q.maxLabel(), _t.maxLabel())+1;
+		
+		inNewCount.resize(labelNum);
+		outNewCount.resize(labelNum);
+		bothNewCount.resize(labelNum);
+		notNewCount.resize(labelNum);
 
 	};
 public:
@@ -453,7 +454,7 @@ public:
 			ptr[i] = ptr[i - 1];
 			ptr[i].addNode(ms[i - 1]);		
 		}
-		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
+//		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
 	}
 };

@@ -11,7 +11,7 @@
 #include<typeinfo>
 #include<utility>
 
-//#define DETAILS_TIME_COUNT
+#define DETAILS_TIME_COUNT
 using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
@@ -48,7 +48,7 @@ protected:
 	AnswerReceiverType& answerReceiver;
 	bool goDeeper_timeCount()
 	{
-		if (searchDepth == queryGraph.size()) {
+		if (searchDepth == queryGraphPtr -> size()) {
 			this->ToDoAfterFindASolution();
 			return true;
 		}

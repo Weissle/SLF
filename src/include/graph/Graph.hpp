@@ -28,9 +28,11 @@ private:
 	size_t _size;
 
 	// NodeLabel -> the maximum out and in degrees of this kind of nodes have;
-	unordered_map<NodeLabelType, pair<size_t, size_t>> auxLDinform;
+	unordered_map<NodeLabelType, size_t> aux_LabelMaxOut;
+	unordered_map<NodeLabelType, size_t> aux_LabelMaxIn;
 	// NodeLabel -> quantity of nodes have this label
-	unordered_map<NodeLabelType, size_t> auxLQinform;
+	unordered_map<NodeLabelType, size_t> aux_LabelNum;
+	NodeLabelType _maxLabel = 0;
 public:
 	Graph() = default;
 	Graph(const vector<NodeType>& __nodes) :_nodes(__nodes) {
@@ -62,13 +64,13 @@ public:
 		auto& sourceNode = _nodes[source];
 		auto& targetNode = _nodes[target];
 
-		const EdgeType  sourceEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
-		const EdgeType  targetEdge = EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, source, target, edgeLabel);
+		const EdgeType  sourceEdge = EdgeType(EDGE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
+		const EdgeType  targetEdge = EdgeType(EDGE_RECORD_TYPE::TARGET, source, target, edgeLabel);
 		sourceNode.addOutEdge(targetEdge);
 		targetNode.addInEdge(sourceEdge);
 		if (GRAPH_TYPE::BIDIRECTION == graphType) {
-			const EdgeType sourceEdge1 = EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, target, source, edgeLabel);
-			const EdgeType targetEdge1 = EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, target, source, edgeLabel);
+			const EdgeType sourceEdge1 = EdgeType(EDGE_RECORD_TYPE::SOURCE, target, source, edgeLabel);
+			const EdgeType targetEdge1 = EdgeType(EDGE_RECORD_TYPE::TARGET, target, source, edgeLabel);
 			sourceNode.addInEdge(sourceEdge1);
 			targetNode.addOutEdge(targetEdge1);
 		}
@@ -78,44 +80,39 @@ public:
 		return _size;
 	};
 	const vector<NodeType>& nodes()const { return _nodes; }
-	const NodeType* nodePointer(const NodeIDType& nodeID) const {
-		assert((nodeID < _size) && "node ID overflow");
-		return &_nodes[nodeID];
-	}
+
 	const NodeType& node(const NodeIDType& nodeID) const {
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
-	unordered_map<NodeLabelType, pair<size_t, size_t>> LDinform()const {
-		return auxLDinform;
+	unordered_map<NodeLabelType,size_t> labelMaxIn()const {
+		return this->aux_LabelMaxIn;
 	}
-	unordered_map<NodeLabelType, size_t> LQinform()const {
-		return auxLQinform;
+	unordered_map<NodeLabelType, size_t> labelMaxOut()const {
+		return this->aux_LabelMaxOut;
+	}
+	unordered_map<NodeLabelType, size_t> labelNum()const {
+		return this->aux_LabelNum;
 	}
 	//do something to improve match speed
 	void graphBuildFinish() {
-		size_t labelTypeNum = 0, labelMax = 0;
 
-		//only allow label type from 1 2 3 ... n-1
+
+		//only allow label type from 0 1 2 3 ... n-1
 		for (auto& node : _nodes) {
 			node.NodeBuildFinish();
-			//std::map<NodeLabelType,FSPair<int,int>>
-			auto po = auxLDinform.find(node.label());
-			auxLQinform[node.label()]++;
-			if (po == auxLDinform.end()) {
-				auxLDinform[node.label()].first = node.outEdgesNum();
-				auxLDinform[node.label()].second = node.inEdgesNum();
-				labelTypeNum++;
-				labelMax = max(labelMax, node.label());
-			}
-			else {
-				po->second.first = max(po->second.first, node.outEdgesNum());
-				po->second.second = max(po->second.second, node.inEdgesNum());
-			}
+			auto nodeLabel = node.label();
+			this->aux_LabelNum[nodeLabel]++;
+
+			auto &inMax = aux_LabelMaxIn[nodeLabel];
+			inMax = max(inMax, node.inEdgesNum());
+			auto& outMax = aux_LabelMaxOut[nodeLabel];
+			outMax = max(outMax, node.outEdgesNum());
+			_maxLabel = max(_maxLabel, nodeLabel);
 		}
-		assert(labelTypeNum - 1 == labelMax && "n kinds of node label , nodes' label type should range from 0 to n-1 ");
 
 	}
+	NodeLabelType maxLabel()const { return _maxLabel; }
 	bool existEdge(const NodeIDType& from, const NodeIDType& to, const EdgeLabelType& edgeLabel)const {
 		return _nodes[from].existSameTypeEdgeToNode(to, edgeLabel);
 	}

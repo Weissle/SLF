@@ -186,39 +186,52 @@ public:
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
 		vector<NodeIDType> matchSequence;
 		matchSequence.reserve(graph.size() + 1);
-		unordered_map<NodeLabelType, size_t> pgLQ = graph.LQinform(), tgLQ = targetGraph.LQinform();
-		unordered_map<NodeLabelType, pair<size_t, size_t>>  pgLD = graph.LDinform(), tgLD = targetGraph.LDinform();
+		unordered_map<NodeLabelType, size_t> pgLabelNum = graph.labelNum(), tgLabelNum = targetGraph.labelNum();
+		unordered_map<NodeLabelType, size_t> pgLabelInMax = graph.labelMaxIn(), tgLabelInMax = targetGraph.labelMaxIn();
+		unordered_map<NodeLabelType, size_t> pgLabelOutMax = graph.labelMaxOut(), tgLabelOutMax = targetGraph.labelMaxOut();
 		vector< vector< size_t > > tgin, tgout;
-		assert(pgLQ.size() <= tgLQ.size() && " pattern graph is not a subgraph of target graph owing to the label type");
-
-		tgin.resize(pgLQ.size());
-
-		tgout.resize(pgLQ.size());
-		LOOP(i, 0, pgLQ.size()) {
-
-			tgin[i].resize(tgLD[i].second + 2);
-			tgout[i].resize(tgLD[i].first + 2);
-			assert(pgLD[i].second <= tgLD[i].second && pgLD[i].first <= tgLD[i].first && " pattern graph is not a subgraph of target graph owing to in or out degree");
-
+		//a simple check;
+		{
+			if (pgLabelNum.size() > tgLabelNum.size()) {
+				cout << "No solution" << endl;
+				exit(0);
+			}
+			for (const auto p : pgLabelNum) {
+				auto l = p.first;
+				auto num = p.second;
+				if (pgLabelInMax[l] > tgLabelInMax[l] || num > tgLabelNum[l] || pgLabelOutMax[l] > tgLabelOutMax[l]) {
+					cout << "no solution\n";
+					exit(1);
+				}
+			}
+		}
+		size_t labelMax = 0;
+		for (auto& p : tgLabelNum)labelMax = max(labelMax, p.first);
+		tgin.resize(labelMax+1);
+		tgout.resize(labelMax+1);
+		LOOP(i, 0, tgLabelNum.size()) {
+			tgin[i].resize(tgLabelInMax[i] + 1);
+			tgout[i].resize(tgLabelOutMax[i] + 1);
 		}
 
 		for (auto& node : targetGraph.nodes()) {
-			if (node.label() >= pgLQ.size()) continue;
 			tgin[node.label()][node.inEdgesNum()]++;
 			tgout[node.label()][node.outEdgesNum()]++;
 		}
-		LOOP(i, 0, pgLQ.size()) {
-			size_t nodeCount = tgLQ[i];
+		LOOP(i, 0, labelMax+1) {
+			size_t nodeCount = tgLabelNum[i];
+			int last = 0;
 			LOOP(j, 0, tgout[i].size()) {
-				int temp = tgout[i][j];
-				tgout[i][j] = nodeCount;
-				nodeCount -= temp;
+				nodeCount -= last;
+				last = tgout[i][j];
+				tgout[i][j] = nodeCount ;
 			}
-			nodeCount = tgLQ[i];
+			last = 0;
+			nodeCount = tgLabelNum[i];
 			LOOP(j, 0, tgin[i].size()) {
-				int temp = tgin[i][j];
+				nodeCount -= last;
+				last = tgin[i][j];
 				tgin[i][j] = nodeCount;
-				nodeCount -= temp;
 			}
 		}
 		double* possibility = new double[graph.size()];

@@ -1,5 +1,5 @@
 #pragma once
-
+#include<utility>
 // NodeSet class
 
 //#define TRAVERSE_SET(TEMP_VARIABLE_NAME,S) for(const auto &TEMP_VARIABLE_NAME=S.begin();TEMP_VARIABLE_NAME!=S.end();++TEMP_VARIABLE_NAME)
@@ -13,9 +13,10 @@
 #define INDUCE_ISO
 //#define NORMAL_ISO
 namespace wg {
+
 typedef size_t NodeIDType;
-typedef pair<NodeIDType, NodeIDType> MapPair;
-typedef vector<NodeIDType> MapType;
+using MapPair = std::pair<NodeIDType, NodeIDType>;
+using  MapType = std::vector<NodeIDType> ;
 const size_t NO_MAP = SIZE_MAX;
 const MapPair error_pair = MapPair(NO_MAP, NO_MAP);
 }

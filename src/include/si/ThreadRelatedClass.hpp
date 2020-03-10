@@ -5,15 +5,16 @@
 #include<assert.h>
 using namespace std;
 namespace wg {
+template<class _Ty>
 class vector_mutex {
-	vector<size_t> q;
+	vector<_Ty> q;
 public:
 	std::mutex m;
 	vector_mutex() = default;
-	void push_back(size_t t) {
+	void push_back(_Ty t) {
 		q.push_back(t);
 	}
-	size_t pop() {
+	_Ty pop() {
 		auto t = q.back();
 		q.pop_back();
 		return t;
@@ -24,7 +25,7 @@ public:
 	size_t size() {
 		return q.size();
 	}
-	size_t& operator[](size_t t) {
+	_Ty& operator[](size_t t) {
 		return q[t];
 	}
 };

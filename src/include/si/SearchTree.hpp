@@ -29,8 +29,11 @@ public:
 		tree[depth].pop_back();
 		return answer;
 	}
-	void setTree(size_t depth, const vector<MapPair>& v) {
+	void setTree(size_t depth, const vector<MapPair>& v,bool resetOther=false) {
 		assert(depth < maxDepth && "depth >= maxDepth");
+		if (resetOther) {
+			LOOP(i, 0, maxDepth)tree[depth].clear();
+		}
 		tree[depth] = v;
 	}
 };

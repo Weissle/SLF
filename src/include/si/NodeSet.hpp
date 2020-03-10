@@ -97,9 +97,9 @@ private:
 public:
 
 	NodeSetWithLabel(const GraphType& _graph) :NodeSetWithLabelSimple<GraphType>(_graph) {
-		const auto LQinform = _graph.LQinform();
-		v.resize(LQinform.size());
-		for (auto it = LQinform.begin(); it != LQinform.end(); ++it) {
+		const auto labelsNum = _graph.labelNum();
+		v.resize(_graph.maxLabel()+1);
+		for (auto it = labelsNum.begin(); it != labelsNum.end(); ++it) {
 			v[it->first].reserve(calHashSuitableSize(it->second));
 		}
 	}
@@ -123,7 +123,7 @@ public:
 		return belong[id];
 	}
 	const Nodes& getSet(NodeLabelType label)const {
-		if (label >= v.size()) return move(Nodes());
+//		if (label >= v.size()) return move(Nodes());
 		return v[label];
 	}
 	size_t size(NodeLabelType label)const {

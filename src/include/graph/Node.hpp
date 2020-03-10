@@ -21,18 +21,9 @@ private:
 	NodeIDType _id;
 	NodeLabelType _label;
 	vector<EdgeType> _inEdges, _outEdges;
-	bool edgeSort = false;
 
 	bool findEdge(const vector<EdgeType>& edges, const EdgeType&& edge) const {
-		if (edgeSort) {
-			return binary_search(edges.begin(), edges.end(), edge);
-		}
-		else {
-			for (const auto& it : edges) {
-				if (it == edge)return true;
-			}
-			return false;
-		}
+		return binary_search(edges.begin(), edges.end(), edge);
 	}
 public:
 	Node() = default;
@@ -59,17 +50,11 @@ public:
 		return ((_inEdges.size() > n.inEdgesNum()) && (_outEdges.size() > n.outEdgesNum()));
 	}
 
-	bool existSameTypeEdgeToNode(const NodeType& n, const EdgeType& e)const {
-		return findEdge(_outEdges, EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, _id, n._id, e.label()));
-	}
 	bool existSameTypeEdgeToNode(const NodeIDType to, const EdgeLabelType elabel)const {
-		return findEdge(_outEdges, EdgeType(EdgeType::NODE_RECORD_TYPE::TARGET, _id, to, elabel));
+		return findEdge(_outEdges, EdgeType(EDGE_RECORD_TYPE::TARGET, _id, to, elabel));
 	}
-	bool existSameTypeEdgeFromNode(const NodeType& n, const EdgeType& e)const {
-		return findEdge(_inEdges, EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, n._id, _id, e.label()));
-	}
-	bool existSameTypeEdgeFromNode(const NodeIDType to, const EdgeLabelType elabel)const {
-		return findEdge(_inEdges, EdgeType(EdgeType::NODE_RECORD_TYPE::SOURCE, to, _id, elabel));
+	bool existSameTypeEdgeFromNode(const NodeIDType from, const EdgeLabelType elabel)const {
+		return findEdge(_inEdges, EdgeType(EDGE_RECORD_TYPE::SOURCE, from, _id, elabel));
 	}
 	void reserve(const size_t s) {
 		_inEdges.reserve(s);
@@ -82,22 +67,15 @@ public:
 	size_t nodeIdHash()const { return hash<NodeIDType>()(this->_id); }
 	void addInEdge(const EdgeType& e) {
 		_inEdges.push_back(e);
-		edgeSort = false;
 	}
 	void addOutEdge(const EdgeType& e) {
 		_outEdges.push_back(e);
-		edgeSort = false;
 	}
 	void NodeBuildFinish() {
 		_inEdges.shrink_to_fit();
 		_outEdges.shrink_to_fit();
-		sort(_inEdges.begin(), _inEdges.end(), [](const EdgeType& a, const EdgeType& b) {
-			return a < b;
-			});
-		sort(_outEdges.begin(), _outEdges.end(), [](const EdgeType& a, const EdgeType& b) {
-			return a < b;
-			});
-		edgeSort = true;
+		sort(_inEdges.begin(), _inEdges.end());
+		sort(_outEdges.begin(), _outEdges.end());
 	}
 };
 }
