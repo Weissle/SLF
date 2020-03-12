@@ -31,32 +31,134 @@ namespace wg {
 
 template<typename GraphType>
 class State;
-template<typename GraphType,class NodeSetType>
-class GraphMatchState{
-
-    typedef typename GraphType::NodeType NodeType;
-    typedef typename NodeType::NodeIDType NodeIDType;
-    typedef typename NodeType::NodeLabelType NodeLabelType;
-
+template<typename GraphType>
+class GraphStateBase {
+protected:
+	typedef typename GraphType::NodeType NodeType;
+	typedef typename NodeType::NodeLabelType NodeLabelType;
 	const GraphType* graphPointer = nullptr;
 	size_t searchDepth = 0;
-    NodeSetType unmap, in, out;
 	vector<size_t> inDepth, outDepth;
 	vector<size_t> inRefTimes, outRefTimes;
-public:
 	friend class State<GraphType>;
-	GraphMatchState() = default;
-	GraphMatchState(const GraphType& g) :graphPointer(&g) {
-		in = NodeSetType(g);
-		out = NodeSetType(g);
-		unmap = NodeSetType(g);
-
+public:
+	GraphStateBase() = default;
+	GraphStateBase(const GraphType& g) :graphPointer(&g) {
 		size_t graphSize = g.size();
 		inDepth.resize(graphSize);
 		outDepth.resize(graphSize);
 
 		inRefTimes.resize(graphSize);
 		outRefTimes.resize(graphSize);
+	}
+};
+template<typename GraphType>
+class TargetGraphMatchState :GraphStateBase<GraphType> {
+	typedef NodeSetWithDepth<GraphType> NodeSetType;
+	NodeSetType unmap, in, out;
+public:
+	friend class State<GraphType>;
+	TargetGraphMatchState() = default;
+	TargetGraphMatchState(const GraphType& g, const size_t maxDepth = 0) :GraphStateBase<GraphType>(g) {
+
+		in = NodeSetType(g, maxDepth);
+		out = NodeSetType(g, maxDepth);
+		unmap = NodeSetType(g, maxDepth);
+
+		for (const auto& node : g.nodes()) unmap.insert(node.id(), 0);
+	}
+	void addNode(NodeIDType id) {
+		const GraphType& graph = *graphPointer;
+		unmap.erase(id, 0);
+		cout << "erase in " << id << ' ' << inDepth[id] << " add\n";
+		in.erase(id, inDepth[id]);
+		cout << "erase out " << id << ' ' << outDepth[id] << " add\n";
+		out.erase(id, outDepth[id]);
+		searchDepth++;
+		const auto& node = graph.node(id);
+		for (const auto& tempEdge : node.inEdges()) {
+			const auto& nodeID = tempEdge.source();
+			// was not be mapped
+			const bool i = IN_NODE_SET(in, nodeID);
+			const bool n = (i) ? true : IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			if (!i) {
+				cout << "insert in " << nodeID << ' ' << searchDepth << '\n';
+				in.insert(nodeID, searchDepth);
+				inDepth[nodeID] = searchDepth;
+			}
+			++inRefTimes[nodeID];
+		}
+		for (const auto& tempEdge : node.outEdges()) {
+			const auto& nodeID = tempEdge.target();
+			const bool o = IN_NODE_SET(out, nodeID);
+			const bool n = (o) ? true : IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			if (!o) {
+				cout << "insert out " << nodeID << ' ' << searchDepth << '\n';
+				out.insert(nodeID, searchDepth);
+				outDepth[nodeID] = searchDepth;
+			}
+			++outRefTimes[nodeID];
+		}
+		return;
+	}
+	void deleteNode(NodeIDType id) {
+		const GraphType& graph = *graphPointer;
+		const auto& node = graph.node(id);
+		for (const auto& tempEdge : node.inEdges()) {
+			const auto& nodeID = tempEdge.source();
+			const bool n = IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			auto& refTimes = inRefTimes[nodeID];
+			auto& nodeDepth = inDepth[nodeID];
+			if (nodeDepth == searchDepth) {
+				//				in.erase(nodeID,searchDepth);
+				nodeDepth = 0;
+			}
+			refTimes--;
+		}
+		for (const auto& tempEdge : node.outEdges()) {
+			const auto& nodeID = tempEdge.target();
+			const bool n = IN_NODE_SET(unmap, nodeID);
+			if (!n)continue;
+			auto& refTimes = outRefTimes[nodeID];
+			auto& nodeDepth = outDepth[nodeID];
+			if (nodeDepth == searchDepth) {
+				//				out.erase(nodeID,searchDepth);
+				nodeDepth = 0;
+			}
+			refTimes--;
+		}
+		cout << "in pop\n";
+		in.pop(searchDepth);
+		cout << "out pop\n";
+		out.pop(searchDepth);
+		--searchDepth;
+		if (inDepth[id]) {
+			cout << "insert in " << id << ' ' << inDepth[id] << " delete\n";
+			in.insert(id, inDepth[id]);
+		}
+		if (outDepth[id]) {
+			cout << "insert out " << id << ' ' << inDepth[id] << " delete\n";
+			out.insert(id, outDepth[id]);
+		}
+		unmap.insert(id, 0);
+	}
+};
+
+template<typename GraphType>
+class SubgraphMatchState :GraphStateBase<GraphType> {
+	using NodeSetType = NodeSetSimple<GraphType>;
+	NodeSetType unmap, in, out;
+public:
+	friend class State<GraphType>;
+	SubgraphMatchState() = default;
+	SubgraphMatchState(const GraphType& g, const size_t maxDepth = 0) :GraphStateBase<GraphType>(g) {
+
+		in = NodeSetType(g);
+		out = NodeSetType(g);
+		unmap = NodeSetType(g);
 		for (const auto& node : g.nodes()) unmap.insert(node.id());
 	}
 	void addNode(NodeIDType id) {
@@ -91,53 +193,20 @@ public:
 		}
 		return;
 	}
-	void deleteNode(NodeIDType id) {
-		const GraphType& graph = *graphPointer;
-		const auto& node = graph.node(id);
-		for (const auto& tempEdge : node.inEdges()) {
-			const auto& nodeID = tempEdge.source();
-			const bool n = IN_NODE_SET(unmap, nodeID);
-			if (!n)continue;
-			auto& refTimes = inRefTimes[nodeID];
-			auto& nodeDepth = inDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				in.erase(nodeID);
-				nodeDepth = 0;
-			}
-			refTimes--;
-		}
-		for (const auto& tempEdge : node.outEdges()) {
-			const auto& nodeID = tempEdge.target();
-			const bool n = IN_NODE_SET(unmap, nodeID);
-			if (!n)continue;
-			auto& refTimes = outRefTimes[nodeID];
-			auto& nodeDepth = outDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				out.erase(nodeID);
-				nodeDepth = 0;
-			}
-			refTimes--;
-		}
-		if (inDepth[id])	in.insert(id);
-		if (outDepth[id])	out.insert(id);
-		unmap.insert(id);
-		--searchDepth;
-	}
 };
+
 template<typename GraphType>
-class State  {
+class State {
 	typedef typename GraphType::NodeType NodeType;
 
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef typename NodeSetSimple<GraphType> QueryStateNodeSet;
-	typedef typename NodeSetWithLabel<GraphType> TargetStateNodeState;
 	typedef typename NodeSetWithLabel<GraphType>::Nodes NodeSetWithLabelUnit;
 private:
-	GraphMatchState<GraphType,TargetStateNodeState> targetState;
-	shared_ptr<GraphMatchState<GraphType,QueryStateNodeSet>[]> queryStates;
+	TargetGraphMatchState<GraphType> targetState;
+	shared_ptr<SubgraphMatchState<GraphType>[]> queryStates;
 	const GraphType* targetGraphPtr, * queryGraphPtr;
 	size_t searchDepth = 0;
 	MapType mapping;
@@ -321,7 +390,7 @@ private:
 		}
 		return true;
 	}
-	State(const GraphType& _q, const GraphType& _t) : queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t)
+	State(const GraphType& _q, const GraphType& _t) : queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size())
 	{
 
 		const auto queryGraphSize = _q.size();
@@ -329,8 +398,8 @@ private:
 
 		mappingAux.resize(targetGraphSize, NO_MAP);
 		mapping.resize(queryGraphSize, NO_MAP);
-		labelNum = max(_q.maxLabel(), _t.maxLabel())+1;
-		
+		labelNum = max(_q.maxLabel(), _t.maxLabel()) + 1;
+
 		inNewCount.resize(labelNum);
 		outNewCount.resize(labelNum);
 		bothNewCount.resize(labelNum);
@@ -338,12 +407,13 @@ private:
 
 	};
 public:
-	State(const GraphType& _q, const GraphType& _t, shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> _queryStates) :State(_q, _t)
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<SubgraphMatchState<GraphType>[]> _queryStates) :State(_q, _t)
 	{
 		queryStates = _queryStates;
 	};
 	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& ms) :State(_q, _t) {
 		queryStates = State<GraphType>::makeSubgraphState(_q, ms);
+		LOOP(i, 0, 10)cout << endl;
 	};
 	State() = default;
 
@@ -377,6 +447,7 @@ public:
 		{
 			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
 			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
+			if (mappingAux[targetNodeToMatchID] != NO_MAP)continue;
 
 #ifdef INDUCE_ISO
 			// it will be ditched because of sourceRule in next depth .
@@ -438,22 +509,23 @@ public:
 	}
 	size_t depth() const { return searchDepth; }
 
-	static shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
+	static shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
 		auto t1 = clock();
 		assert(g.size() == ms.size());
-		auto ptr = new GraphMatchState<GraphType,QueryStateNodeSet>[ms.size()];
+		//the final state will never be used , so this function will not generate the final state;
+		auto ptr = new SubgraphMatchState<GraphType>[ms.size()];
 		if (ptr == nullptr) {
 			cout << "allocate memory fail" << endl;
 			exit(1);
 		}
 
-		shared_ptr<GraphMatchState<GraphType, QueryStateNodeSet>[]> p(ptr);
-		p[0] = move(GraphMatchState<GraphType, QueryStateNodeSet>(g));
+		shared_ptr<SubgraphMatchState<GraphType>[]> p(ptr);
+		p[0] = move(SubgraphMatchState<GraphType>(g));
 		LOOP(i, 1, ms.size()) {
 			ptr[i] = ptr[i - 1];
-			ptr[i].addNode(ms[i - 1]);		
+			ptr[i].addNode(ms[i - 1]);
 		}
-//		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
+		//		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
 	}
 };

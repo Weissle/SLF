@@ -67,7 +67,6 @@ public:
 };
 template<class GraphType>
 class NodeSetSimple {
-	typedef typename GraphType::NodeType NodeType;
 protected:
 	GraphType const* graph = nullptr;
 	vector<bool> belong;
@@ -88,7 +87,7 @@ public:
 	}
 };
 template<class GraphType>
-class NodeSetWithLabel:NodeSetSimple<GraphType> {
+class NodeSetWithLabel :NodeSetSimple<GraphType> {
 public:
 	typedef size_t NodeLabelType;
 	typedef vector<NodeIDType> Nodes;
@@ -100,13 +99,13 @@ public:
 	NodeSetWithLabel(const GraphType& _graph) :NodeSetSimple<GraphType>(_graph) {
 		const auto labelsNum = _graph.labelNum();
 		place.resize(_graph.size(), NO_MAP);
-		v.resize(_graph.maxLabel()+1);
+		v.resize(_graph.maxLabel() + 1);
 		for (auto it = labelsNum.begin(); it != labelsNum.end(); ++it) {
 			v[it->first].reserve(it->second + 1);
 		}
 	}
 	void insert(const NodeIDType id) {
-	
+
 		if (place[id] == NO_MAP) {
 			const auto label = graph->node(id).label();
 			place[id] = v[label].size();
@@ -129,10 +128,10 @@ public:
 		return;
 	}
 	inline bool exist(const NodeIDType id)const {
-		return place[id]!=NO_MAP;
+		return place[id] != NO_MAP;
 	}
 	const Nodes& getSet(NodeLabelType label)const {
-//		if (label >= v.size()) return move(Nodes());
+		//		if (label >= v.size()) return move(Nodes());
 		return v[label];
 	}
 	size_t size(NodeLabelType label)const {
@@ -140,6 +139,104 @@ public:
 	}
 
 	NodeSetWithLabel() = default;
+};
+
+template<class GraphType>
+class NodeSetWithDepth :NodeSetSimple<GraphType> {
+public:
+	typedef size_t NodeLabelType;
+	typedef vector<NodeIDType> Nodes;
+private:
+	vector<size_t> place, depthSpace;
+	Nodes p;
+	size_t nowDepth = 0;
+
+public:
+	inline void double_swap(size_t id1, size_t id2) {
+		auto& p1 = place[id1], & p2 = place[id2];
+		swap(p[p1], p[p2]);
+		swap(p1, p2);
+	}
+	NodeSetWithDepth(const GraphType& _graph, size_t depth) :NodeSetSimple<GraphType>(_graph) {
+		const auto labelsNum = _graph.labelNum();
+		place.resize(_graph.size(), NO_MAP);
+		p.reserve(_graph.size() + 5);
+		depthSpace.resize(2 * depth + 3, 0);
+	}
+	void prepare(const size_t depth) {
+		assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
+		assert(depthSpace[(depth << 1) + 1] == 0);
+		depthSpace[(depth << 1) + 1] = depthSpace[(depth << 1) + 2] = depthSpace[(depth << 1)];
+	}
+	void insert(const NodeIDType id, const size_t depth) {
+		if (id == 468468) {
+			int a = 0;
+		}
+		if (belong[id] == false) {
+			belong[id] = true;
+			if (place[id] == NO_MAP) {
+				assert(nowDepth <= depth - 1 || nowDepth == depth || depth == 0);
+				assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
+				nowDepth = depth;
+				place[id] = p.size();
+				p.push_back(id);
+				depthSpace[(depth << 1) + 1]++;
+				depthSpace[(depth << 1) + 2]++;
+			}
+			else {
+				assert(place[id] >= place[p[depthSpace[(depth << 1) + 1]]]);
+				double_swap(id, p[depthSpace[(depth << 1) + 1]]);
+				depthSpace[(depth << 1) + 1]++;
+			}
+
+		}
+		return;
+	}
+	void erase(const NodeIDType id, size_t depth) {
+		if (id == 684684) {
+			int a = 0;
+		}
+		assert(depth <= nowDepth);
+		if (belong[id] == true) {
+			belong[id] = false;
+			depthSpace[(depth << 1) + 1]--;
+			double_swap(id, p[depthSpace[(depth << 1) + 1]]);
+		}
+		return;
+	}
+	void pop(size_t depth) {
+		if (depth == 8) {
+			int a = 0;
+		}
+		assert(depth = nowDepth);
+		assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
+		assert(depthSpace[(depth << 1) + 1] == p.size());
+		nowDepth--;
+		if (depthSpace[(depth << 1) + 2] == 0)return;
+		auto end = depthSpace[(depth << 1) + 2];
+		auto start = depthSpace[(depth << 1)];
+
+		LOOP(i, 0, end - start) {
+			auto id = p.back();
+			cout << "pop " << id << ' ' << depth << " isbelong " << belong[id] << endl;
+			belong[id] = false;
+			place[id] = NO_MAP;
+			p.pop_back();
+		}
+		depthSpace[(depth << 1) + 1] = depthSpace[(depth << 1) + 2] = 0;
+	}
+	inline bool exist(const NodeIDType id)const {
+		return belong[id];
+	}
+	const Nodes& getSet(NodeLabelType label)const {
+		//		if (label >= v.size()) return move(Nodes());
+		return p;
+	}
+	size_t size(NodeLabelType label)const {
+		return p.size();
+	}
+
+	NodeSetWithDepth() = default;
 };
 
 }

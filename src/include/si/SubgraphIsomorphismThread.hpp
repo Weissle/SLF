@@ -60,7 +60,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	}
 public:
 	SubgraphIsomorphismThreadUnit(size_t _id, const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution, vector_mutex<size_t>& _freeThreads,
-		condition_variable& _cv, bool& _end, shared_ptr<GraphMatchState<GraphType, NodeSetSimple<GraphType>>[]> _sp) :
+		condition_variable& _cv, bool& _end, shared_ptr<SubgraphMatchState<GraphType>[]> _sp) :
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _mS, _oneSolution), id(_id), answerReceiver(_answerReceiver), maxDepth(_q.size()),
 		state(_q, _t, _sp), freeThreads(_freeThreads), finish_cv(_cv), end(_end), searchTree(_q.size())
 	{
@@ -99,7 +99,7 @@ class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType, Matc
 	AnswerReceiverType& answerReceiver;
 	size_t threadNum;
 	condition_variable work_cv;
-	shared_ptr<GraphMatchState<GraphType, NodeSetSimple<GraphType>>[]> subgraphStates;
+	shared_ptr<SubgraphMatchState<GraphType>[]> subgraphStates;
 	State<GraphType> state;
 public:
 	SubgraphIsomorphismThread() = default;
