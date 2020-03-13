@@ -54,7 +54,6 @@ public:
 		return _size > temp._size;
 	}
 	auto begin()const {
-
 		return s.begin();
 	}
 	const unordered_set<NodeIDType>& getSet()const {
@@ -151,6 +150,15 @@ private:
 	Nodes p;
 	size_t nowDepth = 0;
 
+	inline size_t& start_place(const size_t depth){
+		return depthSpace[depth << 1];
+	}
+	inline size_t& mid_place(const size_t depth){
+		return depthSpace[(depth << 1)+1];
+	}
+	inline size_t& end_place(const size_t depth){
+		return depthSpace[(depth + 1) << 1];
+	}
 public:
 	inline void double_swap(size_t id1, size_t id2) {
 		auto& p1 = place[id1], & p2 = place[id2];
@@ -160,13 +168,13 @@ public:
 	NodeSetWithDepth(const GraphType& _graph, size_t depth) :NodeSetSimple<GraphType>(_graph) {
 		const auto labelsNum = _graph.labelNum();
 		place.resize(_graph.size(), NO_MAP);
-		p.reserve(_graph.size() + 5);
+		p.reserve(_graph.size() + 1);
 		depthSpace.resize(2 * depth + 3, 0);
 	}
 	void prepare(const size_t depth) {
 		assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
 		assert(depthSpace[(depth << 1) + 1] == 0);
-		depthSpace[(depth << 1) + 1] = depthSpace[(depth << 1) + 2] = depthSpace[(depth << 1)];
+		mid_place(depth) = end_place(depth) = start_place(depth);
 		nowDepth++;
 	}
 	void insert(const NodeIDType id, const size_t depth) {
@@ -176,18 +184,18 @@ public:
 		if (belong[id] == false) {
 			belong[id] = true;
 			if (place[id] == NO_MAP) {
-				assert(nowDepth <= depth - 1 || nowDepth == depth || depth == 0);
+				assert(nowDepth == depth);
 				assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
 				nowDepth = depth;
 				place[id] = p.size();
 				p.push_back(id);
-				depthSpace[(depth << 1) + 1]++;
-				depthSpace[(depth << 1) + 2]++;
+				mid_place(depth)++;
+				end_place(depth)++;
 			}
 			else {
-				assert(place[id] >= place[p[depthSpace[(depth << 1) + 1]]]);
-				double_swap(id, p[depthSpace[(depth << 1) + 1]]);
-				depthSpace[(depth << 1) + 1]++;
+		//		assert(place[id] == place[p[depthSpace[(depth << 1) + 1]]]);
+		//		double_swap(id, p[depthSpace[(depth << 1) + 1]]);
+				mid_place(depth)++;
 			}
 
 		}
@@ -200,43 +208,36 @@ public:
 		assert(depth <= nowDepth);
 		if (belong[id] == true) {
 			belong[id] = false;
-			depthSpace[(depth << 1) + 1]--;
-			double_swap(id, p[depthSpace[(depth << 1) + 1]]);
+			mid_place(depth)--;
+			double_swap(id, p[mid_place(depth)]);
 		}
 		return;
 	}
 	void pop(size_t depth) {
-		if (depth == 464315) {
-			int a = 0;
-		}
 		assert(depth = nowDepth);
 		assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
 		assert(depthSpace[(depth << 1) + 1] == p.size());
 		nowDepth--;
-
-		auto end = depthSpace[(depth << 1) + 2];
-		auto start = depthSpace[(depth << 1)];
-
-		LOOP(i, 0, end - start) {
-			auto id = p.back();
-	//		cout << "pop " << id << ' ' << depth << " isbelong " << belong[id] << endl;
+		auto end = end_place(depth);
+		auto start = start_place(depth);
+		LOOP(i, start, end) {
+			const auto& id = p[i];
 			belong[id] = false;
 			place[id] = NO_MAP;
+		}
+		LOOP(i, start, end) {
 			p.pop_back();
 		}
-		depthSpace[(depth << 1) + 1] = depthSpace[(depth << 1) + 2] = 0;
+
+		mid_place(depth) = end_place(depth) = 0;
 	}
 	inline bool exist(const NodeIDType id)const {
 		return belong[id];
 	}
-	void getSet(size_t depth,const NodeIDType *&begin,const NodeIDType *&end)const {
-		//		if (label >= v.size()) return move(Nodes());
+	void getSet(size_t depth,const NodeIDType *&begin,const NodeIDType *&mid)const {
 		assert(depth <= nowDepth);
-		begin = p.data() + depthSpace[(depth << 1)];
-		end = p.data() + depthSpace[(depth << 1) + 1];
-	}
-	size_t size(NodeLabelType label)const {
-		return p.size();
+		begin = p.data() + depthSpace[depth << 1];
+		mid = p.data() + depthSpace[(depth << 1) + 1];
 	}
 
 	NodeSetWithDepth() = default;

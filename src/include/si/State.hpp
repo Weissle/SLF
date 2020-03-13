@@ -5,16 +5,11 @@
 #include"NodeSet.hpp"
 #include<assert.h>
 #include<iostream>
-#include<unordered_set>
-#include<unordered_map>
 #include<algorithm>
 #include<memory>
-#include<limits>
-#include<functional>
 #include"common.h"
 #include<si/si_marcos.h>
 #include<cstring>
-#include"tools/AdaptiveStateChanger.hpp"
 
 //defind INDUCE_ISO or NORMAL_ISO in si_marcos.h
 #if !defined(INDUCE_ISO) && !defined(NORMAL_ISO)
@@ -442,39 +437,49 @@ public:
 		const auto queryNodeOutDepth = queryStates[searchDepth].outDepth[queryNodeToMatchID];
 
 		const auto queryNodeLabel = queryNode.label();
-		const NodeSetWithLabelUnit* tempNodeSetPointer;
 
 		const NodeIDType* begin = nullptr, * end = nullptr;
-		if (queryNodeInIn) targetState.in.getSet(queryNodeInDepth,begin,end);
-		else if (queryNodeInOut) targetState.out.getSet(queryNodeOutDepth,begin,end);
-		else targetState.unmap.getSet(0,begin,end);
-		
-		answer.reserve(end-begin);
+#ifdef NORMAL_ISO
+		for (auto d = 0; d <= std::min(queryNodeInDepth, queryNodeOutDepth); d++) {
+			if (queryNodeInIn) targetState.in.getSet(d, begin, end);
+			else if (queryNodeInOut) targetState.out.getSet(d, begin, end);
+			else targetState.unmap.getSet(0, begin, end);
+			for (auto it = begin; it < end; ++it) {
+				const auto& targetNodeToMatchID = *it;
+				const auto& targetNode = targetGraph.node(targetNodeToMatchID);
+				if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
+				assert(mappingAux[targetNodeToMatchID] == NO_MAP);
 
+				if (queryNodeInRefTimes > targetState.inRefTimes[targetNodeToMatchID]) continue;
+				if (queryNodeOutRefTimes > targetState.outRefTimes[targetNodeToMatchID]) continue;
+				if (queryNodeInDepth < targetState.inDepth[targetNodeToMatchID])continue;
+				if (queryNodeOutDepth < targetState.outDepth[targetNodeToMatchID])continue;
+
+				answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
+			}
+		}
+#endif
+#if defined(INDUCE_ISO)
+		if (queryNodeInIn) targetState.in.getSet(queryNodeInDepth, begin, end);
+		else if (queryNodeInOut) targetState.out.getSet(queryNodeOutDepth, begin, end);
+		else targetState.unmap.getSet(0, begin, end);
+		answer.reserve(end - begin);
 		for(auto it=begin;it<end;++it)
 		{
 			const auto& targetNodeToMatchID = *it;
 			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
 			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
-			if (mappingAux[targetNodeToMatchID] != NO_MAP)continue;
+			assert(mappingAux[targetNodeToMatchID] == NO_MAP);
 
-#ifdef INDUCE_ISO
 			// it will be ditched because of sourceRule in next depth .
 			if (queryNodeInRefTimes != targetState.inRefTimes[targetNodeToMatchID]) continue;
 			if (queryNodeOutRefTimes != targetState.outRefTimes[targetNodeToMatchID]) continue;
 			if (queryNodeInDepth != targetState.inDepth[targetNodeToMatchID])continue;
 			if (queryNodeOutDepth != targetState.outDepth[targetNodeToMatchID])continue;
-#elif defined(NORMAL_ISO)
-			if (queryNodeInRefTimes > targetState.inRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeOutRefTimes > targetState.outRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeInDepth < targetState.inDepth[targetNodeToMatchID])continue;
-			if (queryNodeOutDepth < targetState.outDepth[targetNodeToMatchID])continue;
-#endif
-
 			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
 
 		}
-
+#endif
 		return std::move(answer);
 
 	}

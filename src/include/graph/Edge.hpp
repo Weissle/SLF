@@ -1,5 +1,4 @@
 #pragma once
-#include<typeinfo>
 #include<assert.h>
 #include<si/si_marcos.h>
 namespace wg {
