@@ -19,9 +19,9 @@ vector<size_t> readMatchSequence(string &matchOrderPath) {
 			exit(1);
 		}
 		while (f.eof() == false) {
-			size_t temp;
+			size_t temp = UINT32_MAX;
 			f >> temp;
-			ms.push_back(temp);
+			if (temp != UINT32_MAX)ms.push_back(temp);
 		}
 		f.close();
 	}
@@ -61,16 +61,16 @@ int main(int argc, char * argv[]) {
 	// graph type ( store in files ) and read graph
 #define GRF_L
 #ifdef GRF_L
-	typedef GRFGraphLabel<GraphType> GraphReader;
+	typedef GRFGraphLabel<GraphType,size_t> GraphReader;
 #elif defined(LAD)
 	typedef LADReader<GraphType> GraphReader;
 #elif defined ARG_NL
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
+	IndexTurner<size_t> turner;
 	auto t1 = clock();
-
-	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
-		        *targetGraph = GraphReader::readGraph(targetGraphPath);
+	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath,turner),
+		        *targetGraph = GraphReader::readGraph(targetGraphPath,turner);
 //	PRINT_TIME_COST_S("read graph time : ", clock() - t1);
 //	cout << "read graph finish" << endl;
 

@@ -189,10 +189,10 @@ public:
 	}
 };
 
-template<class GraphType>
+template<class GraphType,class NodeLabelType>
 class GRFGraphLabel {
 public:
-	static GraphType* readGraph(string graphPath) {
+	static GraphType* readGraph(string graphPath,wg::IndexTurner<NodeLabelType> &turner) {
 		fstream f;
 		f.open(graphPath.c_str(), ios_base::in);
 		if (f.is_open() == false) {
@@ -208,7 +208,7 @@ public:
 			size_t id;
 			int label;
 			f >> id >> label;
-			graph->setNodeLabel(id, label - 1);
+			graph->setNodeLabel(id, turner(label));
 		}
 		bool* pp = new bool[nodeNum]();
 		while (f.eof() == false) {
@@ -218,9 +218,10 @@ public:
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
 
-				size_t source = INT32_MAX, target = INT32_MAX;
+				size_t source = UINT32_MAX, target = UINT32_MAX;
 
 				f >> source >> target;
+				if (source == UINT32_MAX || target == UINT32_MAX) continue;
 				pair<size_t, size_t> p(source, target);
 				if (IN_SET(s, p))continue;
 				if (pp[source] == false) {

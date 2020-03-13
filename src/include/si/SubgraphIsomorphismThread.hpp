@@ -134,37 +134,7 @@ public:
 			tasks.pop_back();
 		}
 		
-	/*	bool end = false;
-		const GraphType & targetGraph = *targetGraphPtr;
-		const GraphType & queryGraph = *queryGraphPtr;
-		vector<unique_ptr<SIUnit>> siUnits(4);
-		vector_mutex<size_t> freeThreads;
-		vector<thread> threads(threadNum);
-		vector<pair<NodeIDType, NodeIDType>> tasks = state.calCandidatePairs(matchSequence[0]);
-		auto tasksDistribute = [&](size_t freeUnit) {
-			if (tasks.empty() == false) {
-				if (threads[freeUnit].joinable()) threads[freeUnit].join();
-				auto tempP = tasks.back();
-				tasks.pop_back();
-				siUnits[freeUnit]->prepare(tempP);
-				threads[freeUnit] = thread(&SIUnit::run, siUnits[freeUnit].get());
 
-			}
-		};
-		LOOP(i, 0, threadNum) {
-			auto p = make_unique<SIUnit>(i, queryGraph, targetGraph, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end, subgraphStates);
-			siUnits[i] = move(p);
-			tasksDistribute(i);
-		}
-		while (tasks.size()) {
-			unique_lock<mutex> ul(freeThreads.m);
-			work_cv.wait(ul, [&freeThreads]() {return !freeThreads.empty(); });
-			auto freeUnit = freeThreads.pop();
-			tasksDistribute(freeUnit);
-		}
-		
-		LOOP(i, 0, threadNum) 	if (threads[i].joinable())	threads[i].join();
-	*/
 			
 		return;
 	}
