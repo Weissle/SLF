@@ -167,6 +167,7 @@ public:
 		assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
 		assert(depthSpace[(depth << 1) + 1] == 0);
 		depthSpace[(depth << 1) + 1] = depthSpace[(depth << 1) + 2] = depthSpace[(depth << 1)];
+		nowDepth++;
 	}
 	void insert(const NodeIDType id, const size_t depth) {
 		if (id == 468468) {
@@ -205,20 +206,20 @@ public:
 		return;
 	}
 	void pop(size_t depth) {
-		if (depth == 8) {
+		if (depth == 464315) {
 			int a = 0;
 		}
 		assert(depth = nowDepth);
 		assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
 		assert(depthSpace[(depth << 1) + 1] == p.size());
 		nowDepth--;
-		if (depthSpace[(depth << 1) + 2] == 0)return;
+
 		auto end = depthSpace[(depth << 1) + 2];
 		auto start = depthSpace[(depth << 1)];
 
 		LOOP(i, 0, end - start) {
 			auto id = p.back();
-			cout << "pop " << id << ' ' << depth << " isbelong " << belong[id] << endl;
+	//		cout << "pop " << id << ' ' << depth << " isbelong " << belong[id] << endl;
 			belong[id] = false;
 			place[id] = NO_MAP;
 			p.pop_back();
@@ -228,9 +229,11 @@ public:
 	inline bool exist(const NodeIDType id)const {
 		return belong[id];
 	}
-	const Nodes& getSet(NodeLabelType label)const {
+	void getSet(size_t depth,const NodeIDType *&begin,const NodeIDType *&end)const {
 		//		if (label >= v.size()) return move(Nodes());
-		return p;
+		assert(depth <= nowDepth);
+		begin = p.data() + depthSpace[(depth << 1)];
+		end = p.data() + depthSpace[(depth << 1) + 1];
 	}
 	size_t size(NodeLabelType label)const {
 		return p.size();

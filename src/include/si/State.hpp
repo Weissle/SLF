@@ -68,13 +68,18 @@ public:
 		for (const auto& node : g.nodes()) unmap.insert(node.id(), 0);
 	}
 	void addNode(NodeIDType id) {
+		if (id == 1806) {
+			int a=0;
+		}
 		const GraphType& graph = *graphPointer;
 		unmap.erase(id, 0);
-		cout << "erase in " << id << ' ' << inDepth[id] << " add\n";
+//		cout << "erase in " << id << ' ' << inDepth[id] << " add\n";
 		in.erase(id, inDepth[id]);
-		cout << "erase out " << id << ' ' << outDepth[id] << " add\n";
+//		cout << "erase out " << id << ' ' << outDepth[id] << " add\n";
 		out.erase(id, outDepth[id]);
 		searchDepth++;
+		in.prepare(searchDepth);
+		out.prepare(searchDepth);
 		const auto& node = graph.node(id);
 		for (const auto& tempEdge : node.inEdges()) {
 			const auto& nodeID = tempEdge.source();
@@ -83,7 +88,7 @@ public:
 			const bool n = (i) ? true : IN_NODE_SET(unmap, nodeID);
 			if (!n)continue;
 			if (!i) {
-				cout << "insert in " << nodeID << ' ' << searchDepth << '\n';
+//				cout << "insert in " << nodeID << ' ' << searchDepth << '\n';
 				in.insert(nodeID, searchDepth);
 				inDepth[nodeID] = searchDepth;
 			}
@@ -95,7 +100,7 @@ public:
 			const bool n = (o) ? true : IN_NODE_SET(unmap, nodeID);
 			if (!n)continue;
 			if (!o) {
-				cout << "insert out " << nodeID << ' ' << searchDepth << '\n';
+//				cout << "insert out " << nodeID << ' ' << searchDepth << '\n';
 				out.insert(nodeID, searchDepth);
 				outDepth[nodeID] = searchDepth;
 			}
@@ -104,6 +109,9 @@ public:
 		return;
 	}
 	void deleteNode(NodeIDType id) {
+		if (id == 1806) {
+			int a=0;
+		}
 		const GraphType& graph = *graphPointer;
 		const auto& node = graph.node(id);
 		for (const auto& tempEdge : node.inEdges()) {
@@ -130,17 +138,17 @@ public:
 			}
 			refTimes--;
 		}
-		cout << "in pop\n";
+//		cout << "in pop\n";
 		in.pop(searchDepth);
-		cout << "out pop\n";
+//		cout << "out pop\n";
 		out.pop(searchDepth);
 		--searchDepth;
 		if (inDepth[id]) {
-			cout << "insert in " << id << ' ' << inDepth[id] << " delete\n";
+//			cout << "insert in " << id << ' ' << inDepth[id] << " delete\n";
 			in.insert(id, inDepth[id]);
 		}
 		if (outDepth[id]) {
-			cout << "insert out " << id << ' ' << inDepth[id] << " delete\n";
+//			cout << "insert out " << id << ' ' << inDepth[id] << " delete\n";
 			out.insert(id, outDepth[id]);
 		}
 		unmap.insert(id, 0);
@@ -413,7 +421,6 @@ public:
 	};
 	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& ms) :State(_q, _t) {
 		queryStates = State<GraphType>::makeSubgraphState(_q, ms);
-		LOOP(i, 0, 10)cout << endl;
 	};
 	State() = default;
 
@@ -437,14 +444,16 @@ public:
 		const auto queryNodeLabel = queryNode.label();
 		const NodeSetWithLabelUnit* tempNodeSetPointer;
 
-		if (queryNodeInIn) tempNodeSetPointer = &targetState.in.getSet(queryNodeLabel);
-		else if (queryNodeInOut)tempNodeSetPointer = &targetState.out.getSet(queryNodeLabel);
-		else tempNodeSetPointer = &targetState.unmap.getSet(queryNodeLabel);
+		const NodeIDType* begin = nullptr, * end = nullptr;
+		if (queryNodeInIn) targetState.in.getSet(queryNodeInDepth,begin,end);
+		else if (queryNodeInOut) targetState.out.getSet(queryNodeOutDepth,begin,end);
+		else targetState.unmap.getSet(0,begin,end);
+		
+		answer.reserve(end-begin);
 
-		answer.reserve(tempNodeSetPointer->size());
-
-		TRAVERSE_SET(targetNodeToMatchID, *tempNodeSetPointer)
+		for(auto it=begin;it<end;++it)
 		{
+			const auto& targetNodeToMatchID = *it;
 			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
 			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
 			if (mappingAux[targetNodeToMatchID] != NO_MAP)continue;
