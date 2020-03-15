@@ -7,6 +7,7 @@
 #include"MatchOrderSelector.hpp"
 #include"ThreadRelatedClass.hpp"
 #include"SearchTree.hpp"
+#include<mutex>
 #include<utility>
 #include<memory>
 #include<tools/ThreadPool.h>
@@ -17,7 +18,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	size_t searchDepth = 0, maxDepth = 0, minDepth = 0;
 	State<GraphType> state, minState;
 	size_t id;
-	vector_mutex<size_t>& freeThreads;
+	stack_mutex<size_t>& freeThreads;
 	condition_variable& finish_cv;
 	vector<NodeIDType> targetGraphMapSequence;
 	//	SearchTreeThread searchTree;
@@ -59,7 +60,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		}
 	}
 public:
-	SubgraphIsomorphismThreadUnit(size_t _id, const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution, vector_mutex<size_t>& _freeThreads,
+	SubgraphIsomorphismThreadUnit(size_t _id, const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution, stack_mutex<size_t>& _freeThreads,
 		condition_variable& _cv, bool& _end, shared_ptr<SubgraphMatchState<GraphType>[]> _sp) :
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _mS, _oneSolution), id(_id), answerReceiver(_answerReceiver), maxDepth(_q.size()),
 		state(_q, _t, _sp), freeThreads(_freeThreads), finish_cv(_cv), end(_end), searchTree(_q.size())
@@ -80,8 +81,7 @@ public:
 	void run() {
 //		auto t1 = clock();
 		run_no_recursive();
-		lock_guard<mutex> lg(freeThreads.m);
-		freeThreads.push_back(id);
+		freeThreads.push(id);
 		finish_cv.notify_one();
 	}
 	pair<size_t, size_t> minDepth_and_restPair() {
@@ -111,31 +111,37 @@ public:
 		state = State<GraphType>(*queryGraphPtr, *targetGraphPtr, subgraphStates);
 	}
 	void run() {
-
 		bool end = false;
 		vector<unique_ptr<SIUnit>> siUnits(threadNum);
-		vector_mutex<size_t> freeThreads;
-		ThreadPool threadPool(threadNum);
+		stack_mutex<size_t> freeThreads;
+		vector<thread> threads(threadNum);
 		vector<pair<NodeIDType, NodeIDType>> tasks = state.calCandidatePairs(matchSequence[0]);
-
+		ThreadPool  threadPool(threadNum);
 		auto tasksDistribute = [&](MapPair p) {
 			if (end)return;
-			auto freeUnit = freeThreads.pop();
+			bool ok = false;
+			auto freeUnit = freeThreads.pop(ok);
+			if (!ok)return;
 			siUnits[freeUnit]->prepare(p);
 			siUnits[freeUnit]->run();
 		};
 		LOOP(i, 0, threadNum) {
 			auto p = make_unique<SIUnit>(i, *queryGraphPtr, *targetGraphPtr, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end, subgraphStates);
 			siUnits[i] = move(p);
-			freeThreads.push_back(i);
+			freeThreads.push((size_t)i);
 		}
 		while (tasks.size()) {
 			threadPool.enqueue(tasksDistribute, tasks.back());
 			tasks.pop_back();
 		}
+<<<<<<< HEAD
 		
 
 			
+=======
+	
+
+>>>>>>> fda5eb9cb2a8ca629cef3741f427f9666263dc3e
 		return;
 	}
 
