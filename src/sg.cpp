@@ -2,12 +2,13 @@
 #include"tools/SubgraphGenerator.hpp"
 #include<string>
 #include<tools/RandomGenerator.hpp>
+#include<tools/IndexTurner.hpp>
 #include"tools/argh.h"
 #include<thread>
 using namespace std;
 using namespace wg;
 template<class GraphType>
-void writeToFile(const string &fileName,const GraphType &graph) {
+void writeToFile(const string& fileName, const GraphType& graph) {
 	ofstream f;
 	f.flush();
 	f.open(fileName.c_str(), ios::out);
@@ -127,7 +128,10 @@ int main(int argc, char* argv[]) {
 			}
 		}
 	}
-	else graph = GRFGraphLabel<GraphType>::readGraph(graphPath.c_str());
+	else {
+		IndexTurner<size_t> turner;
+		graph = GRFGraphLabel<GraphType,size_t>::readGraph(graphPath.c_str(),turner);
+	}
 	cout << "big graph ok" << endl;
 
 	sg::SubgraphGenerator<GraphType> subgraphG(*graph, sNeed);
@@ -138,8 +142,8 @@ int main(int argc, char* argv[]) {
 	writeMapping(midGraphPath, midGraph);
 	thread t1(writeMapping<NodeIDType>, ref(midGraphPath), ref(midGraph));
 	auto queryGraph = subgraphG.getSmallGraph();
-	
-	auto fun = [](GraphType &g,const string &path) {
+
+	auto fun = [](GraphType& g, const string& path) {
 		g.graphBuildFinish();
 		writeToFile(path, g);
 	};
@@ -148,15 +152,15 @@ int main(int argc, char* argv[]) {
 	t1.join();
 	t2.join();
 	t3.join();
-	
-/*	
-	writeToFile(smallGraphPath, queryGraph);
-	writeToFile(bigGraphPath, *graph);
-	
-	graph->graphBuildFinish();
-	queryGraph.graphBuildFinish();
-	writeToFile(smallGraphPath, queryGraph);
-	writeToFile(bigGraphPath, *graph);*/
+
+	/*
+		writeToFile(smallGraphPath, queryGraph);
+		writeToFile(bigGraphPath, *graph);
+
+		graph->graphBuildFinish();
+		queryGraph.graphBuildFinish();
+		writeToFile(smallGraphPath, queryGraph);
+		writeToFile(bigGraphPath, *graph);*/
 	delete graph;
 	delete randomer;
 

@@ -5,6 +5,7 @@
 #include<fstream>
 #include"tools/AnswerChecker.hpp"
 #include"tools/SolutionReader.hpp"
+#include"tools/IndexTurner.hpp"
 using namespace std;
 using namespace wg;
 static long t = 0;
@@ -35,9 +36,9 @@ int main(int argc, char* argv[]) {
 
 	vector< vector<size_t> > solutions = SolutionReader::readSolutions(solutionPath);
 
-
-	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath),
-		* targetGraph = GraphReader::readGraph(targetGraphPath);
+	IndexTurner<size_t> turner;
+	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath,turner),
+		* targetGraph = GraphReader::readGraph(targetGraphPath,turner);
 	queryGraph->graphBuildFinish();
 	targetGraph->graphBuildFinish();
 	typedef AnswerChecker<GraphType> ACer;

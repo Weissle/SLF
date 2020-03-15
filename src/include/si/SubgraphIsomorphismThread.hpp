@@ -134,14 +134,6 @@ public:
 			threadPool.enqueue(tasksDistribute, tasks.back());
 			tasks.pop_back();
 		}
-<<<<<<< HEAD
-		
-
-			
-=======
-	
-
->>>>>>> fda5eb9cb2a8ca629cef3741f427f9666263dc3e
 		return;
 	}
 

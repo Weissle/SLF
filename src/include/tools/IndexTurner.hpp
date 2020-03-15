@@ -32,7 +32,6 @@ public:
 	IndexTurner() = default;
 	IndexTurner(const size_t  s) {
 		BIndex.reserve(s);
-		if (typeid(IndexType) == typeid(unordered_map<_NameType, int>))index.reserve(calHashSuitableSize(s));
 	}
 	~IndexTurner() = default;
 	void clear() {

@@ -189,7 +189,7 @@ public:
 	}
 };
 
-template<class GraphType,class NodeLabelType>
+template<class GraphType,class NodeLabelType=size_t>
 class GRFGraphLabel {
 public:
 	static GraphType* readGraph(string graphPath,wg::IndexTurner<NodeLabelType> &turner) {

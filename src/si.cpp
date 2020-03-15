@@ -90,7 +90,7 @@ int main(int argc, char * argv[]) {
 		answerReceiver.finish();
 	}
 	else {
-		AnswerReceiver answerReceiver(answerPath);
+		AnswerReceiver answerReceiver;
 		SubgraphIsomorphism<GraphType, AnswerReceiver, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms);
 		si.run();
 		answerReceiver.finish();

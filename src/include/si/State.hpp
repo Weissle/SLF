@@ -63,14 +63,9 @@ public:
 		for (const auto& node : g.nodes()) unmap.insert(node.id(), 0);
 	}
 	void addNode(NodeIDType id) {
-		if (id == 1806) {
-			int a=0;
-		}
 		const GraphType& graph = *graphPointer;
 		unmap.erase(id, 0);
-//		cout << "erase in " << id << ' ' << inDepth[id] << " add\n";
 		in.erase(id, inDepth[id]);
-//		cout << "erase out " << id << ' ' << outDepth[id] << " add\n";
 		out.erase(id, outDepth[id]);
 		searchDepth++;
 		in.prepare(searchDepth);
@@ -83,7 +78,6 @@ public:
 			const bool n = (i) ? true : IN_NODE_SET(unmap, nodeID);
 			if (!n)continue;
 			if (!i) {
-//				cout << "insert in " << nodeID << ' ' << searchDepth << '\n';
 				in.insert(nodeID, searchDepth);
 				inDepth[nodeID] = searchDepth;
 			}
@@ -95,7 +89,6 @@ public:
 			const bool n = (o) ? true : IN_NODE_SET(unmap, nodeID);
 			if (!n)continue;
 			if (!o) {
-//				cout << "insert out " << nodeID << ' ' << searchDepth << '\n';
 				out.insert(nodeID, searchDepth);
 				outDepth[nodeID] = searchDepth;
 			}
@@ -104,48 +97,30 @@ public:
 		return;
 	}
 	void deleteNode(NodeIDType id) {
-		if (id == 1806) {
-			int a=0;
-		}
 		const GraphType& graph = *graphPointer;
 		const auto& node = graph.node(id);
 		for (const auto& tempEdge : node.inEdges()) {
 			const auto& nodeID = tempEdge.source();
 			const bool n = IN_NODE_SET(unmap, nodeID);
 			if (!n)continue;
-			auto& refTimes = inRefTimes[nodeID];
+			inRefTimes[nodeID]--;
 			auto& nodeDepth = inDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				//				in.erase(nodeID,searchDepth);
-				nodeDepth = 0;
-			}
-			refTimes--;
+			if (nodeDepth == searchDepth)	nodeDepth = 0;
+
 		}
 		for (const auto& tempEdge : node.outEdges()) {
 			const auto& nodeID = tempEdge.target();
 			const bool n = IN_NODE_SET(unmap, nodeID);
 			if (!n)continue;
-			auto& refTimes = outRefTimes[nodeID];
+			outRefTimes[nodeID]--;
 			auto& nodeDepth = outDepth[nodeID];
-			if (nodeDepth == searchDepth) {
-				//				out.erase(nodeID,searchDepth);
-				nodeDepth = 0;
-			}
-			refTimes--;
+			if (nodeDepth == searchDepth)	nodeDepth = 0;
 		}
-//		cout << "in pop\n";
 		in.pop(searchDepth);
-//		cout << "out pop\n";
 		out.pop(searchDepth);
 		--searchDepth;
-		if (inDepth[id]) {
-//			cout << "insert in " << id << ' ' << inDepth[id] << " delete\n";
-			in.insert(id, inDepth[id]);
-		}
-		if (outDepth[id]) {
-//			cout << "insert out " << id << ' ' << inDepth[id] << " delete\n";
-			out.insert(id, outDepth[id]);
-		}
+		if (inDepth[id]) 	in.insert(id, inDepth[id]);
+		if (outDepth[id]) 	out.insert(id, outDepth[id]);
 		unmap.insert(id, 0);
 	}
 };
@@ -229,65 +204,54 @@ private:
 #endif
 	}
 	//check the mapping is still consistent after add this pair
-	bool sourceRule(const MapPair& cp)
-	{
+
+	bool induceCheck(const MapPair& cp) {
 		const GraphType& targetGraph = *targetGraphPtr;
 		const GraphType& queryGraph = *queryGraphPtr;
-		const auto& querySourceNodeID = cp.first;
-		const auto& targetSourceNodeID = cp.second;
+		const auto& query_nodeid = cp.first;
+		const auto& target_nodeid = cp.second;
 
-		const auto& querySourceNode = queryGraph.node(querySourceNodeID);
-		const auto& targetSourceNode = targetGraph.node(targetSourceNodeID);
+		const auto& query_node = queryGraph.node(query_nodeid);
+		const auto& target_node = targetGraph.node(target_nodeid);
 
 		clearNewCount();
 		// targetSourceNode is the predecessor of three typies of nodes
 		//1. not in map AND not self loop  
 		//2. self loop and 3. in map
 
-		for (const auto& tempEdge : targetSourceNode.outEdges()) {
-			const auto& targetTargetNodeID = tempEdge.target();
-			const bool notMapped = IN_NODE_SET(targetState.unmap, targetTargetNodeID);
-			if (notMapped && targetTargetNodeID != targetSourceNodeID) {
-				const bool o = IN_NODE_SET(targetState.out, targetTargetNodeID);
-				const bool i = IN_NODE_SET(targetState.in, targetTargetNodeID);
+		for (const auto& tempEdge : target_node.outEdges()) {
+			const auto& target_toid = tempEdge.target();
+			const bool notMapped = IN_NODE_SET(targetState.unmap, target_toid);
+			if (notMapped && target_toid != target_nodeid) {
+				const bool o = IN_NODE_SET(targetState.out, target_toid);
+				const bool i = IN_NODE_SET(targetState.in, target_toid);
 				const bool b = (i && o);
-				const auto label = targetGraph[targetTargetNodeID].label();
+				const auto label = targetGraph[target_toid].label();
 				if (b) {
 					bothNewCount[label]++;
-#if defined(NORMAL_ISO)
-					outNewCount[label]++;
-					inNewCount[label]++;
-#endif
 				}
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
-#ifdef NORMAL_ISO
-			}
-#elif defined(INDUCE_ISO)
+
 				else ++notNewCount[label];
 			}
 			else {
-				const auto queryTargetNodeID = (notMapped) ? querySourceNodeID : mappingAux[targetTargetNodeID];
-				if (queryGraph.existEdge(querySourceNodeID, queryTargetNodeID, tempEdge.label()) == false) return false;
+				const auto query_toid = (notMapped) ? query_nodeid : mappingAux[target_toid];
+				if (queryGraph.existEdge(query_nodeid, query_toid, tempEdge.label()) == false) return false;
 			}
-#endif
 		}
 
-		for (const auto& tempEdge : querySourceNode.outEdges()) {
-			const auto& queryTargetNodeID = tempEdge.target();
+		for (const auto& tempEdge : query_node.outEdges()) {
+			const auto& query_toid = tempEdge.target();
 			//this tempnode have been mapped
-			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, queryTargetNodeID);
-			if (notMapped && queryTargetNodeID != querySourceNodeID) {
-				const bool o = IN_NODE_SET(queryStates[searchDepth].out, queryTargetNodeID);
-				const bool i = IN_NODE_SET(queryStates[searchDepth].in, queryTargetNodeID);
+			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, query_toid);
+			if (notMapped && query_toid != query_nodeid) {
+				const bool o = IN_NODE_SET(queryStates[searchDepth].out, query_toid);
+				const bool i = IN_NODE_SET(queryStates[searchDepth].in, query_toid);
 				const bool b = (o && i);
-				const auto label = queryGraph[queryTargetNodeID].label();
+				const auto label = queryGraph[query_toid].label();
 				if (b) {
-#ifdef INDUCE_ISO
 					if (bothNewCount[label]--);
-#elif defined(NORMAL_ISO)
-					if (bothNewCount[label]-- && outNewCount[label]-- && inNewCount[label]--);
-#endif
 					else return false;
 				}
 				else if (o) {
@@ -298,77 +262,53 @@ private:
 					if (inNewCount[label]--);
 					else return false;
 				}
-#if defined(INDUCE_ISO)
 				else {
 					if (notNewCount[label]--);
 					else return false;
 				}
-#endif
 			}
 			else {
-				const auto targetTargetNodeID = (notMapped) ? targetSourceNodeID : mapping[queryTargetNodeID];
-				if (targetGraph.existEdge(targetSourceNodeID, targetTargetNodeID, tempEdge.label()) == false)return false;
+				const auto target_toid = (notMapped) ? target_nodeid : mapping[query_toid];
+				if (targetGraph.existEdge(target_nodeid, target_toid, tempEdge.label()) == false)return false;
 			}
 
 		}
-
-		return true;
-
-	}
-	bool targetRule(const MapPair& cp)
-	{
-		const GraphType& targetGraph = *targetGraphPtr;
-		const GraphType& queryGraph = *queryGraphPtr;
-		const auto& queryTargetNodeID = cp.first;
-		const auto& targetTargetNodeID = cp.second;
-
-		const auto& queryTargetNode = queryGraph.node(queryTargetNodeID);
-		const auto& targetTargetNode = targetGraph.node(targetTargetNodeID);
 
 		clearNewCount();
-		for (const auto& tempEdge : targetTargetNode.inEdges()) {
-			const auto& targetSourceNodeID = tempEdge.source();
-			const bool notMapped = IN_NODE_SET(targetState.unmap, targetSourceNodeID);
-			if (notMapped && targetTargetNodeID != targetSourceNodeID) {
-				const bool o = IN_NODE_SET(targetState.out, targetSourceNodeID);
-				const bool i = IN_NODE_SET(targetState.in, targetSourceNodeID);
+
+		for (const auto& tempEdge : target_node.inEdges()) {
+			const auto& target_fromid = tempEdge.source();
+			const bool notMapped = IN_NODE_SET(targetState.unmap, target_fromid);
+			if (notMapped && target_nodeid != target_fromid) {
+				const bool o = IN_NODE_SET(targetState.out, target_fromid);
+				const bool i = IN_NODE_SET(targetState.in, target_fromid);
 				const bool b = (o && i);
-				const auto label = targetGraph[targetSourceNodeID].label();
+				const auto label = targetGraph[target_fromid].label();
 				if (b) {
 					bothNewCount[label]++;
-#if defined(NORMAL_ISO)
-					outNewCount[label]++;
-					inNewCount[label]++;
-#endif
+
 				}
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
-#ifdef NORMAL_ISO
-			}
-#elif defined(INDUCE_ISO)
+
 				else ++notNewCount[label];
 			}
 			else {
-				const auto querySourceNodeID = (notMapped) ? queryTargetNodeID : mappingAux[targetSourceNodeID];
-				if (queryGraph.existEdge(querySourceNodeID, queryTargetNodeID, tempEdge.label()) == false)return false;
+				const auto query_fromid = (notMapped) ? query_nodeid : mappingAux[target_fromid];
+				if (queryGraph.existEdge(query_fromid, query_nodeid, tempEdge.label()) == false)return false;
 			}
-#endif
 		}
 
-		for (const auto& tempEdge : queryTargetNode.inEdges()) {
-			const auto& querySourceNodeID = tempEdge.source();
-			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, querySourceNodeID);
-			if (notMapped && queryTargetNodeID != querySourceNodeID) {
-				const bool o = IN_NODE_SET(queryStates[searchDepth].out, querySourceNodeID);
-				const bool i = IN_NODE_SET(queryStates[searchDepth].in, querySourceNodeID);
+		for (const auto& tempEdge : query_node.inEdges()) {
+			const auto& query_fromid = tempEdge.source();
+			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, query_fromid);
+			if (notMapped && query_nodeid != query_fromid) {
+				const bool o = IN_NODE_SET(queryStates[searchDepth].out, query_fromid);
+				const bool i = IN_NODE_SET(queryStates[searchDepth].in, query_fromid);
 				const bool b = (o && i);
-				const auto label = queryGraph[querySourceNodeID].label();
+				const auto label = queryGraph[query_fromid].label();
 				if (b) {
-#ifdef INDUCE_ISO
 					if (bothNewCount[label]--);
-#elif defined(NORMAL_ISO)
-					if (bothNewCount[label]-- && outNewCount[label]-- && inNewCount[label]--);
-#endif
 					else return false;
 				}
 				else if (o) {
@@ -379,20 +319,143 @@ private:
 					if (inNewCount[label]--);
 					else return false;
 				}
-#if defined(INDUCE_ISO)
 				else {
 					if (notNewCount[label]--);
 					else return false;
 				}
-#endif
 			}
 			else {
-				const auto targetSourceNodeID = (notMapped) ? targetTargetNodeID : mapping[querySourceNodeID];
-				if (targetGraph.existEdge(targetSourceNodeID, targetTargetNodeID, tempEdge.label()) == false)return false;
+				const auto target_fromid = (notMapped) ? target_nodeid : mapping[query_fromid];
+				if (targetGraph.existEdge(target_fromid, target_nodeid, tempEdge.label()) == false)return false;
 			}
 		}
 		return true;
 	}
+	bool normalCheck(const MapPair& cp) {
+		const GraphType& targetGraph = *targetGraphPtr;
+		const GraphType& queryGraph = *queryGraphPtr;
+		const auto& query_nodeid = cp.first;
+		const auto& target_nodeid = cp.second;
+
+		const auto& query_node = queryGraph.node(query_nodeid);
+		const auto& target_node = targetGraph.node(target_nodeid);
+
+		clearNewCount();
+
+		for (const auto& tempEdge : target_node.outEdges()) {
+			const auto& target_toid = tempEdge.target();
+			const bool notMapped = IN_NODE_SET(targetState.unmap, target_toid);
+			if (notMapped && target_toid != target_nodeid) {
+				const bool o = IN_NODE_SET(targetState.out, target_toid);
+				const bool i = IN_NODE_SET(targetState.in, target_toid);
+				const bool b = (i && o);
+				const auto label = targetGraph[target_toid].label();
+				if (b) {
+					bothNewCount[label]++;
+				}
+				else if (o)	outNewCount[label]++;
+				else if (i) inNewCount[label]++;
+
+				else ++notNewCount[label];
+			}
+			else {
+				const auto query_toid = (notMapped) ? query_nodeid : mappingAux[target_toid];
+				if (queryGraph.existEdge(query_nodeid, query_toid, tempEdge.label()) == false) return false;
+			}
+		}
+
+		for (const auto& tempEdge : query_node.outEdges()) {
+			const auto& query_toid = tempEdge.target();
+			//this tempnode have been mapped
+			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, query_toid);
+			if (notMapped && query_toid != query_nodeid) {
+				const bool o = IN_NODE_SET(queryStates[searchDepth].out, query_toid);
+				const bool i = IN_NODE_SET(queryStates[searchDepth].in, query_toid);
+				const bool b = (o && i);
+				const auto label = queryGraph[query_toid].label();
+				if (b) {
+					if (bothNewCount[label]--);
+					else return false;
+				}
+				else if (o) {
+					if (outNewCount[label]--);
+					else return false;
+				}
+				else if (i) {
+					if (inNewCount[label]--);
+					else return false;
+				}
+				else {
+					if (notNewCount[label]--);
+					else return false;
+				}
+			}
+			else {
+				const auto target_toid = (notMapped) ? target_nodeid : mapping[query_toid];
+				if (targetGraph.existEdge(target_nodeid, target_toid, tempEdge.label()) == false)return false;
+			}
+
+		}
+
+		clearNewCount();
+
+		for (const auto& tempEdge : target_node.inEdges()) {
+			const auto& target_fromid = tempEdge.source();
+			const bool notMapped = IN_NODE_SET(targetState.unmap, target_fromid);
+			if (notMapped && target_nodeid != target_fromid) {
+				const bool o = IN_NODE_SET(targetState.out, target_fromid);
+				const bool i = IN_NODE_SET(targetState.in, target_fromid);
+				const bool b = (o && i);
+				const auto label = targetGraph[target_fromid].label();
+				if (b) {
+					bothNewCount[label]++;
+
+				}
+				else if (o)	outNewCount[label]++;
+				else if (i) inNewCount[label]++;
+
+				else ++notNewCount[label];
+			}
+			else {
+				const auto query_fromid = (notMapped) ? query_nodeid : mappingAux[target_fromid];
+				if (queryGraph.existEdge(query_fromid, query_nodeid, tempEdge.label()) == false)return false;
+			}
+		}
+
+		for (const auto& tempEdge : query_node.inEdges()) {
+			const auto& query_fromid = tempEdge.source();
+			const bool notMapped = IN_NODE_SET(queryStates[searchDepth].unmap, query_fromid);
+			if (notMapped && query_nodeid != query_fromid) {
+				const bool o = IN_NODE_SET(queryStates[searchDepth].out, query_fromid);
+				const bool i = IN_NODE_SET(queryStates[searchDepth].in, query_fromid);
+				const bool b = (o && i);
+				const auto label = queryGraph[query_fromid].label();
+				if (b) {
+					if (bothNewCount[label]--);
+					else return false;
+				}
+				else if (o) {
+					if (outNewCount[label]--);
+					else return false;
+				}
+				else if (i) {
+					if (inNewCount[label]--);
+					else return false;
+				}
+				else {
+					if (notNewCount[label]--);
+					else return false;
+				}
+		}
+			else {
+				const auto target_fromid = (notMapped) ? target_nodeid : mapping[query_fromid];
+				if (targetGraph.existEdge(target_fromid, target_nodeid, tempEdge.label()) == false)return false;
+			}
+			}
+		return true;
+		}
+
+
 	State(const GraphType& _q, const GraphType& _t) : queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size())
 	{
 
@@ -440,31 +503,28 @@ public:
 
 		const NodeIDType* begin = nullptr, * end = nullptr;
 #ifdef NORMAL_ISO
-		for (auto d = 0; d <= std::min(queryNodeInDepth, queryNodeOutDepth); d++) {
-			if (queryNodeInIn) targetState.in.getSet(d, begin, end);
-			else if (queryNodeInOut) targetState.out.getSet(d, begin, end);
-			else targetState.unmap.getSet(0, begin, end);
-			for (auto it = begin; it < end; ++it) {
-				const auto& targetNodeToMatchID = *it;
-				const auto& targetNode = targetGraph.node(targetNodeToMatchID);
-				if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
-				assert(mappingAux[targetNodeToMatchID] == NO_MAP);
+		targetState.unmap.getSet(0, begin, end);
+		for (auto it = begin; it < end; ++it) {
+			const auto& targetNodeToMatchID = *it;
+			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
+			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
+			assert(mappingAux[targetNodeToMatchID] == NO_MAP);
 
-				if (queryNodeInRefTimes > targetState.inRefTimes[targetNodeToMatchID]) continue;
-				if (queryNodeOutRefTimes > targetState.outRefTimes[targetNodeToMatchID]) continue;
-				if (queryNodeInDepth < targetState.inDepth[targetNodeToMatchID])continue;
-				if (queryNodeOutDepth < targetState.outDepth[targetNodeToMatchID])continue;
+			if (queryNodeInRefTimes > targetState.inRefTimes[targetNodeToMatchID]) continue;
+			if (queryNodeOutRefTimes > targetState.outRefTimes[targetNodeToMatchID]) continue;
+			if (queryNodeInDepth < targetState.inDepth[targetNodeToMatchID])continue;
+			if (queryNodeOutDepth < targetState.outDepth[targetNodeToMatchID])continue;
 
-				answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
-			}
+			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
 		}
+
 #endif
 #if defined(INDUCE_ISO)
 		if (queryNodeInIn) targetState.in.getSet(queryNodeInDepth, begin, end);
 		else if (queryNodeInOut) targetState.out.getSet(queryNodeOutDepth, begin, end);
 		else targetState.unmap.getSet(0, begin, end);
 		answer.reserve(end - begin);
-		for(auto it=begin;it<end;++it)
+		for (auto it = begin; it < end; ++it)
 		{
 			const auto& targetNodeToMatchID = *it;
 			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
@@ -483,13 +543,18 @@ public:
 		return std::move(answer);
 
 	}
-	bool checkPair(const MapPair & cp)
+	bool checkPair(const MapPair& cp)
 	{
-		const bool answer = sourceRule(cp) && targetRule(cp);
+#ifdef INDUCE_ISO
+		const bool answer = induceCheck(cp);
+		//		const bool answer = sourceRule(cp) && targetRule(cp);
+#elif defined(NORMAL_ISO)
+		const bool answer = normalCheck(cp);
+#endif
 		return answer;
-	}
+		}
 
-	void pushPair(const MapPair & cp)
+	void pushPair(const MapPair& cp)
 	{
 		const auto targetNodeID = cp.second;
 		const auto queryNodeID = cp.first;
@@ -500,7 +565,7 @@ public:
 
 		return;
 	}
-	void popPair(const MapPair & cp)
+	void popPair(const MapPair& cp)
 	{
 		popPair(cp.first);
 	}
@@ -523,7 +588,7 @@ public:
 	}
 	size_t depth() const { return searchDepth; }
 
-	static shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType & g, const vector<NodeIDType> & ms) {
+	static shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, const vector<NodeIDType>& ms) {
 		auto t1 = clock();
 		assert(g.size() == ms.size());
 		//the final state will never be used , so this function will not generate the final state;
@@ -542,7 +607,7 @@ public:
 		//		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
 	}
-};
+	};
 
 
-}
+	}
