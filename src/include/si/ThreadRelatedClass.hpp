@@ -1,33 +1,40 @@
 #pragma once;
 #include<utility>
-#include<vector>
+#include<stack>
 #include<mutex>
 #include<assert.h>
 using namespace std;
 namespace wg {
 template<class _Ty>
-class vector_mutex {
-	vector<_Ty> q;
-public:
+class stack_mutex {
+	stack<_Ty> s;
 	std::mutex m;
-	vector_mutex() = default;
-	void push_back(_Ty t) {
-		q.push_back(t);
+public:
+	stack_mutex() = default;
+	void push(const _Ty& t) {
+		lock_guard<mutex> lg(m);
+		s.push(t);
 	}
-	_Ty pop() {
-		auto t = q.back();
-		q.pop_back();
-		return t;
+	_Ty pop(bool& ok) {
+		lock_guard<mutex> lg(m);
+		if (s.empty()) {
+			ok = false;
+			return _Ty();
+		}
+		else {
+			auto t = s.top();
+			s.pop();
+			ok = true;
+			return t;
+		}
 	}
-	bool empty() {
-		return q.empty();
+	bool empty() const {
+		return s.empty();
 	}
-	size_t size() {
-		return q.size();
+	size_t size() const {
+		return s.size();
 	}
-	_Ty& operator[](size_t t) {
-		return q[t];
-	}
+
 };
 
 }
