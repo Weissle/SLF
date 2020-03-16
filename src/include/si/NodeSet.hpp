@@ -4,6 +4,7 @@
 #include<assert.h>
 #include<unordered_set>
 #include<memory>
+#include"ThreadRelatedClass.hpp"
 // only use bool[] or unordered_set cost much time
 using namespace std;
 namespace wg {
@@ -69,11 +70,9 @@ class NodeSetSimple {
 protected:
 	GraphType const* graph = nullptr;
 	vector<bool> belong;
-
 public:
 	NodeSetSimple() = default;
-	NodeSetSimple(const GraphType& _g) :graph(&_g) {
-		belong.resize(_g.size());
+	NodeSetSimple(const GraphType& _g) :graph(&_g), belong(_g.size()) {
 	}
 	inline void insert(const NodeIDType id) {
 		belong[id] = true;
@@ -141,7 +140,7 @@ public:
 };
 
 template<class GraphType>
-class NodeSetWithDepth :NodeSetSimple<GraphType> {
+class NodeSetWithDepth :public NodeSetSimple<GraphType> {
 public:
 	typedef size_t NodeLabelType;
 	typedef vector<NodeIDType> Nodes;
@@ -150,13 +149,13 @@ private:
 	Nodes p;
 	size_t nowDepth = 0;
 
-	inline size_t& start_place(const size_t depth){
+	inline size_t& start_place(const size_t depth) {
 		return depthSpace[depth << 1];
 	}
-	inline size_t& mid_place(const size_t depth){
-		return depthSpace[(depth << 1)+1];
+	inline size_t& mid_place(const size_t depth) {
+		return depthSpace[(depth << 1) + 1];
 	}
-	inline size_t& end_place(const size_t depth){
+	inline size_t& end_place(const size_t depth) {
 		return depthSpace[(depth + 1) << 1];
 	}
 public:
@@ -178,9 +177,6 @@ public:
 		nowDepth++;
 	}
 	void insert(const NodeIDType id, const size_t depth) {
-		if (id == 468468) {
-			int a = 0;
-		}
 		if (belong[id] == false) {
 			belong[id] = true;
 			if (place[id] == NO_MAP) {
@@ -193,8 +189,6 @@ public:
 				end_place(depth)++;
 			}
 			else {
-		//		assert(place[id] == place[p[depthSpace[(depth << 1) + 1]]]);
-		//		double_swap(id, p[depthSpace[(depth << 1) + 1]]);
 				mid_place(depth)++;
 			}
 
@@ -202,9 +196,7 @@ public:
 		return;
 	}
 	void erase(const NodeIDType id, size_t depth) {
-		if (id == 684684) {
-			int a = 0;
-		}
+
 		assert(depth <= nowDepth);
 		if (belong[id] == true) {
 			belong[id] = false;
@@ -231,10 +223,8 @@ public:
 
 		mid_place(depth) = end_place(depth) = 0;
 	}
-	inline bool exist(const NodeIDType id)const {
-		return belong[id];
-	}
-	void getSet(size_t depth,const NodeIDType *&begin,const NodeIDType *&mid)const {
+
+	void getSet(size_t depth, const NodeIDType*& begin, const NodeIDType*& mid)const {
 		assert(depth <= nowDepth);
 		begin = p.data() + depthSpace[depth << 1];
 		mid = p.data() + depthSpace[(depth << 1) + 1];
