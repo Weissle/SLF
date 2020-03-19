@@ -352,15 +352,13 @@ private:
 				const auto label = targetGraph[target_toid].label();
 				if (b) {
 					bothNewCount[label]++;
+					outNewCount[label]++;
+					inNewCount[label]++;
 				}
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
 
 				else ++notNewCount[label];
-			}
-			else {
-				const auto query_toid = (notMapped) ? query_nodeid : mappingAux[target_toid];
-				if (queryGraph.existEdge(query_nodeid, query_toid, tempEdge.label()) == false) return false;
 			}
 		}
 
@@ -374,7 +372,7 @@ private:
 				const bool b = (o && i);
 				const auto label = queryGraph[query_toid].label();
 				if (b) {
-					if (bothNewCount[label]--);
+					if (bothNewCount[label]-- && outNewCount[label]-- && inNewCount[label]--);
 					else return false;
 				}
 				else if (o) {
@@ -416,10 +414,7 @@ private:
 
 				else ++notNewCount[label];
 			}
-			else {
-				const auto query_fromid = (notMapped) ? query_nodeid : mappingAux[target_fromid];
-				if (queryGraph.existEdge(query_fromid, query_nodeid, tempEdge.label()) == false)return false;
-			}
+
 		}
 
 		for (const auto& tempEdge : query_node.inEdges()) {
