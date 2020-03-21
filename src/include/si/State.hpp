@@ -407,6 +407,8 @@ private:
 				const auto label = targetGraph[target_fromid].label();
 				if (b) {
 					bothNewCount[label]++;
+					outNewCount[label]++;
+					inNewCount[label]++;
 
 				}
 				else if (o)	outNewCount[label]++;
@@ -426,7 +428,7 @@ private:
 				const bool b = (o && i);
 				const auto label = queryGraph[query_fromid].label();
 				if (b) {
-					if (bothNewCount[label]--);
+					if (bothNewCount[label]-- && outNewCount[label]-- && inNewCount[label]--);
 					else return false;
 				}
 				else if (o) {
@@ -441,14 +443,14 @@ private:
 					if (notNewCount[label]--);
 					else return false;
 				}
-		}
+			}
 			else {
 				const auto target_fromid = (notMapped) ? target_nodeid : mapping[query_fromid];
 				if (targetGraph.existEdge(target_fromid, target_nodeid, tempEdge.label()) == false)return false;
 			}
-			}
-		return true;
 		}
+		return true;
+	}
 
 
 	State(const GraphType& _q, const GraphType& _t) : queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size())
@@ -547,7 +549,7 @@ public:
 		const bool answer = normalCheck(cp);
 #endif
 		return answer;
-		}
+	}
 
 	void pushPair(const MapPair& cp)
 	{
@@ -584,7 +586,6 @@ public:
 	size_t depth() const { return searchDepth; }
 
 	static shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, const vector<NodeIDType>& ms) {
-		auto t1 = clock();
 		assert(g.size() == ms.size());
 		//the final state will never be used , so this function will not generate the final state;
 		auto ptr = new SubgraphMatchState<GraphType>[ms.size()];
@@ -599,10 +600,9 @@ public:
 			ptr[i] = ptr[i - 1];
 			ptr[i].addNode(ms[i - 1]);
 		}
-		//		PRINT_TIME_COST_MS("time cost : ", clock() - t1);
 		return p;
 	}
-	};
+};
 
 
-	}
+}
