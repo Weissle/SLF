@@ -11,7 +11,7 @@
 #include<typeinfo>
 #include<utility>
 
-#define DETAILS_TIME_COUNT
+//#define DETAILS_TIME_COUNT
 using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
@@ -46,6 +46,7 @@ protected:
 	size_t searchDepth;
 	StateType mapState;
 	AnswerReceiverType& answerReceiver;
+	DynamicArray<pair<const NodeIDType*,const NodeIDType*>> cand_id;
 	bool goDeeper_timeCount()
 	{
 		if (searchDepth == queryGraphPtr -> size()) {
@@ -54,7 +55,7 @@ protected:
 		}
 		++hitTime;
 		if ((int)hitTime % (int)1E4 == 0) {
-			cout << hitTime << endl;
+//			cout << hitTime << endl;
 		}
 		auto t1 = clock();
 		const auto canditatePairs = move(mapState.calCandidatePairs(matchSequence[searchDepth]));
@@ -84,53 +85,35 @@ protected:
 		}
 		return false;
 	}
-	bool goDeeper() {
-		if (searchDepth == queryGraph.size()) {
-			this->ToDoAfterFindASolution();
-			return true;
-		}
-		const auto& canditatePairs = mapState.calCandidatePairs(matchSequence[searchDepth]);
-		for (const auto& tempCanditatePair : canditatePairs) {
-			const bool suitable = mapState.checkPair(tempCanditatePair);
-			if (suitable) {
-				mapState.pushPair(tempCanditatePair);
-				++searchDepth;
-				if (goDeeper() && this->needOneSolution) return true;
-				mapState.popPair(tempCanditatePair);
-				--searchDepth;
-			}
-		}
 
-		return false;
-	}
 	inline void ToDoAfterFindASolution() {
 		answerReceiver << mapState.getMap();
 	}
 	void run_no_recursive() {
 
 		const auto queryGraphSize = queryGraphPtr->size();
-		SearchTree searchTree(queryGraphSize);
-		searchTree.setTree(0, move(mapState.calCandidatePairs(matchSequence[0])));
-
+		mapState.calCandidatePairs(matchSequence[0], cand_id[0].first, cand_id[0].second);
 		auto popOperation = [&]() {
 			searchDepth--;
 			mapState.popPair(matchSequence[searchDepth]);
 		};
-		auto pushOperation = [&](MapPair& p) {
-			mapState.pushPair(p);
+		auto pushOperation = [&](const NodeIDType& query_id, const NodeIDType& target_id) {
+			mapState.pushPair(query_id,target_id);
 			searchDepth++;
 		};
+
 		while (true) {
-			while (searchTree.empty(searchDepth) == false) {
-				auto tempPair = searchTree.pop(searchDepth);
-				if (!mapState.checkPair(tempPair)) continue;
-				pushOperation(tempPair);
+			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
+				const auto query_id = matchSequence[searchDepth], target_id = *cand_id[searchDepth].first;
+				cand_id[searchDepth].first++;
+				if (!mapState.checkPair(query_id,target_id)) continue;
+				pushOperation(query_id,target_id);
 				if (searchDepth == queryGraphSize) {	//find a solution, just pop last pair ,it will not effect the correction of answer;
 					ToDoAfterFindASolution();
 					if (needOneSolution) return;
 					popOperation();
 				}
-				else	searchTree.setTree(searchDepth, move(mapState.calCandidatePairs(matchSequence[searchDepth])));
+				else	mapState.calCandidatePairs(matchSequence[searchDepth], cand_id[searchDepth].first, cand_id[searchDepth].second);
 			}
 			if (searchDepth == 0)return;
 			else popOperation();
@@ -145,13 +128,14 @@ public:
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(const GraphType& _queryGraph,const GraphType& _targetGraph,AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence)
+		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence),cand_id(queryGraphPtr->size())
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
 		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";
 		cout << endl;
 #endif
 		searchDepth = 0;
+		
 };
 	void run()
 	{
@@ -165,7 +149,6 @@ public:
 		cout << "hit times " << hitTime << endl;
 		cout << "canditate Pair Count " << canditatePairCount << endl;
 #else
-		//	goDeeper();
 		run_no_recursive();
 #endif
 }

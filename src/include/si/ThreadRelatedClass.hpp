@@ -12,18 +12,18 @@ class stack_mutex {
 	std::mutex m;
 public:
 	stack_mutex() = default;
-	void push(const _Ty& t) {
+	void push(_Ty& t) {
 		lock_guard<mutex> lg(m);
-		s.push(t);
+		s.push(move(t));
 	}
 	_Ty pop(bool& ok) {
 		lock_guard<mutex> lg(m);
 		if (s.empty()) {
 			ok = false;
-			return _Ty();
+			return move(_Ty());
 		}
 		else {
-			auto t = s.top();
+			auto t = move( s.top());
 			s.pop();
 			ok = true;
 			return t;

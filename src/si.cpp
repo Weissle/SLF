@@ -50,13 +50,15 @@ int main(int argc, char * argv[]) {
     cmdl({"-self-order","-so"})>>matchOrderPath;
 
 	//match order
-#define MOS_VF3
+#define MOS_VF3P
 #ifdef MOS_TEST
     typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_NORMAL)
 	typedef MatchOrderSelector<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_VF3)
 	typedef MatchOrderSelectorVF3<GraphType> MatchOrderSelectorType;
+#elif defined(MOS_VF3P)
+	typedef MatchOrderSelectorVF3Plus<GraphType> MatchOrderSelectorType;
 #endif
 	// graph type ( store in files ) and read graph
 #define GRF_L

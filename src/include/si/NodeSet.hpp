@@ -182,14 +182,17 @@ public:
 			if (place[id] == NO_MAP) {
 				assert(nowDepth == depth);
 				assert(depthSpace[(depth << 1) + 1] == depthSpace[(depth << 1) + 2]);
-				nowDepth = depth;
 				place[id] = p.size();
 				p.push_back(id);
 				mid_place(depth)++;
 				end_place(depth)++;
 			}
 			else {
-				mid_place(depth)++;
+				auto &mid_p = mid_place(depth);
+				swap(p[place[id]], p[mid_p]);
+				place[p[mid_p]] = mid_p;
+
+				mid_p++;
 			}
 
 		}
@@ -200,7 +203,11 @@ public:
 		assert(depth <= nowDepth);
 		if (belong[id] == true) {
 			belong[id] = false;
-			mid_place(depth)--;
+		//	mid_place(depth)--;
+			auto& mid_p = mid_place(depth);
+			mid_p--;
+			place[p[mid_p]] = place[id];
+			swap(p[mid_p], p[place[id]]);
 			double_swap(id, p[mid_place(depth)]);
 		}
 		return;

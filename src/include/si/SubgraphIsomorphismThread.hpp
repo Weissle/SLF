@@ -10,41 +10,46 @@
 #include<mutex>
 #include<utility>
 #include<memory>
-#include<tools/ThreadPool.h>
+//#include<tools/ThreadPool.h>
+#include<tools/DynamicThreadPool.hpp>
+#include<atomic>
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> {
+	using SIUnit = SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType>;
 	AnswerReceiverType& answerReceiver;
 	size_t searchDepth = 0, maxDepth = 0, minDepth = 0;
 	State<GraphType> state, minState;
 	size_t id;
-	stack_mutex<size_t>& freeThreads;
+	stack_mutex<unique_ptr<SIUnit>>& freeThreads;
 	condition_variable& finish_cv;
 	vector<NodeIDType> targetGraphMapSequence;
-	//	SearchTreeThread searchTree;
-	SearchTree searchTree;
-	volatile bool& end;
+	DynamicArray<pair<const NodeIDType*, const NodeIDType*>> cand_id;
+	atomic_bool& end;
 	inline void ToDoAfterFindASolution() {
 		answerReceiver << state.getMap();
 	}
 
 	void run_no_recursive() {
-		//		searchTree.setTree(0, move(state.calCandidatePairs(matchSequence[0])));
-		const auto queryGraphSize = this->queryGraphPtr->size();
+
+		const auto queryGraphSize = queryGraphPtr->size();
+
 		auto popOperation = [&]() {
 			searchDepth--;
 			state.popPair(matchSequence[searchDepth]);
 		};
-		auto pushOperation = [&](MapPair& p) {
-			state.pushPair(p);
+		auto pushOperation = [&](const NodeIDType& query_id, const NodeIDType& target_id) {
+			state.pushPair(query_id, target_id);
 			searchDepth++;
 		};
+
 		while (true) {
 			if (end == true)return;
-			while (searchTree.empty(searchDepth) == false) {
-				auto tempPair = searchTree.pop(searchDepth);
-				if (!state.checkPair(tempPair)) continue;
-				pushOperation(tempPair);
+			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
+				const auto query_id = matchSequence[searchDepth], target_id = *cand_id[searchDepth].first;
+				cand_id[searchDepth].first++;
+				if (!state.checkPair(query_id, target_id)) continue;
+				pushOperation(query_id, target_id);
 				if (searchDepth == queryGraphSize) {	//find a solution, just pop last pair ,it will not effect the correction of answer;
 					ToDoAfterFindASolution();
 					if (needOneSolution) {
@@ -53,36 +58,37 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 					}
 					popOperation();
 				}
-				else	searchTree.setTree(searchDepth, move(state.calCandidatePairs(matchSequence[searchDepth])), false);
+				else	state.calCandidatePairs(matchSequence[searchDepth], cand_id[searchDepth].first, cand_id[searchDepth].second);
 			}
 			if (searchDepth == 0)return;
 			else popOperation();
 		}
 	}
 public:
-	SubgraphIsomorphismThreadUnit(size_t _id, const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution, stack_mutex<size_t>& _freeThreads,
-		condition_variable& _cv, bool& _end, shared_ptr<SubgraphMatchState<GraphType>[]> _sp) :
+	SubgraphIsomorphismThreadUnit(size_t _id, const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution, stack_mutex<unique_ptr<SIUnit>>& _freeThreads,
+		condition_variable& _cv, atomic_bool& _end, shared_ptr<SubgraphMatchState<GraphType>[]> _sp) :
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _mS, _oneSolution), id(_id), answerReceiver(_answerReceiver), maxDepth(_q.size()),
-		state(_q, _t, _sp), freeThreads(_freeThreads), finish_cv(_cv), end(_end), searchTree(_q.size())
+		state(_q, _t, _sp), freeThreads(_freeThreads), finish_cv(_cv), end(_end),cand_id(_q.size())
 	{
 		targetGraphMapSequence.resize(_q.size());
 		for (auto& it : targetGraphMapSequence) it = NO_MAP;
 	}
 
-	void prepare(MapPair p) {
-		searchTree.setTree(0, vector<MapPair>(1, p), true);
+	void prepare(const NodeIDType query_id, const NodeIDType target_id) {
+		if (state.checkPair(query_id, target_id) == false) {
+			cand_id[1].first = cand_id[1].second = nullptr;
+		}
+		else {
+			state.pushPair(query_id, target_id);
+			state.calCandidatePairs(matchSequence[1], cand_id[1].first, cand_id[1].second);
+			searchDepth = 1;
+		}
 		return;
 	}
-	void prepare(State<GraphType>& s, size_t _nD, vector<MapPair>& ps) {
-		this->state = s;
-		this->searchDepth = _nD;
-		searchTree.setTree(_nD, ps);
-	}
+
 	void run() {
-//		auto t1 = clock();
+		//		auto t1 = clock();
 		run_no_recursive();
-		freeThreads.push(id);
-		finish_cv.notify_one();
 	}
 	pair<size_t, size_t> minDepth_and_restPair() {
 		auto p = searchTree.minDepth_and_restPair();
@@ -111,28 +117,29 @@ public:
 		state = State<GraphType>(*queryGraphPtr, *targetGraphPtr, subgraphStates);
 	}
 	void run() {
-		bool end = false;
-		vector<unique_ptr<SIUnit>> siUnits(threadNum);
-		stack_mutex<size_t> freeThreads;
+		atomic_bool end = false;
+		stack_mutex<unique_ptr<SIUnit>> freeUnits;
 		vector<thread> threads(threadNum);
-		vector<pair<NodeIDType, NodeIDType>> tasks = state.calCandidatePairs(matchSequence[0]);
-		ThreadPool  threadPool(threadNum);
-		auto tasksDistribute = [&](MapPair p) {
+		const NodeIDType* begin_ptr = nullptr, * end_ptr = nullptr;
+		DynamicThreadPool threadPool(threadNum);
+		state.calCandidatePairs(matchSequence[0], begin_ptr, end_ptr);
+		auto tasksDistribute = [&](const NodeIDType query_id, const NodeIDType target_id) {
 			if (end)return;
 			bool ok = false;
-			auto freeUnit = freeThreads.pop(ok);
+			auto freeUnit = move(freeUnits.pop(ok));
 			if (!ok)return;
-			siUnits[freeUnit]->prepare(p);
-			siUnits[freeUnit]->run();
+			freeUnit->prepare(query_id,target_id);
+			freeUnit->run();
+			freeUnits.push(move(freeUnit));
+			work_cv.notify_one();
 		};
 		LOOP(i, 0, threadNum) {
-			auto p = make_unique<SIUnit>(i, *queryGraphPtr, *targetGraphPtr, answerReceiver, matchSequence, needOneSolution, freeThreads, work_cv, end, subgraphStates);
-			siUnits[i] = move(p);
-			freeThreads.push((size_t)i);
+			auto p = make_unique<SIUnit>(i, *queryGraphPtr, *targetGraphPtr, answerReceiver, matchSequence, needOneSolution, freeUnits, work_cv, end, subgraphStates);
+			freeUnits.push(move(p));
 		}
-		while (tasks.size()) {
-			threadPool.enqueue(tasksDistribute, tasks.back());
-			tasks.pop_back();
+		while (begin_ptr!= end_ptr) {
+			threadPool.addTask(tasksDistribute, matchSequence[0],*begin_ptr);
+			++begin_ptr;
 		}
 		return;
 	}

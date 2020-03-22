@@ -480,87 +480,74 @@ public:
 	State() = default;
 
 public:
-	//public function
-	vector<MapPair> calCandidatePairs(const NodeIDType id)const
+	void calCandidatePairs(const NodeIDType query_id, const NodeIDType*& begin, const NodeIDType*& end)const
 	{
-		vector<MapPair> answer;
-		const GraphType& targetGraph = *targetGraphPtr;
-		const GraphType& queryGraph = *queryGraphPtr;
-		const auto& queryNodeToMatchID = id;
 
-		const bool queryNodeInIn = IN_NODE_SET(queryStates[searchDepth].in, queryNodeToMatchID);
-		const bool queryNodeInOut = IN_NODE_SET(queryStates[searchDepth].out, queryNodeToMatchID);
-		const auto& queryNode = queryGraph.node(queryNodeToMatchID);
-		const auto queryNodeInRefTimes = queryStates[searchDepth].inRefTimes[queryNodeToMatchID];
-		const auto queryNodeOutRefTimes = queryStates[searchDepth].outRefTimes[queryNodeToMatchID];
-		const auto queryNodeInDepth = queryStates[searchDepth].inDepth[queryNodeToMatchID];
-		const auto queryNodeOutDepth = queryStates[searchDepth].outDepth[queryNodeToMatchID];
+		const bool queryNodeInIn = IN_NODE_SET(queryStates[searchDepth].in, query_id);
+		const bool queryNodeInOut = IN_NODE_SET(queryStates[searchDepth].out, query_id);
+		const auto& queryNode = queryGraphPtr->node(query_id);
+		const auto queryNodeInDepth = queryStates[searchDepth].inDepth[query_id];
+		const auto queryNodeOutDepth = queryStates[searchDepth].outDepth[query_id];
 
 		const auto queryNodeLabel = queryNode.label();
 
-		const NodeIDType* begin = nullptr, * end = nullptr;
+
+#if defined(INDUCE_ISO)
+		if (queryNodeInIn && queryNodeInOut) {
+			const NodeIDType* in_begin, * in_end, * out_begin, * out_end;
+			targetState.in.getSet(queryStates[searchDepth].inDepth[query_id], in_begin, in_end);
+			targetState.out.getSet(queryStates[searchDepth].outDepth[query_id], out_begin, out_end);
+			if (in_end - in_begin > out_end - out_begin) {
+				begin = out_begin;
+				end = out_end;
+			}
+			else {
+				begin = in_begin;
+				end = in_end;
+			}
+		}
+		else if (queryNodeInIn) targetState.in.getSet(queryStates[searchDepth].inDepth[query_id], begin, end);
+		else if (queryNodeInOut) targetState.out.getSet(queryStates[searchDepth].outDepth[query_id], begin, end);
+		else targetState.unmap.getSet(0, begin, end);
+#endif
+
 #ifdef NORMAL_ISO
 		targetState.unmap.getSet(0, begin, end);
-		for (auto it = begin; it < end; ++it) {
-			const auto& targetNodeToMatchID = *it;
-			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
-			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
-			assert(mappingAux[targetNodeToMatchID] == NO_MAP);
-
-			if (queryNodeInRefTimes > targetState.inRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeOutRefTimes > targetState.outRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeInDepth < targetState.inDepth[targetNodeToMatchID])continue;
-			if (queryNodeOutDepth < targetState.outDepth[targetNodeToMatchID])continue;
-
-			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
-		}
-
 #endif
-#if defined(INDUCE_ISO)
-		if (queryNodeInIn) targetState.in.getSet(queryNodeInDepth, begin, end);
-		else if (queryNodeInOut) targetState.out.getSet(queryNodeOutDepth, begin, end);
-		else targetState.unmap.getSet(0, begin, end);
-		answer.reserve(end - begin);
-		for (auto it = begin; it < end; ++it)
-		{
-			const auto& targetNodeToMatchID = *it;
-			const auto& targetNode = targetGraph.node(targetNodeToMatchID);
-			if (queryNode.isSameType(targetNode) == false || queryNode > targetNode) continue;
-			assert(mappingAux[targetNodeToMatchID] == NO_MAP);
-
-			// it will be ditched because of sourceRule in next depth .
-			if (queryNodeInRefTimes != targetState.inRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeOutRefTimes != targetState.outRefTimes[targetNodeToMatchID]) continue;
-			if (queryNodeInDepth != targetState.inDepth[targetNodeToMatchID])continue;
-			if (queryNodeOutDepth != targetState.outDepth[targetNodeToMatchID])continue;
-			answer.push_back(MapPair(queryNodeToMatchID, targetNodeToMatchID));
-
-		}
-#endif
-		return std::move(answer);
 
 	}
 	bool checkPair(const MapPair& cp)
 	{
+		return checkPair(cp.first, cp.second);
+	}
+	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)
+	{
+		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || queryGraphPtr->node(query_id) > targetGraphPtr->node(target_id)) return false;
 #ifdef INDUCE_ISO
-		const bool answer = induceCheck(cp);
-		//		const bool answer = sourceRule(cp) && targetRule(cp);
+		if (queryStates[searchDepth].inRefTimes[query_id] != targetState.inRefTimes[target_id]) return false;
+		if (queryStates[searchDepth].outRefTimes[query_id] != targetState.outRefTimes[target_id]) return false;
+		if (queryStates[searchDepth].inDepth[query_id] != targetState.inDepth[target_id])return false;
+		if (queryStates[searchDepth].outDepth[query_id] != targetState.outDepth[target_id])return false;
+
+		const bool answer = induceCheck(make_pair(query_id, target_id));
 #elif defined(NORMAL_ISO)
-		const bool answer = normalCheck(cp);
+		if (queryStates[searchDepth].inRefTimes[query_id] > targetState.inRefTimes[target_id]) return false;
+		if (queryStates[searchDepth].outRefTimes[query_id] > targetState.outRefTimes[target_id]) return false;
+		if (queryStates[searchDepth].inDepth[query_id] < targetState.inDepth[target_id])return false;
+		if (queryStates[searchDepth].outDepth[query_id] < targetState.outDepth[target_id])return false;
+		const bool answer = normalCheck(make_pair(query_id, target_id));
 #endif
 		return answer;
 	}
-
 	void pushPair(const MapPair& cp)
 	{
-		const auto targetNodeID = cp.second;
-		const auto queryNodeID = cp.first;
-		mapping[queryNodeID] = targetNodeID;
-		mappingAux[targetNodeID] = queryNodeID;
-		targetState.addNode(targetNodeID);
+		pushPair(cp.first, cp.second);
+	}
+	void pushPair(const NodeIDType& query_id, const NodeIDType& target_id) {
+		mapping[query_id] = target_id;
+		mappingAux[target_id] = query_id;
+		targetState.addNode(target_id);
 		searchDepth++;
-
-		return;
 	}
 	void popPair(const MapPair& cp)
 	{
@@ -602,7 +589,7 @@ public:
 		}
 		return p;
 	}
-};
+	};
 
 
 }
