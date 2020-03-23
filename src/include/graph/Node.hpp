@@ -46,8 +46,8 @@ public:
 		return _label == n.label();
 	}
 
-	bool operator>(const NodeType& n) const {
-		return ((_inEdges.size() > n.inEdgesNum()) && (_outEdges.size() > n.outEdgesNum()));
+	bool operator>=(const NodeType& n) const {
+		return ((_inEdges.size() >= n.inEdgesNum()) && (_outEdges.size() >= n.outEdgesNum()));
 	}
 
 	bool existSameTypeEdgeToNode(const NodeIDType to, const EdgeLabelType elabel)const {

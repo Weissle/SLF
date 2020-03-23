@@ -415,7 +415,7 @@ public:
 		auto tg_in_variance = variance(tgin_record.begin(), tgin_record.end());
 		auto tg_out_variance = variance(tgout_record.begin(), tgout_record.end());
 		unordered_set<NodeIDType> notInSeq;
-		for (auto node : graph.nodes()) {
+		for (auto &node : graph.nodes()) {
 			auto id = node.id();
 			notInSeq.insert(id);
 			auto label = node.label();
@@ -452,8 +452,8 @@ public:
 					}
 					else if (it->second == maxDegreeInSeq) {
 						if (fabs(nowposs - possibility[it->second]) < 1E-20) {
-							auto nownode = graph.node(nowid);
-							auto thisnode = graph.node(it->first);
+							auto &nownode = graph.node(nowid);
+							auto &thisnode = graph.node(it->first);
 							if (nownode.outEdgesNum() + nownode.inEdgesNum() < thisnode.outEdgesNum() + thisnode.inEdgesNum()) {
 								nowid = it->first;
 								nowposs = possibility[nowid];
@@ -483,7 +483,7 @@ public:
 			matchSequence.push_back(seqID);
 			notInSeq.erase(seqID);
 			ioMap.erase(seqID);
-			auto node = graph.node(seqID);
+			auto &node = graph.node(seqID);
 			for (auto& edge : node.inEdges()) {
 				auto temp = edge.source();
 				if (IN_SET(notInSeq, temp)) ioMap[temp]++;

@@ -12,7 +12,7 @@
 #include <functional>
 #include <atomic>
 #include <type_traits>
-class DynamicThreadPool {
+class ThreadPool {
 
 	std::queue<std::function<void()>> tasks;
 	std::mutex tasks_mutex;
@@ -25,11 +25,7 @@ class DynamicThreadPool {
 
 	std::condition_variable wake_up_cv;
 	std::atomic_bool fast_stop = false, wait_stop = false;
-	/*
-	void thread_quit_op(size_t id) {
-		std::lock_guard<std::mutex> lg(free_threads_mutex);
-		free_threads.push(id);
-	}*/
+
 	void run_unit(size_t id) {
 		while (true) {
 			{
@@ -54,11 +50,13 @@ class DynamicThreadPool {
 		}
 	}
 public:
-	DynamicThreadPool() = default;
-	DynamicThreadPool(size_t threads_num_) :threads_num(threads_num_) {
+	ThreadPool() = default;
+	ThreadPool(const ThreadPool&) = delete;
+	ThreadPool& operator=(const ThreadPool&) = delete;
+	ThreadPool(size_t threads_num_) :threads_num(threads_num_) {
 		threads.resize(threads_num.load());
 		for (int i = 0; i < threads_num_; ++i) {
-			threads[i] = std::move(std::thread(&DynamicThreadPool::run_unit, this,i));
+			threads[i] = std::move(std::thread(&ThreadPool::run_unit, this,i));
 		}
 	}
 	template<class R>
@@ -77,13 +75,14 @@ public:
 		std::function<return_type()> func = std::function<return_type()>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 		return move(addTask(func));
 	}
-	~DynamicThreadPool() {
+	~ThreadPool() {
 		wait_stop = true;
 		wake_up_cv.notify_all();
 		for (auto& t : threads) {
 			if (t.joinable())t.join();
 		}
 	}
+
 	/*	This function will not stop all thread immediately.
 		It will stop a thread  */
 	void fastStop() {
@@ -97,24 +96,7 @@ public:
 	size_t threadNum()const {
 		return threads_num.load();
 	}
-	/*
-	void addThreads(size_t num) {
-		threads_num_hope += num;
-		std::lock_guard<std::mutex> lg(free_threads_mutex);
-		while (threads_num < threads_num_hope) {
-			if (free_threads.empty() == false) {
-				auto id = free_threads.front();
-				free_threads.pop();
-				threads[id] = std::move(std::thread(&DynamicThreadPool::run_unit, this, id));
-			}
-			else threads.emplace_back(&DynamicThreadPool::run_unit, this, threads.size());
-			threads_num++;
-		}
-	}
-	void reduceThreads(size_t num) {
-		if (num > threads_num_hope) threads_num_hope = 0;
-		else threads_num_hope -= num;
-	}*/
+
 };
 
 

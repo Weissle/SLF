@@ -2,7 +2,6 @@
 #include"State.hpp"
 #include"AnswerReceiver.hpp"
 #include"ThreadRelatedClass.hpp"
-#include"SearchTree.hpp"
 #include<si/MatchOrderSelector.hpp>
 #include<vector>
 #include<iostream>
@@ -31,7 +30,7 @@ protected:
 	bool needOneSolution;
 public:
 	SubgraphIsomorphismBase() = default;
-	SubgraphIsomorphismBase(const GraphType& _q,const GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), matchSequence(_mS), needOneSolution(needOS)
+	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), matchSequence(_mS), needOneSolution(needOS)
 	{
 		auto t1 = clock();
 		if (matchSequence.size() == 0) 	matchSequence = MatchOrderSelectorType::run(_q, _t);
@@ -46,38 +45,41 @@ protected:
 	size_t searchDepth;
 	StateType mapState;
 	AnswerReceiverType& answerReceiver;
-	DynamicArray<pair<const NodeIDType*,const NodeIDType*>> cand_id;
+	DynamicArray<pair<const NodeIDType*, const NodeIDType*>> cand_id;
+	CutRuleVector cut_rule_vector;
 	bool goDeeper_timeCount()
 	{
-		if (searchDepth == queryGraphPtr -> size()) {
+		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
 			return true;
 		}
 		++hitTime;
 		if ((int)hitTime % (int)1E4 == 0) {
-//			cout << hitTime << endl;
+			//			cout << hitTime << endl;
 		}
+		const auto query_id = matchSequence[searchDepth];
 		auto t1 = clock();
-		const auto canditatePairs = move(mapState.calCandidatePairs(matchSequence[searchDepth]));
+		mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
 		auto t2 = clock();
 		cal += t2 - t1;
-		if (canditatePairs.empty())return false;
-		canditatePairCount += canditatePairs.size();
+		canditatePairCount += cand_id[searchDepth].second - cand_id[searchDepth].first;
 
-		for (const auto& tempCanditatePair : canditatePairs) {
+		while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
 			t1 = clock();
-			const bool suitable = mapState.checkPair(tempCanditatePair);
+			const auto target_id = *cand_id[searchDepth].first;
+			cand_id[searchDepth].first++;
+			const bool suitable = mapState.checkPair(query_id, target_id, &cut_rule_vector);
 			t2 = clock();
 			check += t2 - t1;
 			if (suitable) {
 				t1 = clock();
-				mapState.pushPair(tempCanditatePair);
+				mapState.pushPair(query_id, target_id);
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
 				if (goDeeper_timeCount() && this->needOneSolution) return true;
 				t1 = clock();
-				mapState.popPair(tempCanditatePair);
+				mapState.popPair(query_id);
 				--searchDepth;
 				t2 = clock();
 				del += t2 - t1;
@@ -98,7 +100,7 @@ protected:
 			mapState.popPair(matchSequence[searchDepth]);
 		};
 		auto pushOperation = [&](const NodeIDType& query_id, const NodeIDType& target_id) {
-			mapState.pushPair(query_id,target_id);
+			mapState.pushPair(query_id, target_id);
 			searchDepth++;
 		};
 
@@ -106,8 +108,8 @@ protected:
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
 				const auto query_id = matchSequence[searchDepth], target_id = *cand_id[searchDepth].first;
 				cand_id[searchDepth].first++;
-				if (!mapState.checkPair(query_id,target_id)) continue;
-				pushOperation(query_id,target_id);
+				if (!mapState.checkPair(query_id, target_id, &cut_rule_vector)) continue;
+				pushOperation(query_id, target_id);
 				if (searchDepth == queryGraphSize) {	//find a solution, just pop last pair ,it will not effect the correction of answer;
 					ToDoAfterFindASolution();
 					if (needOneSolution) return;
@@ -127,16 +129,17 @@ public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _queryGraph,const GraphType& _targetGraph,AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence),cand_id(queryGraphPtr->size())
+	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
+		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence), cand_id(queryGraphPtr->size())
+		, cut_rule_vector(max(_queryGraph.maxLabel(), _targetGraph.maxLabel()) + 1)
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
 		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";
 		cout << endl;
 #endif
 		searchDepth = 0;
-		
-};
+
+	};
 	void run()
 	{
 #ifdef DETAILS_TIME_COUNT
@@ -151,7 +154,7 @@ public:
 #else
 		run_no_recursive();
 #endif
-}
+	}
 
 };
 

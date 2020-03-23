@@ -12,7 +12,7 @@ class stack_mutex {
 	std::mutex m;
 public:
 	stack_mutex() = default;
-	void push(_Ty& t) {
+	void push(_Ty t) {
 		lock_guard<mutex> lg(m);
 		s.push(move(t));
 	}
@@ -26,7 +26,7 @@ public:
 			auto t = move( s.top());
 			s.pop();
 			ok = true;
-			return t;
+			return move(t);
 		}
 	}
 	bool empty() const {
