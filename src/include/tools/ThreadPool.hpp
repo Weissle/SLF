@@ -18,12 +18,12 @@ class ThreadPool {
 	std::mutex tasks_mutex;
 
 	std::vector<std::thread> threads;
-	std::atomic_size_t threads_num = 0, threads_num_hope = 0;
+	std::atomic_size_t threads_num = 0, threads_num_hope = 0, running_thread_num = 0;
 	std::mutex free_threads_mutex;
 	std::queue<size_t> free_threads;
 
 
-	std::condition_variable wake_up_cv;
+	std::condition_variable wake_up_cv, join_cv;
 	std::atomic_bool fast_stop = false, wait_stop = false;
 
 	void run_unit(size_t id) {
@@ -45,7 +45,10 @@ class ThreadPool {
 						return;
 					}
 				}
+				running_thread_num++;
 				task();
+				running_thread_num--;
+				join_cv.notify_one();
 			}
 		}
 	}
@@ -56,7 +59,7 @@ public:
 	ThreadPool(size_t threads_num_) :threads_num(threads_num_) {
 		threads.resize(threads_num.load());
 		for (int i = 0; i < threads_num_; ++i) {
-			threads[i] = std::move(std::thread(&ThreadPool::run_unit, this,i));
+			threads[i] = std::move(std::thread(&ThreadPool::run_unit, this, i));
 		}
 	}
 	template<class R>
@@ -73,6 +76,7 @@ public:
 	{
 		using return_type = typename std::result_of<F(Args...)>::type;
 		std::function<return_type()> func = std::function<return_type()>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+		//		std::function<return_type()> func = std::function<return_type()>(std::bind(f, args...));
 		return move(addTask(func));
 	}
 	~ThreadPool() {
@@ -95,6 +99,24 @@ public:
 	}
 	size_t threadNum()const {
 		return threads_num.load();
+	}
+	size_t runningThreadNum()const {
+		return running_thread_num;
+	}
+	size_t restTaskNum()const {
+		return tasks.size();
+	}
+	void join() {
+		{
+			unique_lock<mutex> ul(tasks_mutex);
+			join_cv.wait(ul, [&]() {return 0 == running_thread_num && tasks.empty(); });
+			wait_stop = true;
+		}
+		wake_up_cv.notify_all();
+		for (auto& t : threads) {
+			if (t.joinable())t.join();
+		}
+
 	}
 
 };

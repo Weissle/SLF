@@ -23,7 +23,7 @@ public:
 			return move(_Ty());
 		}
 		else {
-			auto t = move( s.top());
+			auto t = move(s.top());
 			s.pop();
 			ok = true;
 			return move(t);
@@ -65,9 +65,11 @@ public:
 	}
 	DynamicArray<T>& operator=(const DynamicArray<T>& other) {
 		if (this == &other)return *this;
-		if (p)delete[]p;
+		if (size_ != other.size_) {
+			if (p)delete[]p;
+			p = new T[size_];
+		}
 		size_ = other.size_;
-		p = new T[size_];
 		std::copy(other.p, other.p + size_, p);
 		return *this;
 	}
@@ -118,4 +120,5 @@ public:
 bool bitmap::usable = false;
 size_t* bitmap::for_false = nullptr;
 size_t* bitmap::for_true = nullptr;
+
 }

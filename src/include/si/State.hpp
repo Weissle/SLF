@@ -475,7 +475,7 @@ public:
 		queryStates = _queryStates;
 	};
 	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& ms) :State(_q, _t) {
-		queryStates = State<GraphType>::makeSubgraphState(_q, ms);
+		queryStates = makeSubgraphState(_q, ms);
 	};
 	State() = default;
 
@@ -516,13 +516,10 @@ public:
 #endif
 
 	}
-	bool checkPair(const MapPair& cp)
-	{
-		return checkPair(cp.first, cp.second);
-	}
+
 	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)
 	{
-		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || queryGraphPtr->node(query_id) > targetGraphPtr->node(target_id)) return false;
+		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false) return false;
 #ifdef INDUCE_ISO
 		if (queryStates[searchDepth].inRefTimes[query_id] != targetState.inRefTimes[target_id]) return false;
 		if (queryStates[searchDepth].outRefTimes[query_id] != targetState.outRefTimes[target_id]) return false;
@@ -539,19 +536,12 @@ public:
 #endif
 		return answer;
 	}
-	void pushPair(const MapPair& cp)
-	{
-		pushPair(cp.first, cp.second);
-	}
+
 	void pushPair(const NodeIDType& query_id, const NodeIDType& target_id) {
 		mapping[query_id] = target_id;
 		mappingAux[target_id] = query_id;
 		targetState.addNode(target_id);
 		searchDepth++;
-	}
-	void popPair(const MapPair& cp)
-	{
-		popPair(cp.first);
 	}
 	void popPair(const NodeIDType queryNodeID)  //query node id
 	{
@@ -572,24 +562,20 @@ public:
 	}
 	size_t depth() const { return searchDepth; }
 
-	static shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, const vector<NodeIDType>& ms) {
-		assert(g.size() == ms.size());
-		//the final state will never be used , so this function will not generate the final state;
-		auto ptr = new SubgraphMatchState<GraphType>[ms.size()];
-		if (ptr == nullptr) {
-			cout << "allocate memory fail" << endl;
-			exit(1);
-		}
 
-		shared_ptr<SubgraphMatchState<GraphType>[]> p(ptr);
-		p[0] = move(SubgraphMatchState<GraphType>(g));
-		LOOP(i, 1, ms.size()) {
-			ptr[i] = ptr[i - 1];
-			ptr[i].addNode(ms[i - 1]);
-		}
-		return p;
+};
+template<class GraphType>
+shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, const vector<NodeIDType>& ms) {
+	assert(g.size() == ms.size());
+	//the final state will never be used , so this function will not generate the final state;
+	auto ptr = new SubgraphMatchState<GraphType>[ms.size()];
+	shared_ptr<SubgraphMatchState<GraphType>[]> p(ptr);
+	p[0] = move(SubgraphMatchState<GraphType>(g));
+	LOOP(i, 1, ms.size()) {
+		ptr[i] = ptr[i - 1];
+		ptr[i].addNode(ms[i - 1]);
 	}
-	};
-
+	return p;
+}
 
 }

@@ -46,7 +46,6 @@ protected:
 	StateType mapState;
 	AnswerReceiverType& answerReceiver;
 	DynamicArray<pair<const NodeIDType*, const NodeIDType*>> cand_id;
-	CutRuleVector cut_rule_vector;
 	bool goDeeper_timeCount()
 	{
 		if (searchDepth == queryGraphPtr->size()) {
@@ -108,7 +107,7 @@ protected:
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
 				const auto query_id = matchSequence[searchDepth], target_id = *cand_id[searchDepth].first;
 				cand_id[searchDepth].first++;
-				if (!mapState.checkPair(query_id, target_id, &cut_rule_vector)) continue;
+				if (!mapState.checkPair(query_id, target_id)) continue;
 				pushOperation(query_id, target_id);
 				if (searchDepth == queryGraphSize) {	//find a solution, just pop last pair ,it will not effect the correction of answer;
 					ToDoAfterFindASolution();
@@ -131,7 +130,7 @@ public:
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
 		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence), cand_id(queryGraphPtr->size())
-		, cut_rule_vector(max(_queryGraph.maxLabel(), _targetGraph.maxLabel()) + 1)
+
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
 		TRAVERSE_SET(nodeID, matchSequence) cout << nodeID << " ";
