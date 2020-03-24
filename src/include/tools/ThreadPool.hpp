@@ -76,7 +76,7 @@ public:
 	{
 		using return_type = typename std::result_of<F(Args...)>::type;
 		std::function<return_type()> func = std::function<return_type()>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-		//		std::function<return_type()> func = std::function<return_type()>(std::bind(f, args...));
+//		std::function<return_type()> func = std::function<return_type()>(std::bind(f, args...));
 		return move(addTask(func));
 	}
 	~ThreadPool() {
