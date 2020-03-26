@@ -67,7 +67,7 @@ protected:
 			t1 = clock();
 			const auto target_id = *cand_id[searchDepth].first;
 			cand_id[searchDepth].first++;
-			const bool suitable = mapState.checkPair(query_id, target_id, &cut_rule_vector);
+			const bool suitable = mapState.checkPair(query_id, target_id);
 			t2 = clock();
 			check += t2 - t1;
 			if (suitable) {
@@ -104,8 +104,9 @@ protected:
 		};
 
 		while (true) {
+			auto query_id = matchSequence[searchDepth];
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
-				const auto query_id = matchSequence[searchDepth], target_id = *cand_id[searchDepth].first;
+				const auto target_id = *cand_id[searchDepth].first;
 				cand_id[searchDepth].first++;
 				if (!mapState.checkPair(query_id, target_id)) continue;
 				pushOperation(query_id, target_id);
@@ -114,7 +115,10 @@ protected:
 					if (needOneSolution) return;
 					popOperation();
 				}
-				else	mapState.calCandidatePairs(matchSequence[searchDepth], cand_id[searchDepth].first, cand_id[searchDepth].second);
+				else {
+					query_id = matchSequence[searchDepth];
+					mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
+				}
 			}
 			if (searchDepth == 0)return;
 			else popOperation();

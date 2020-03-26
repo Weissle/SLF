@@ -91,6 +91,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		auto last_check_spilt_time = clock();
 		size_t allow_bifurcate_depth = (minDepth + maxDepth) / 2;
 		while (true) {
+			auto query_id = matchSequence[searchDepth];
 			if (thread_controller->end == true)return;
 			if (clock() - last_check_spilt_time > (CLOCKS_PER_SEC / 20)) {
 				if (minDepth > allow_bifurcate_depth) 	allow_bifurcate_depth = minDepth;
@@ -103,7 +104,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 			}
 
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
-				const auto query_id = matchSequence[searchDepth], target_id = *cand_id[searchDepth].first;
+				const auto target_id = *cand_id[searchDepth].first;
 				cand_id[searchDepth].first++;
 				if (!state.checkPair(query_id, target_id)) continue;
 				pushOperation(query_id, target_id);
@@ -119,7 +120,10 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 					}
 					popOperation();
 				}
-				else	state.calCandidatePairs(matchSequence[searchDepth], cand_id[searchDepth].first, cand_id[searchDepth].second);
+				else {
+					query_id = matchSequence[searchDepth];
+					state.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
+				}
 			}
 			if (searchDepth == 0)return;
 			else if (searchDepth <= minDepth && thread_controller->distribute_period == true)return;

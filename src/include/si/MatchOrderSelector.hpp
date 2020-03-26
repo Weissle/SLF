@@ -228,8 +228,8 @@ public:
 		}
 		size_t labelMax = 0;
 		for (auto& p : tgLabelNum)labelMax = max(labelMax, p.first);
-		tgin.resize(labelMax+1);
-		tgout.resize(labelMax+1);
+		tgin.resize(labelMax + 1);
+		tgout.resize(labelMax + 1);
 		LOOP(i, 0, tgLabelNum.size()) {
 			tgin[i].resize(tgLabelInMax[i] + 1);
 			tgout[i].resize(tgLabelOutMax[i] + 1);
@@ -239,13 +239,13 @@ public:
 			tgin[node.label()][node.inEdgesNum()]++;
 			tgout[node.label()][node.outEdgesNum()]++;
 		}
-		LOOP(i, 0, labelMax+1) {
+		LOOP(i, 0, labelMax + 1) {
 			size_t nodeCount = tgLabelNum[i];
 			int last = 0;
 			LOOP(j, 0, tgout[i].size()) {
 				nodeCount -= last;
 				last = tgout[i][j];
-				tgout[i][j] = nodeCount ;
+				tgout[i][j] = nodeCount;
 			}
 			last = 0;
 			nodeCount = tgLabelNum[i];
@@ -411,15 +411,15 @@ public:
 		}
 		double* possibility = new double[graph.size()];
 		pair<NodeIDType, pair<double, size_t>>* sortPoss = new pair<NodeIDType, pair<double, size_t>>[graph.size()];
-		
+
 		auto tg_in_variance = variance(tgin_record.begin(), tgin_record.end());
 		auto tg_out_variance = variance(tgout_record.begin(), tgout_record.end());
 		unordered_set<NodeIDType> notInSeq;
-		for (auto &node : graph.nodes()) {
+		for (auto& node : graph.nodes()) {
 			auto id = node.id();
 			notInSeq.insert(id);
 			auto label = node.label();
-			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()] *tgLabelNum[label]) / (targetGraph.size() * targetGraph.size());
+			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()]) / (/*targetGraph.size() * targetGraph.size() */ tgLabelNum[label] /*( graph[id].inEdgesNum() + graph[id].outEdgesNum())*/);
 
 			sortPoss[id] = pair<NodeIDType, pair<double, size_t>>(id, pair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
 
@@ -452,8 +452,8 @@ public:
 					}
 					else if (it->second == maxDegreeInSeq) {
 						if (fabs(nowposs - possibility[it->second]) < 1E-20) {
-							auto &nownode = graph.node(nowid);
-							auto &thisnode = graph.node(it->first);
+							auto& nownode = graph.node(nowid);
+							auto& thisnode = graph.node(it->first);
 							if (nownode.outEdgesNum() + nownode.inEdgesNum() < thisnode.outEdgesNum() + thisnode.inEdgesNum()) {
 								nowid = it->first;
 								nowposs = possibility[nowid];
@@ -483,7 +483,7 @@ public:
 			matchSequence.push_back(seqID);
 			notInSeq.erase(seqID);
 			ioMap.erase(seqID);
-			auto &node = graph.node(seqID);
+			auto& node = graph.node(seqID);
 			for (auto& edge : node.inEdges()) {
 				auto temp = edge.source();
 				if (IN_SET(notInSeq, temp)) ioMap[temp]++;
