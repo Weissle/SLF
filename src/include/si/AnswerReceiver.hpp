@@ -35,9 +35,9 @@ public:
 		return;
 	}
 	void finish() {
-		cout << "solution count : "<<count-1 << endl;
+//		cout << "solution count : "<<count-1 << endl;
 	}
-
+	size_t solutions_count() { return count - 1; }
 };
 
 class AnswerReceiverThread :public AnswerReceiver {
