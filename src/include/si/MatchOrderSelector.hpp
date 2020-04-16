@@ -198,7 +198,7 @@ public:
 
 };
 template<class _GraphType>
-class MatchOrderSelectorVF3 {
+class MatchOrderSelectorSI {
 public:
 	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
@@ -348,7 +348,7 @@ public:
 };
 
 template<class _GraphType>
-class MatchOrderSelectorVF3Plus {
+class MatchOrderSelectorSI_T {
 public:
 	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
@@ -419,7 +419,7 @@ public:
 			auto id = node.id();
 			notInSeq.insert(id);
 			auto label = node.label();
-			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()]) / (/*targetGraph.size() * targetGraph.size() */ tgLabelNum[label] /*( graph[id].inEdgesNum() + graph[id].outEdgesNum())*/);
+			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()] ) / (targetGraph.size() * targetGraph.size() );
 
 			sortPoss[id] = pair<NodeIDType, pair<double, size_t>>(id, pair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
 
@@ -427,47 +427,31 @@ public:
 
 		sort(sortPoss, sortPoss + graph.size(), [](const pair<NodeIDType, pair<double, size_t>>& a, const pair<NodeIDType, pair<double, size_t>>& b)
 			{
-				if (fabs(a.second.first - b.second.first) < 1E-20) {
+				if (fabs(a.second.first - b.second.first) < 1E-300) {
 					return a.second.second > b.second.second;
 				}
 				return a.second.first < b.second.first;
 			});
 
 		size_t maxDegreeInSeq = 0;
-		map<NodeIDType, size_t> ioMap;
+		map<NodeIDType, double> ioMap;
 		auto* sortPossPoint = sortPoss;
 		int seqID = -1;
 		auto chooseNode = [&]() {
 			int nowid = -1;
-			double nowposs = 1;
+			double nowposs = 2;
 			if (ioMap.empty() == false) {
-				maxDegreeInSeq = 0;
-				nowid = -1;
-				nowposs = 1;
 				for (auto it = ioMap.begin(); it != ioMap.end(); ++it) {
-					if (it->second > maxDegreeInSeq) {
-						nowid = it->first;
-						nowposs = possibility[nowid];
-						maxDegreeInSeq = it->second;
-					}
-					else if (it->second == maxDegreeInSeq) {
-						if (fabs(nowposs - possibility[it->second]) < 1E-20) {
-							auto& nownode = graph.node(nowid);
-							auto& thisnode = graph.node(it->first);
-							if (nownode.outEdgesNum() + nownode.inEdgesNum() < thisnode.outEdgesNum() + thisnode.inEdgesNum()) {
-								nowid = it->first;
-								nowposs = possibility[nowid];
-								maxDegreeInSeq = it->second;
-							}
-						}
-						else if (nowposs > possibility[it->second]) {
+					if (fabs(it->second - nowposs) < 1e-300) {
+						if (graph[it->first].outEdgesNum() + graph[it->first].inEdgesNum() > graph[nowid].outEdgesNum() + graph[nowid].inEdgesNum()) {
+							nowposs = it->second;
 							nowid = it->first;
-							nowposs = possibility[nowid];
-							maxDegreeInSeq = it->second;
 						}
 					}
-
-					else continue;
+					else if (it->second < nowposs) {
+						nowposs = it->second;
+						nowid = it->first;
+					}
 				}
 			}
 			else {
@@ -483,18 +467,25 @@ public:
 			matchSequence.push_back(seqID);
 			notInSeq.erase(seqID);
 			ioMap.erase(seqID);
+			if (notInSeq.empty())break;
 			auto& node = graph.node(seqID);
 			for (auto& edge : node.inEdges()) {
 				auto temp = edge.source();
-				if (IN_SET(notInSeq, temp)) ioMap[temp]++;
+				if (IN_SET(notInSeq, temp)) {
+					if (fabs(ioMap[temp] - 0) < 1e-300)ioMap[temp] = possibility[temp];
+					ioMap[temp] *= possibility[seqID];
+				};
 			}
 			for (auto& edge : node.outEdges()) {
 				auto temp = edge.target();
-				if (IN_SET(notInSeq, temp)) ioMap[temp]++;
+				if (IN_SET(notInSeq, temp)) {
+					if (fabs(ioMap[temp] - 0) < 1e-300)ioMap[temp] = possibility[temp];
+					ioMap[temp] *= possibility[seqID];
+				}
 			}
-			if (notInSeq.empty())break;
+			
 			seqID = chooseNode();
-		} while (notInSeq.empty() == false);
+		} while (true);
 		delete[]sortPoss;
 		delete[]possibility;
 		return matchSequence;

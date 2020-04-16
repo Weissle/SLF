@@ -162,8 +162,8 @@ public:
 
 };
 
-template<typename GraphType, typename AnswerReceiverType, typename MatchOrderSelector = MatchOrderSelectorVF3<GraphType> >
-class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType, MatchOrderSelector> {
+template<typename GraphType, typename AnswerReceiverType>
+class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType> {
 	typedef size_t NodeIDType;
 	typedef SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType> SIUnit;
 	AnswerReceiverType& answerReceiver;
@@ -177,7 +177,7 @@ public:
 	SubgraphIsomorphismThread() = default;
 	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t _threadN,
 		bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType, MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), threadNum(_threadN)
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), threadNum(_threadN)
 	{
 		subgraphStates = makeSubgraphState<GraphType>(_queryGraph, matchSequence);
 		state = State<GraphType>(*queryGraphPtr, *targetGraphPtr, subgraphStates);

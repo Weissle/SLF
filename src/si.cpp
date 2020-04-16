@@ -4,29 +4,13 @@
 #include<time.h>
 #include<iostream>
 #include<fstream>
+#include<string>
 #include"si/AnswerReceiver.hpp"
 #include"si/SubgraphIsomorphismThread.hpp"
 using namespace std;
 static long t = 0;
 using namespace wg;
-vector<size_t> readMatchSequence(string &matchOrderPath) {
-	vector<size_t> ms;
-	if (matchOrderPath.empty()==false) {
-		fstream f;
-		f.open(matchOrderPath.c_str(), ios_base::in);
-		if (f.is_open() == false) {
-			cout << matchOrderPath << " open fail" << endl;
-			exit(1);
-		}
-		while (f.eof() == false) {
-			size_t temp = UINT32_MAX;
-			f >> temp;
-			if (temp != UINT32_MAX)ms.push_back(temp);
-		}
-		f.close();
-	}
-	return move(ms);
-}
+
 int main(int argc, char * argv[]) {
 	typedef size_t NodeIDType;
 //	typedef Edge<int> EdgeType;
@@ -50,15 +34,15 @@ int main(int argc, char * argv[]) {
     cmdl({"-self-order","-so"})>>matchOrderPath;
 
 	//match order
-#define MOS_VF3P
+#define MOS_SI
 #ifdef MOS_TEST
     typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_NORMAL)
 	typedef MatchOrderSelector<GraphType> MatchOrderSelectorType;
-#elif defined(MOS_VF3)
-	typedef MatchOrderSelectorVF3<GraphType> MatchOrderSelectorType;
-#elif defined(MOS_VF3P)
-	typedef MatchOrderSelectorVF3Plus<GraphType> MatchOrderSelectorType;
+#elif defined(MOS_SI)
+	typedef MatchOrderSelectorSI<GraphType> MatchOrderSelectorType;
+#elif defined(MOS_SI_TEST)
+	typedef MatchOrderSelectorSI_T<GraphType> MatchOrderSelectorType;
 #endif
 	// graph type ( store in files ) and read graph
 #define GRF_L
@@ -80,31 +64,33 @@ int main(int argc, char * argv[]) {
 
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
-
-//	PRINT_TIME_COST_S("sort edge time : ",clock()- t1);
-	vector<NodeIDType> ms =move(readMatchSequence(matchOrderPath));
+	vector<NodeIDType> ms;
+	if (matchOrderPath.size())  ms = move(readMatchSequence(matchOrderPath));
+	else ms = MatchOrderSelectorType::run(*queryGraph, *targetGraph);
 	size_t solutions = 0;
+	size_t call_times = 0;
 //	t1 = clock();
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(answerPath);
-		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
+		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
 		si.run();
-//		cout << "ok\n";
 		answerReceiver.finish();
 		solutions = answerReceiver.solutions_count();
 	}
 	else {
 		AnswerReceiver answerReceiver;
-		SubgraphIsomorphism<GraphType, AnswerReceiver, MatchOrderSelectorType> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms);
+		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms);
 		si.run();
 		answerReceiver.finish();
 		solutions = answerReceiver.solutions_count();
+		call_times = si.callTimes();
 	}
 	double TimeC = clock()-t1;
 //	cout << "time cost : " << (TimeC) / CLOCKS_PER_SEC<<" s  "<< (TimeC) / (CLOCKS_PER_SEC/1000)<<" ms" << endl;
 	delete queryGraph;
 	delete targetGraph;
 	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string((double)TimeC / CLOCKS_PER_SEC) + "]" << endl;
+//	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
 	return 0;
 }
 

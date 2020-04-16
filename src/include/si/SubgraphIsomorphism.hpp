@@ -10,14 +10,14 @@
 #include<typeinfo>
 #include<utility>
 
-//#define DETAILS_TIME_COUNT
+#define DETAILS_TIME_COUNT
 using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
 
 */
 namespace wg {
-template<class GraphType, class MatchOrderSelectorType = MatchOrderSelectorVF3<GraphType>>
+template<class GraphType>
 class SubgraphIsomorphismBase {
 protected:
 	typedef typename GraphType::NodeType NodeType;
@@ -32,14 +32,13 @@ public:
 	SubgraphIsomorphismBase() = default;
 	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), matchSequence(_mS), needOneSolution(needOS)
 	{
-		auto t1 = clock();
-		if (matchSequence.size() == 0) 	matchSequence = MatchOrderSelectorType::run(_q, _t);
+		assert(_mS.size() == _q.size());
 
 	}
 };
 //for single thread
-template<typename GraphType, typename AnswerReceiverType, typename _MatchOrderSelector = void >
-class SubgraphIsomorphism : public SubgraphIsomorphismBase<GraphType, _MatchOrderSelector> {
+template<typename GraphType, typename AnswerReceiverType>
+class SubgraphIsomorphism : public SubgraphIsomorphismBase<GraphType> {
 
 protected:
 	size_t searchDepth;
@@ -133,7 +132,7 @@ public:
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType, _MatchOrderSelector>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence), cand_id(queryGraphPtr->size())
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence), cand_id(queryGraphPtr->size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
@@ -146,18 +145,19 @@ public:
 	void run()
 	{
 #ifdef DETAILS_TIME_COUNT
-		cout << "start match" << endl;
 		goDeeper_timeCount();
-		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
+/*		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
 		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
 		cout << "hit times " << hitTime << endl;
-		cout << "canditate Pair Count " << canditatePairCount << endl;
+		cout << "canditate Pair Count " << canditatePairCount << endl;*/
 #else
 		run_no_recursive();
 #endif
 	}
+
+	size_t callTimes()const { return this->hitTime; }
 
 };
 
