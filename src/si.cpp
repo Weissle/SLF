@@ -13,7 +13,6 @@ using namespace wg;
 
 int main(int argc, char * argv[]) {
 	typedef size_t NodeIDType;
-//	typedef Edge<int> EdgeType;
 	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
@@ -57,8 +56,6 @@ int main(int argc, char * argv[]) {
 	auto t1 = clock();
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath,turner),
 		        *targetGraph = GraphReader::readGraph(targetGraphPath,turner);
-//	PRINT_TIME_COST_S("read graph time : ", clock() - t1);
-//	cout << "read graph finish" << endl;
 
 	t1 = clock();
 
@@ -67,9 +64,10 @@ int main(int argc, char * argv[]) {
 	vector<NodeIDType> ms;
 	if (matchOrderPath.size())  ms = move(readMatchSequence(matchOrderPath));
 	else ms = MatchOrderSelectorType::run(*queryGraph, *targetGraph);
+
 	size_t solutions = 0;
 	size_t call_times = 0;
-//	t1 = clock();
+
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(answerPath);
 		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
@@ -86,11 +84,13 @@ int main(int argc, char * argv[]) {
 		call_times = si.callTimes();
 	}
 	double TimeC = clock()-t1;
-//	cout << "time cost : " << (TimeC) / CLOCKS_PER_SEC<<" s  "<< (TimeC) / (CLOCKS_PER_SEC/1000)<<" ms" << endl;
 	delete queryGraph;
 	delete targetGraph;
 	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string((double)TimeC / CLOCKS_PER_SEC) + "]" << endl;
 //	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
+
+
 	return 0;
+
 }
 

@@ -84,13 +84,13 @@ public:
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
-	unordered_map<NodeLabelType,size_t> labelMaxIn()const {
+	const unordered_map<NodeLabelType,size_t>& labelMaxIn()const {
 		return this->aux_LabelMaxIn;
 	}
-	unordered_map<NodeLabelType, size_t> labelMaxOut()const {
+	const unordered_map<NodeLabelType, size_t>& labelMaxOut()const {
 		return this->aux_LabelMaxOut;
 	}
-	unordered_map<NodeLabelType, size_t> labelNum()const {
+	const unordered_map<NodeLabelType, size_t>& labelNum()const {
 		return this->aux_LabelNum;
 	}
 	//do something to improve match speed
