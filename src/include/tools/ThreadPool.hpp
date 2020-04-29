@@ -18,13 +18,10 @@ class ThreadPool {
 	std::mutex tasks_mutex;
 
 	std::vector<std::thread> threads;
-	std::atomic_size_t threads_num = 0, threads_num_hope = 0, running_thread_num = 0;
-	std::mutex free_threads_mutex;
-	std::queue<size_t> free_threads;
+	std::atomic_size_t threads_num = 0,running_thread_num = 0;
 
-
-	std::condition_variable wake_up_cv, join_cv;
-	std::atomic_bool fast_stop = false, wait_stop = false;
+	std::condition_variable wake_up_cv;
+	std::atomic_bool wait_stop = false;
 
 	void run_unit(size_t id) {
 		while (true) {
@@ -33,22 +30,20 @@ class ThreadPool {
 				std::function<void()> task;
 				{
 					std::unique_lock<std::mutex> ul(tasks_mutex);
-					wake_up_cv.wait(ul, [this]() {return tasks.size() != 0 || fast_stop == true || wait_stop == true; });
-					if (fast_stop == true) {
-						return;
-					}
+					wake_up_cv.wait(ul, [this]() {return tasks.size() != 0 || (running_thread_num == 0 && wait_stop); });
 					if (tasks.size()) {
 						task = tasks.front();
 						tasks.pop();
 					}
-					else if (wait_stop) {
-						return;
-					}
+					else if (wait_stop && running_thread_num==0)	return;
 				}
 				running_thread_num++;
 				task();
 				running_thread_num--;
-				join_cv.notify_one();
+				if (wait_stop && running_thread_num == 0) {
+					wake_up_cv.notify_one();
+					return;
+				}
 			}
 		}
 	}
@@ -64,7 +59,6 @@ public:
 	}
 	template<class R>
 	std::future<R> addTask(std::function<R()> f) {
-		if (fast_stop) return std::future<R>();
 		auto task = std::make_shared<std::packaged_task<R()>>(f);
 		std::lock_guard<std::mutex> lg(tasks_mutex);
 		tasks.push([task]() {(*task)(); });
@@ -89,14 +83,7 @@ public:
 
 	/*	This function will not stop all thread immediately.
 		It will stop a thread  */
-	void fastStop() {
-		fast_stop = true;
-		wake_up_cv.notify_all();
-	}
-	void waitStop() {
-		wait_stop = true;
-		wake_up_cv.notify_all();
-	}
+
 	size_t threadNum()const {
 		return threads_num.load();
 	}
@@ -109,7 +96,6 @@ public:
 	void join() {
 		{
 			unique_lock<mutex> ul(tasks_mutex);
-			join_cv.wait(ul, [&]() {return 0 == running_thread_num && tasks.empty(); });
 			wait_stop = true;
 		}
 		wake_up_cv.notify_all();
