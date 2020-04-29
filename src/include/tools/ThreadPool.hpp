@@ -31,19 +31,16 @@ class ThreadPool {
 				{
 					std::unique_lock<std::mutex> ul(tasks_mutex);
 					wake_up_cv.wait(ul, [this]() {return tasks.size() != 0 || (running_thread_num == 0 && wait_stop); });
-					if (tasks.size()) {
-						task = tasks.front();
-						tasks.pop();
+					if (tasks.size()==0) {
+						wake_up_cv.notify_one();
+						return;
 					}
-					else if (wait_stop && running_thread_num==0)	return;
+					running_thread_num++;
+					task = move(tasks.front());
+					tasks.pop();
 				}
-				running_thread_num++;
 				task();
 				running_thread_num--;
-				if (wait_stop && running_thread_num == 0) {
-					wake_up_cv.notify_one();
-					return;
-				}
 			}
 		}
 	}
@@ -70,7 +67,6 @@ public:
 	{
 		using return_type = typename std::result_of<F(Args...)>::type;
 		std::function<return_type()> func = std::function<return_type()>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
-//		std::function<return_type()> func = std::function<return_type()>(std::bind(f, args...));
 		return move(addTask(func));
 	}
 	~ThreadPool() {
@@ -98,13 +94,13 @@ public:
 			unique_lock<mutex> ul(tasks_mutex);
 			wait_stop = true;
 		}
-		wake_up_cv.notify_all();
+		wake_up_cv.notify_one();
 		for (auto& t : threads) {
 			if (t.joinable())t.join();
+			wake_up_cv.notify_one();
 		}
 
 	}
-
 };
 
 
