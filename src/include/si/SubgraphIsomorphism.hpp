@@ -132,7 +132,7 @@ public:
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, matchSequence), cand_id(queryGraphPtr->size())
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph,makeSubgraphState(_queryGraph,_matchSequence) ), cand_id(queryGraphPtr->size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE

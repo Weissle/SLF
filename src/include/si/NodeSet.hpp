@@ -65,14 +65,12 @@ public:
 	}
 
 };
-template<class GraphType>
 class NodeSetSimple {
 protected:
-	GraphType const* graph = nullptr;
 	vector<bool> belong;
 public:
 	NodeSetSimple() = default;
-	NodeSetSimple(const GraphType& _g) :graph(&_g), belong(_g.size()) {
+	NodeSetSimple(const size_t& _size) :belong(_size) {
 	}
 	inline void insert(const NodeIDType id) {
 		belong[id] = true;
@@ -85,16 +83,17 @@ public:
 	}
 };
 template<class GraphType>
-class NodeSetWithLabel :NodeSetSimple<GraphType> {
+class NodeSetWithLabel :NodeSetSimple {
 public:
 	typedef size_t NodeLabelType;
 	typedef vector<NodeIDType> Nodes;
+	GraphType* graph;
 private:
 	vector<size_t> place;
 	vector<Nodes> v;
 public:
 
-	NodeSetWithLabel(const GraphType& _graph) :NodeSetSimple<GraphType>(_graph) {
+	NodeSetWithLabel(const GraphType& _graph) :NodeSetSimple(_graph),graph(&_graph) {
 		const auto labelsNum = _graph.labelNum();
 		place.resize(_graph.size(), NO_MAP);
 		v.resize(_graph.maxLabel() + 1);
@@ -139,8 +138,8 @@ public:
 	NodeSetWithLabel() = default;
 };
 
-template<class GraphType>
-class NodeSetWithDepth :public NodeSetSimple<GraphType> {
+
+class NodeSetWithDepth :public NodeSetSimple {
 public:
 	typedef size_t NodeLabelType;
 	typedef vector<NodeIDType> Nodes;
@@ -164,10 +163,9 @@ public:
 		swap(p[p1], p[p2]);
 		swap(p1, p2);
 	}
-	NodeSetWithDepth(const GraphType& _graph, size_t depth) :NodeSetSimple<GraphType>(_graph) {
-		const auto labelsNum = _graph.labelNum();
-		place.resize(_graph.size(), NO_MAP);
-		p.reserve(_graph.size() + 1);
+	NodeSetWithDepth(const size_t& _size, size_t depth) :NodeSetSimple(_size) {
+		place.resize(_size, NO_MAP);
+		p.reserve(_size + 1);
 		depthSpace.resize(2 * depth + 3, 0);
 	}
 	void prepare(const size_t depth) {
@@ -199,11 +197,9 @@ public:
 		return;
 	}
 	void erase(const NodeIDType id, size_t depth) {
-
 		assert(depth <= nowDepth);
 		if (belong[id] == true) {
 			belong[id] = false;
-		//	mid_place(depth)--;
 			auto& mid_p = mid_place(depth);
 			mid_p--;
 			place[p[mid_p]] = place[id];
@@ -228,7 +224,8 @@ public:
 			p.pop_back();
 		}
 
-		mid_place(depth) = end_place(depth) = 0;
+		mid_place(depth) = 0;
+		end_place(depth) = 0;
 	}
 
 	void getSet(size_t depth, const NodeIDType*& begin, const NodeIDType*& mid)const {

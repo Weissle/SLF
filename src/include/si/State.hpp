@@ -27,39 +27,34 @@ namespace wg {
 class GraphStateBase {
 protected:
 	size_t searchDepth = 0;
-	vector<size_t> in_depth, out_depth;
 	vector<size_t> in_ref_times, out_ref_times;
 public:
 	GraphStateBase() = default;
-	GraphStateBase(const size_t& graph_size) {
-
-		in_depth.resize(graph_size);
-		out_depth.resize(graph_size);
-
-		in_ref_times.resize(graph_size);
-		out_ref_times.resize(graph_size);
+	GraphStateBase(const size_t& graph_size) :
+		in_ref_times(graph_size), out_ref_times(graph_size)
+	{
 	}
-	inline size_t inDepth(const NodeIDType id)const { return in_depth[id]; }
-	inline size_t outDepth(const NodeIDType id)const { return out_depth[id]; }
 	inline size_t inRefTimes(const NodeIDType id)const { return in_ref_times[id]; }
 	inline size_t outRefTimes(const NodeIDType id)const { return out_ref_times[id]; }
 
 };
 template<class GraphType>
 class TargetGraphMatchState :public GraphStateBase {
-	NodeSetWithDepth<GraphType> unmap, in, out;
+	NodeSetWithDepth unmap, in, out;
 	const GraphType* graphPointer = nullptr;
+	vector<size_t> in_depth, out_depth;
 public:
 	TargetGraphMatchState() = default;
-	TargetGraphMatchState(const GraphType& g, const size_t maxDepth = 0) :GraphStateBase(g.size()), graphPointer(&g),in(g,maxDepth),out(g, maxDepth),unmap(g, maxDepth) {
-
+	TargetGraphMatchState(const GraphType& g, const size_t maxDepth = 0) :GraphStateBase(g.size()), graphPointer(&g), in(g.size(), maxDepth), out(g.size(), maxDepth), unmap(g.size(), maxDepth),
+		in_depth(g.size()), out_depth(g.size())
+	{
 		for (const auto& node : g.nodes()) unmap.insert(node.id(), 0);
 	}
 	void addNode(NodeIDType id) {
 		const GraphType& graph = *graphPointer;
-		unmap.erase(id, 0);
 		in.erase(id, in_depth[id]);
 		out.erase(id, out_depth[id]);
+		unmap.erase(id, 0);
 		searchDepth++;
 		in.prepare(searchDepth);
 		out.prepare(searchDepth);
@@ -92,6 +87,7 @@ public:
 	void deleteNode(NodeIDType id) {
 		const GraphType& graph = *graphPointer;
 		const auto& node = graph.node(id);
+
 		for (const auto& tempEdge : node.inEdges()) {
 			const auto& nodeID = tempEdge.source();
 			const bool n = inSetUnmap(nodeID);
@@ -116,6 +112,8 @@ public:
 		if (out_depth[id]) 	out.insert(id, out_depth[id]);
 		unmap.insert(id, 0);
 	}
+	inline size_t inDepth(const NodeIDType id)const { return in_depth[id]; }
+	inline size_t outDepth(const NodeIDType id)const { return out_depth[id]; }
 	inline bool inSetIn(const NodeIDType id)const { return in.exist(id); }
 	inline bool inSetOut(const NodeIDType id)const { return out.exist(id); }
 	inline bool inSetUnmap(const NodeIDType id)const { return unmap.exist(id); }
@@ -126,19 +124,21 @@ public:
 
 template<typename GraphType>
 class SubgraphMatchState :public GraphStateBase {
-	NodeSetSimple<GraphType> unmap, in, out;
+	NodeSetSimple unmap, in, out;
 	const GraphType* graphPointer;
+	shared_ptr<vector<size_t>> in_depth, out_depth;
 public:
 	SubgraphMatchState() = default;
-	SubgraphMatchState(const GraphType& g, const size_t maxDepth = 0) :GraphStateBase(g.size()), graphPointer(&g),in(g),out(g),unmap(g) {
-
+	inline size_t inDepth(const NodeIDType id)const { return (*in_depth)[id]; }
+	inline size_t outDepth(const NodeIDType id)const { return (*out_depth)[id]; }
+	SubgraphMatchState(const GraphType& g, const size_t maxDepth = 0) :GraphStateBase(g.size()), graphPointer(&g), in(g.size()), out(g.size()), unmap(g.size()),
+		in_depth(new vector<size_t>(g.size())), out_depth(new vector<size_t>(g.size()))
+	{
 		for (const auto& node : g.nodes()) unmap.insert(node.id());
 	}
 	void addNode(NodeIDType id) {
 		const GraphType& graph = *graphPointer;
 		unmap.erase(id);
-		in.erase(id);
-		out.erase(id);
 		searchDepth++;
 		const auto& node = graph.node(id);
 		for (const auto& tempEdge : node.inEdges()) {
@@ -147,10 +147,7 @@ public:
 			const bool i = inSetIn(nodeID);
 			const bool n = (i) ? true : inSetUnmap(nodeID);
 			if (!n)continue;
-			if (!i) {
-				in.insert(nodeID);
-				in_depth[nodeID] = searchDepth;
-			}
+			if (!i)	(*in_depth)[nodeID] = searchDepth;
 			++in_ref_times[nodeID];
 		}
 		for (const auto& tempEdge : node.outEdges()) {
@@ -158,16 +155,13 @@ public:
 			const bool o = inSetOut(nodeID);
 			const bool n = (o) ? true : inSetUnmap(nodeID);
 			if (!n)continue;
-			if (!o) {
-				out.insert(nodeID);
-				out_depth[nodeID] = searchDepth;
-			}
+			if (!o) (*out_depth)[nodeID] = searchDepth;
 			++out_ref_times[nodeID];
 		}
 		return;
 	}
-	inline bool inSetIn(const NodeIDType id)const { return in.exist(id); }
-	inline bool inSetOut(const NodeIDType id)const { return out.exist(id); }
+	inline bool inSetIn(const NodeIDType id)const { return unmap.exist(id) && inDepth(id) && inDepth(id) <= searchDepth; }
+	inline bool inSetOut(const NodeIDType id)const { return unmap.exist(id) && outDepth(id) && outDepth(id) <= searchDepth; }
 	inline bool inSetUnmap(const NodeIDType id)const { return unmap.exist(id); }
 };
 
@@ -446,10 +440,9 @@ private:
 		return true;
 	}
 
-
-	State(const GraphType& _q, const GraphType& _t) : queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size())
+public:
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<SubgraphMatchState<GraphType>[]> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size()), queryStates(_queryStates)
 	{
-
 		const auto queryGraphSize = _q.size();
 		const auto targetGraphSize = _t.size();
 
@@ -461,16 +454,8 @@ private:
 		outNewCount.resize(labelNum);
 		bothNewCount.resize(labelNum);
 		notNewCount.resize(labelNum);
+	};
 
-	};
-public:
-	State(const GraphType& _q, const GraphType& _t, shared_ptr<SubgraphMatchState<GraphType>[]> _queryStates) :State(_q, _t)
-	{
-		queryStates = _queryStates;
-	};
-	State(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& ms) :State(_q, _t) {
-		queryStates = makeSubgraphState(_q, ms);
-	};
 	State() = default;
 
 public:
@@ -513,7 +498,7 @@ public:
 		mappingAux[target_id] = query_id;
 		targetState.addNode(target_id);
 		searchDepth++;
-	}
+}
 	void popPair(const NodeIDType queryNodeID)  //query node id
 	{
 		NodeIDType& targetNodeID = mapping[queryNodeID];
