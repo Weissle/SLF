@@ -6,37 +6,6 @@
 #include<limits.h>
 using namespace std;
 namespace wg {
-template<class _Ty>
-class stack_mutex {
-	stack<_Ty> s;
-	std::mutex m;
-public:
-	stack_mutex() = default;
-	void push(_Ty t) {
-		lock_guard<mutex> lg(m);
-		s.push(move(t));
-	}
-	_Ty pop(bool& ok) {
-		lock_guard<mutex> lg(m);
-		if (s.empty()) {
-			ok = false;
-			return move(_Ty());
-		}
-		else {
-			auto t = move(s.top());
-			s.pop();
-			ok = true;
-			return move(t);
-		}
-	}
-	bool empty() const {
-		return s.empty();
-	}
-	size_t size() const {
-		return s.size();
-	}
-
-};
 
 template<class T>
 class DynamicArray {
