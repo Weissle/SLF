@@ -13,6 +13,7 @@ namespace wg {
 template<class SIUnit>
 class TaskDistributor :public ThreadPool {
 	void bifurcateFun() {
+//		distribute_period = true;
 		bool ok = false;
 		unique_ptr<SIUnit> prepared_unit;
 		{
@@ -51,6 +52,18 @@ public:
 			ok = false;
 			return move(unique_ptr<SIUnit>());
 		}
+	}
+	bool allowDistribute() {
+	/*	static auto t = clock();
+		if (threads_num != running_thread_num) {
+			const auto temp = clock();
+			if (temp - t >= 10) {
+				t = clock();
+				return true;
+			}
+		}
+		return false;*/
+		return (threads_num.load() == running_thread_num.load()) && restTaskNum()!=0 && wait_stop;
 	}
 
 };

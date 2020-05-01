@@ -31,7 +31,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	}
 	inline void popOperation() {
 		searchDepth--;
-		state.popPair(matchSequence[searchDepth]);
+		state.popPair((*match_sequence_ptr)[searchDepth]);
 	}
 	inline void pushOperation(const NodeIDType& query_id, const NodeIDType& target_id) {
 		state.pushPair(query_id, target_id);
@@ -50,7 +50,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	inline void prepareMinState() {
 		auto head = min_state.depth();
 		LOOP(i, head, minDepth) {
-			min_state.pushPair(matchSequence[i], target_sequence[i]);
+			min_state.pushPair((*match_sequence_ptr)[i], target_sequence[i]);
 		}
 	}
 
@@ -84,19 +84,18 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		siu->minDepth = minDepth;
 		siu->searchDepth = minDepth;
 		std::copy(target_sequence.begin(), target_sequence.begin() + minDepth, (siu->target_sequence).begin());
-		siu->state.calCandidatePairs(matchSequence[minDepth], siu->cand_id[minDepth].first, siu->cand_id[minDepth].second);
-
+		siu->state.calCandidatePairs((*match_sequence_ptr)[minDepth], siu->cand_id[minDepth].first, siu->cand_id[minDepth].second);
 	}
 	void run_no_recursive() {
 		auto last_check_spilt_time = clock();
 		size_t allow_bifurcate_depth = (minDepth + maxDepth) / 2;
 		while (true) {
-			auto query_id = matchSequence[searchDepth];
+			auto query_id = (*match_sequence_ptr)[searchDepth];
 			if (task_distributor->end == true)return;
-			if (clock() - last_check_spilt_time > (CLOCKS_PER_SEC / 20)) {
+			if (task_distributor-> allowDistribute()) {
 				if (minDepth > allow_bifurcate_depth) 	allow_bifurcate_depth = minDepth;
 				else {
-					auto bifurcation_num = threadPoolAllowBifurcationNum();
+					auto bifurcation_num = 1;// threadPoolAllowBifurcationNum();
 					bifurcation(bifurcation_num);
 				}
 				last_check_spilt_time = clock();
@@ -121,7 +120,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 					popOperation();
 				}
 				else {
-					query_id = matchSequence[searchDepth];
+					query_id = (*match_sequence_ptr)[searchDepth];
 					state.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
 				}
 			}
@@ -131,9 +130,9 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		}
 	}
 public:
-	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, vector<NodeIDType>& _mS, bool _oneSolution,
+	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
 	shared_ptr<SubgraphMatchState<GraphType>[]> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :
-		SubgraphIsomorphismBase<GraphType>(_q, _t, _mS, _oneSolution), answerReceiver(_answerReceiver), maxDepth(_q.size()),
+		SubgraphIsomorphismBase<GraphType>(_q, _t, _msp, _oneSolution), answerReceiver(_answerReceiver), maxDepth(_q.size()),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
 		min_state = state;
@@ -146,7 +145,7 @@ public:
 			return;
 		}
 		state.pushPair(query_id, target_id);
-		state.calCandidatePairs(matchSequence[1], cand_id[1].first, cand_id[1].second);
+		state.calCandidatePairs((*match_sequence_ptr)[1], cand_id[1].first, cand_id[1].second);
 		searchDepth = 1;
 		minDepth = 1;
 		assert(min_state.depth() == 0);
@@ -176,32 +175,32 @@ class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType> {
 public:
 	SubgraphIsomorphismThread() = default;
 	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t _threadN,
-		bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), threadNum(_threadN)
+		bool _onlyNeedOneSolution , shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), threadNum(_threadN)
 	{
-		subgraphStates = makeSubgraphState<GraphType>(_queryGraph, matchSequence);
+		subgraphStates = makeSubgraphState<GraphType>(_queryGraph, match_sequence_ptr);
 		state = State<GraphType>(*queryGraphPtr, *targetGraphPtr, subgraphStates);
 	}
 	void run() {
 		const NodeIDType* begin_ptr = nullptr, * end_ptr = nullptr;
+		const auto query_id = (*match_sequence_ptr)[0];
 		auto task_distributor = make_shared<TaskDistributor<SIUnit>>(threadNum);
-		state.calCandidatePairs(matchSequence[0], begin_ptr, end_ptr);
+		state.calCandidatePairs(query_id, begin_ptr, end_ptr);
 		auto tasksDistribute = [&](const NodeIDType query_id, const NodeIDType target_id) {
 			if (task_distributor->end)return;
 			bool ok = false;
 			auto freeUnit = move(task_distributor->getFreeUnit(ok));
-			assert(ok);
 			freeUnit->prepare(query_id, target_id);
 			freeUnit->run();
 			task_distributor->addFreeUnit(move(freeUnit));
 		};
-		LOOP(i, 0, threadNum * 2) {
+		LOOP(i, 0, threadNum + 1) {
 			task_distributor->addTask([&]() {
-				auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, answerReceiver, matchSequence, needOneSolution,subgraphStates, task_distributor);
+				auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, answerReceiver, match_sequence_ptr, needOneSolution,subgraphStates, task_distributor);
 				task_distributor->addFreeUnit(move(p));
 				});
 		}
-		const auto query_id = matchSequence[0];
+		
 		while (begin_ptr != end_ptr) {
 			task_distributor->addTask(tasksDistribute, query_id, *begin_ptr);
 			++begin_ptr;

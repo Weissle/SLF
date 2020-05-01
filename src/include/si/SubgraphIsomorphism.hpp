@@ -10,7 +10,7 @@
 #include<typeinfo>
 #include<utility>
 
-#define DETAILS_TIME_COUNT
+//#define DETAILS_TIME_COUNT
 using namespace std;
 /*
 About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
@@ -26,13 +26,13 @@ protected:
 
 	typedef State<GraphType> StateType;
 	const GraphType* targetGraphPtr, * queryGraphPtr;
-	vector<NodeIDType> matchSequence;
+	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
 	bool needOneSolution;
 public:
 	SubgraphIsomorphismBase() = default;
-	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const vector<NodeIDType>& _mS, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), matchSequence(_mS), needOneSolution(needOS)
+	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const shared_ptr<const vector<NodeIDType>> _msp, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), match_sequence_ptr(_msp), needOneSolution(needOS)
 	{
-		assert(_mS.size() == _q.size());
+		assert(_msp->size() == _q.size());
 
 	}
 };
@@ -47,6 +47,7 @@ protected:
 	DynamicArray<pair<const NodeIDType*, const NodeIDType*>> cand_id;
 	bool goDeeper_timeCount()
 	{
+
 		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
 			return true;
@@ -55,7 +56,7 @@ protected:
 		if ((int)hitTime % (int)1E4 == 0) {
 			//			cout << hitTime << endl;
 		}
-		const auto query_id = matchSequence[searchDepth];
+		const auto query_id = (*match_sequence_ptr)[searchDepth];
 		auto t1 = clock();
 		mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
 		auto t2 = clock();
@@ -90,12 +91,12 @@ protected:
 		answerReceiver << mapState.getMap();
 	}
 	void run_no_recursive() {
-
+		const auto& match_sequence = (*match_sequence_ptr);
 		const auto queryGraphSize = queryGraphPtr->size();
-		mapState.calCandidatePairs(matchSequence[0], cand_id[0].first, cand_id[0].second);
+		mapState.calCandidatePairs(match_sequence[0], cand_id[0].first, cand_id[0].second);
 		auto popOperation = [&]() {
 			searchDepth--;
-			mapState.popPair(matchSequence[searchDepth]);
+			mapState.popPair(match_sequence[searchDepth]);
 		};
 		auto pushOperation = [&](const NodeIDType& query_id, const NodeIDType& target_id) {
 			mapState.pushPair(query_id, target_id);
@@ -103,7 +104,7 @@ protected:
 		};
 
 		while (true) {
-			auto query_id = matchSequence[searchDepth];
+			auto query_id = match_sequence[searchDepth];
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
 				const auto target_id = *cand_id[searchDepth].first;
 				cand_id[searchDepth].first++;
@@ -115,7 +116,7 @@ protected:
 					popOperation();
 				}
 				else {
-					query_id = matchSequence[searchDepth];
+					query_id = match_sequence[searchDepth];
 					mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
 				}
 			}
@@ -131,8 +132,8 @@ public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution = true, vector<NodeIDType>& _matchSequence = vector<NodeIDType>())
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _matchSequence, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph,makeSubgraphState(_queryGraph,_matchSequence) ), cand_id(queryGraphPtr->size())
+	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph,makeSubgraphState(_queryGraph,_match_sequence_ptr) ), cand_id(queryGraphPtr->size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE

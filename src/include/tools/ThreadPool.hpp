@@ -13,23 +13,23 @@
 #include <atomic>
 #include <type_traits>
 class ThreadPool {
-
 	std::queue<std::function<void()>> tasks;
 	std::mutex tasks_mutex;
 
 	std::vector<std::thread> threads;
-	std::atomic_size_t threads_num = 0,running_thread_num = 0;
-
 	std::condition_variable wake_up_cv;
+protected:
 	std::atomic_bool wait_stop = false;
-
+	std::atomic_size_t threads_num = 0,running_thread_num = 0;
+private:
 	void run_unit(size_t id) {
+		running_thread_num++;
 		while (true) {
 			{
-
 				std::function<void()> task;
 				{
 					std::unique_lock<std::mutex> ul(tasks_mutex);
+					running_thread_num--;
 					wake_up_cv.wait(ul, [this]() {return tasks.size() != 0 || (running_thread_num == 0 && wait_stop); });
 					if (tasks.size()==0) {
 						wake_up_cv.notify_one();
@@ -40,7 +40,6 @@ class ThreadPool {
 					tasks.pop();
 				}
 				task();
-				running_thread_num--;
 			}
 		}
 	}

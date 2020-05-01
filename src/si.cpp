@@ -5,6 +5,7 @@
 #include<iostream>
 #include<fstream>
 #include<string>
+#include<memory>
 #include"si/AnswerReceiver.hpp"
 #include"si/SubgraphIsomorphismThread.hpp"
 using namespace std;
@@ -64,20 +65,20 @@ int main(int argc, char * argv[]) {
 	vector<NodeIDType> ms;
 	if (matchOrderPath.size())  ms = move(readMatchSequence(matchOrderPath));
 	else ms = MatchOrderSelectorType::run(*queryGraph, *targetGraph);
-
+	shared_ptr<const vector<NodeIDType>> ms_ptr = make_shared<const vector<NodeIDType>>(ms);
 	size_t solutions = 0;
 	size_t call_times = 0;
 
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(answerPath);
-		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms);
+		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms_ptr);
 		si.run();
 		answerReceiver.finish();
 		solutions = answerReceiver.solutions_count();
 	}
 	else {
 		AnswerReceiver answerReceiver;
-		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms);
+		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms_ptr);
 		si.run();
 		answerReceiver.finish();
 		solutions = answerReceiver.solutions_count();
@@ -87,7 +88,7 @@ int main(int argc, char * argv[]) {
 	delete queryGraph;
 	delete targetGraph;
 	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string((double)TimeC / CLOCKS_PER_SEC) + "]" << endl;
-//	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
+	if(call_times)	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
 
 
 	return 0;
