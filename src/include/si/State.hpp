@@ -126,18 +126,14 @@ template<typename GraphType>
 class SubgraphMatchState :public GraphStateBase {
 	const GraphType* graphPointer;
 	shared_ptr<vector<size_t>> in_depth, out_depth;
-	shared_ptr<vector<size_t>> match_depth;
-//	NodeSetSimple unmap;
+	shared_ptr<const vector<size_t>> match_depth;
 public:
 	SubgraphMatchState() = default;
-	SubgraphMatchState(const GraphType& g, shared_ptr<vector<size_t>> _match_depth) :GraphStateBase(g.size()), graphPointer(&g), match_depth(_match_depth),
-		in_depth(new vector<size_t>(g.size())), out_depth(new vector<size_t>(g.size()))//, unmap(g.size())
-	{
-//		for(const auto &node : g.nodes()) unmap.insert(node.id());
-	}
+	SubgraphMatchState(const GraphType& g, shared_ptr<const vector<size_t>> _match_depth) :GraphStateBase(g.size()), graphPointer(&g), match_depth(_match_depth),
+		in_depth(new vector<size_t>(g.size())), out_depth(new vector<size_t>(g.size()))
+	{}
 	void addNode(NodeIDType id) {
 		const GraphType& graph = *graphPointer;
-//		unmap.erase(id);
 		searchDepth++;
 		const auto& node = graph.node(id);
 		for (const auto& tempEdge : node.inEdges()) {
@@ -163,8 +159,7 @@ public:
 	inline size_t outDepth(const NodeIDType id)const { return (*out_depth)[id]; }
 	inline bool inSetIn(const NodeIDType id)const { return inSetUnmap(id) && inDepth(id) && inDepth(id) <= searchDepth; }
 	inline bool inSetOut(const NodeIDType id)const { return inSetUnmap(id) && outDepth(id) && outDepth(id) <= searchDepth; }
-
-	inline bool inSetUnmap(const NodeIDType id)const { /*assert(unmap.exist(id) == ((*match_depth)[id] < searchDepth)); */return (*match_depth)[id] >= searchDepth; }
+	inline bool inSetUnmap(const NodeIDType id)const { return (*match_depth)[id] >= searchDepth; }
 };
 
 template<typename GraphType>
@@ -175,10 +170,9 @@ class State {
 	typedef typename GraphType::EdgeType EdgeType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
-	typedef typename NodeSetWithLabel<GraphType>::Nodes NodeSetWithLabelUnit;
 private:
 	TargetGraphMatchState<GraphType> targetState;
-	shared_ptr<SubgraphMatchState<GraphType>[]> queryStates;
+	shared_ptr<const SubgraphMatchState<GraphType>[]> queryStates;
 	const GraphType* targetGraphPtr, * queryGraphPtr;
 	size_t searchDepth = 0;
 	MapType mapping;
@@ -443,7 +437,7 @@ private:
 	}
 
 public:
-	State(const GraphType& _q, const GraphType& _t, shared_ptr<SubgraphMatchState<GraphType>[]> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size()), queryStates(_queryStates)
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<const SubgraphMatchState<GraphType>[]> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size()), queryStates(_queryStates)
 	{
 		const auto queryGraphSize = _q.size();
 		const auto targetGraphSize = _t.size();
@@ -461,6 +455,9 @@ public:
 	State() = default;
 
 public:
+/*	void calCandidatePairs(const NodeIDType query_id, vector<NodeIDType> &cantainer)const
+	{
+		const NodeIDType* begin, end;*/
 	void calCandidatePairs(const NodeIDType query_id, const NodeIDType*& begin, const NodeIDType*& end)const
 	{
 #if defined(INDUCE_ISO)
@@ -472,7 +469,7 @@ public:
 #ifdef NORMAL_ISO
 		targetState.getUnmapSet(begin, end);
 #endif
-
+//		cantainer.assign(begin, end);
 	}
 
 	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)
@@ -523,16 +520,17 @@ public:
 
 };
 template<class GraphType>
-shared_ptr<SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, shared_ptr<const vector<NodeIDType>> msp) {
+shared_ptr<const SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, shared_ptr<const vector<NodeIDType>> msp) {
 	assert(g.size() == msp->size());
-	shared_ptr<vector<size_t>> match_place(new vector<size_t>(msp->size()));
+	vector<size_t> match_place(msp->size());
 	for (int i = 0; i < msp->size(); ++i) {
-		(*match_place)[(*msp)[i]] = i;
+		(match_place)[(*msp)[i]] = i;
 	}
+	shared_ptr<const vector<size_t>> match_place_p(new const vector<size_t>(match_place));
 	//the final state will never be used , so this function will not generate the final state;
 	auto ptr = new SubgraphMatchState<GraphType>[msp->size()];
-	shared_ptr<SubgraphMatchState<GraphType>[]> p(ptr);
-	p[0] = move(SubgraphMatchState<GraphType>(g,match_place));
+	shared_ptr<const SubgraphMatchState<GraphType>[]> p(ptr);
+	ptr[0] = move(SubgraphMatchState<GraphType>(g,match_place_p));
 	LOOP(i, 1, msp->size()) {
 		ptr[i] = ptr[i - 1];
 		ptr[i].addNode((*msp)[i - 1]);

@@ -37,16 +37,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		state.pushPair(query_id, target_id);
 		searchDepth++;
 	};
-	size_t threadPoolAllowBifurcationNum() {
-		size_t working_num = task_distributor->runningThreadNum();
-		size_t idle_num = task_distributor->threadNum() - task_distributor->runningThreadNum();
-		size_t task_rest_num = task_distributor->restTaskNum();
-		if (idle_num < task_rest_num)return 0;
-		else {
-			task_distributor->distribute_period = true;
-			return max<size_t>(1, idle_num / working_num);
-		}
-	}
+
 	inline void prepareMinState() {
 		auto head = min_state.depth();
 		LOOP(i, head, minDepth) {
@@ -87,7 +78,6 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		siu->state.calCandidatePairs((*match_sequence_ptr)[minDepth], siu->cand_id[minDepth].first, siu->cand_id[minDepth].second);
 	}
 	void run_no_recursive() {
-		auto last_check_spilt_time = clock();
 		size_t allow_bifurcate_depth = (minDepth + maxDepth) / 2;
 		while (true) {
 			auto query_id = (*match_sequence_ptr)[searchDepth];
@@ -98,7 +88,6 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 					auto bifurcation_num = 1;// threadPoolAllowBifurcationNum();
 					bifurcation(bifurcation_num);
 				}
-				last_check_spilt_time = clock();
 
 			}
 
@@ -131,7 +120,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	}
 public:
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
-	shared_ptr<SubgraphMatchState<GraphType>[]> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :
+	shared_ptr<const SubgraphMatchState<GraphType>[]> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _msp, _oneSolution), answerReceiver(_answerReceiver), maxDepth(_q.size()),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
@@ -168,7 +157,7 @@ class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType> {
 	AnswerReceiverType& answerReceiver;
 	size_t threadNum;
 	condition_variable work_cv;
-	shared_ptr<SubgraphMatchState<GraphType>[]> subgraphStates;
+	shared_ptr<const SubgraphMatchState<GraphType>[]> subgraphStates;
 	State<GraphType> state;
 
 	atomic_bool end = false;

@@ -13,7 +13,7 @@ namespace wg {
 template<class SIUnit>
 class TaskDistributor :public ThreadPool {
 	void bifurcateFun() {
-//		distribute_period = true;
+		distribute_period = true;
 		bool ok = false;
 		unique_ptr<SIUnit> prepared_unit;
 		{
@@ -40,11 +40,12 @@ public:
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
 	}
-	unique_ptr<SIUnit> getFreeUnit(bool &ok) {
+	unique_ptr<SIUnit> getFreeUnit(bool& ok) {
 		lock_guard<mutex> lg(free_units_mutex);
 		if (free_units.size()) {
 			ok = true;
 			auto temp = move(free_units.front());
+			assert(&(*temp));
 			free_units.pop();
 			return move(temp);
 		}
@@ -54,16 +55,11 @@ public:
 		}
 	}
 	bool allowDistribute() {
-	/*	static auto t = clock();
-		if (threads_num != running_thread_num) {
-			const auto temp = clock();
-			if (temp - t >= 10) {
-				t = clock();
-				return true;
-			}
-		}
-		return false;*/
-		return (threads_num.load() == running_thread_num.load()) && restTaskNum()!=0 && wait_stop;
+		bool answer = (threads_num.load() > running_thread_num.load()) && restTaskNum() == 0 && wait_stop;
+//		if (answer)
+//			cout << 1 << endl;
+		return answer;
+	
 	}
 
 };

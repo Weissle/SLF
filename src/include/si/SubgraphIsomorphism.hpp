@@ -28,12 +28,16 @@ protected:
 	const GraphType* targetGraphPtr, * queryGraphPtr;
 	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
 	bool needOneSolution;
+//	unique_ptr<vector<NodeIDType>[]> cand_id;
 public:
 	SubgraphIsomorphismBase() = default;
 	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const shared_ptr<const vector<NodeIDType>> _msp, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), match_sequence_ptr(_msp), needOneSolution(needOS)
 	{
+//		int max_degree=0;
+//		for (const auto& p : _t.labelMaxIn())max_degree = max(max_degree, p->second);
+//		for (const auto& p : _t.labelMaxOut())max_degree = max(max_degree, p->second);
+//		cand_id = move(unique_ptr<vector<NodeIDType>[]>(new vector<NodeIDType>[_q.size()](max_degree)));
 		assert(_msp->size() == _q.size());
-
 	}
 };
 //for single thread
