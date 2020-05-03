@@ -4,9 +4,7 @@
 #include<memory>
 #include<atomic>
 #include<mutex>
-#include<si/si_marcos.h>
 #include<queue>
-#include"ThreadRelatedClass.hpp"
 using namespace std;
 namespace wg {
 
@@ -39,6 +37,7 @@ public:
 	void addFreeUnit(unique_ptr<SIUnit> free_unit) {
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
+//		cout << free_units.size() << endl;
 	}
 	unique_ptr<SIUnit> getFreeUnit(bool& ok) {
 		lock_guard<mutex> lg(free_units_mutex);
@@ -56,8 +55,6 @@ public:
 	}
 	bool allowDistribute() {
 		bool answer = (threads_num.load() > running_thread_num.load()) && restTaskNum() == 0 && wait_stop;
-//		if (answer)
-//			cout << 1 << endl;
 		return answer;
 	
 	}

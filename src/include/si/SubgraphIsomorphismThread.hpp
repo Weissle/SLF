@@ -1,10 +1,8 @@
 #pragma once
 #include<vector>
-#include"AnswerReceiver.hpp"
 #include"SubgraphIsomorphism.hpp"
 #include"State.hpp"
 #include"graph/Graph.hpp"
-#include"MatchOrderSelector.hpp"
 #include"ThreadRelatedClass.hpp"
 #include<mutex>
 #include<utility>
@@ -93,15 +91,15 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		size_t allow_bifurcate_depth = (minDepth + maxDepth) / 2;
 		while (true) {
 			auto query_id = (*match_sequence_ptr)[searchDepth];
-	/*		if (task_distributor->end == true)return;
-			if (task_distributor->allowDistribute()) {
-				if (minDepth > allow_bifurcate_depth) 	allow_bifurcate_depth = minDepth;
-				else {
-					auto bifurcation_num = 1;// threadPoolAllowBifurcationNum();
-					bifurcation(bifurcation_num);
-				}
+			/*		if (task_distributor->end == true)return;
+					if (task_distributor->allowDistribute()) {
+						if (minDepth > allow_bifurcate_depth) 	allow_bifurcate_depth = minDepth;
+						else {
+							auto bifurcation_num = 1;// threadPoolAllowBifurcationNum();
+							bifurcation(bifurcation_num);
+						}
 
-			}*/
+					}*/
 
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
 				const auto target_id = *cand_id[searchDepth].first;
@@ -148,13 +146,13 @@ public:
 		minDepth = min_depth_;
 		searchDepth = min_depth_;
 		assert(min_state.depth() == 0);
-	/*	m.lock();
-		for (auto i = cand_id[min_depth_].first; i < cand_id[min_depth_].second; ++i) {
-			cout << *i << ' ';
-		}
-		cout << endl;
-		m.unlock();*/
-		//cout << cand_id[min_depth_].first << ' ' << cand_id[min_depth_].second << endl;
+		/*	m.lock();
+			for (auto i = cand_id[min_depth_].first; i < cand_id[min_depth_].second; ++i) {
+				cout << *i << ' ';
+			}
+			cout << endl;
+			m.unlock();*/
+			//cout << cand_id[min_depth_].first << ' ' << cand_id[min_depth_].second << endl;
 		return;
 	}
 
@@ -167,27 +165,26 @@ public:
 
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType> {
-	typedef size_t NodeIDType;
 	typedef SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType> SIUnit;
-	AnswerReceiverType& answerReceiver;
-	size_t threadNum;
-	shared_ptr<const SubgraphMatchState<GraphType>[]> subgraphStates;
-	State<GraphType> state;
-
+	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 public:
 	SubgraphIsomorphismThread() = default;
-	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t _threadN,
+	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answer_receiver, size_t _thread_num,
 		bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), threadNum(_threadN)
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
 	{
-		subgraphStates = makeSubgraphState<GraphType>(_queryGraph, match_sequence_ptr);
-		state = State<GraphType>(*queryGraphPtr, *targetGraphPtr, subgraphStates);
+		auto subgraph_states = makeSubgraphState<GraphType>(_queryGraph, _match_sequence_ptr);
+		auto f = [&,subgraph_states ]() {
+			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, _onlyNeedOneSolution, subgraph_states, task_distributor);
+			task_distributor->addFreeUnit(move(p));
+		};
+		LOOP(i, 0, _thread_num + 1) {
+			task_distributor->addTask(f);
+		}
+
 	}
 	void run() {
-		const NodeIDType* begin_ptr = nullptr, * end_ptr = nullptr;
-		const auto query_id = (*match_sequence_ptr)[0];
-		auto task_distributor = make_shared<TaskDistributor<SIUnit>>(threadNum);
-		state.calCandidatePairs(query_id, begin_ptr, end_ptr);
+
 		auto tasksDistribute = [&](const size_t dis_from_end, const size_t num) {
 			if (task_distributor->end)return;
 			bool ok = false;
@@ -196,32 +193,20 @@ public:
 			freeUnit->prepare(0, dis_from_end, num);
 			freeUnit->run();
 			task_distributor->addFreeUnit(move(freeUnit));
+
 		};
-		LOOP(i, 0, threadNum + 1) {
-			task_distributor->addTask([&]() {
-				auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, answerReceiver, match_sequence_ptr, needOneSolution, subgraphStates, task_distributor);
-				task_distributor->addFreeUnit(move(p));
-				});
-		}
-		if (end_ptr - begin_ptr != targetGraphPtr->size()) { cout << 1; }
-		/*	while (begin_ptr != end_ptr) {
-				task_distributor->addTask(tasksDistribute, query_id, *begin_ptr);
-				++begin_ptr;
-			}
-	*/
-		size_t spilt = threadNum << 2;
-		size_t cand_node_num = end_ptr - begin_ptr;
+
+		size_t spilt = (task_distributor->threadNum()) << 2;
+		//First node will try to match all nodes in target graph.
+		size_t cand_node_num = targetGraphPtr->size();
 		size_t each_least = cand_node_num / spilt;
 		size_t mod_more = cand_node_num % spilt;
-		size_t temp = 0;
 		for (auto i = 0; i < spilt; ++i) {
 			size_t this_have = each_least;
 			if (mod_more) {
 				this_have++;
 				mod_more--;
 			}
-			temp += this_have;
-			cout << temp << endl;
 			task_distributor->addTask(tasksDistribute, cand_node_num, this_have);
 			cand_node_num -= this_have;
 		}

@@ -1,17 +1,13 @@
 #pragma once
 #include"Edge.hpp"
-#include"common.h"
+#include"si/si_marcos.h"
 #include<algorithm>
-#include<typeinfo>
 #include<vector>
-#include<iostream>
-#include<time.h>
 using namespace std;
 namespace wg {
 template<typename _EdgeType>
 class Node {
 public:
-	typedef size_t NodeIDType;
 	typedef size_t NodeLabelType;
 	typedef _EdgeType EdgeType;
 	typedef Node<EdgeType> NodeType;

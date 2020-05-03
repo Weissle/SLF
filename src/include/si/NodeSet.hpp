@@ -10,7 +10,6 @@ using namespace std;
 namespace wg {
 template<class _GraphType = void>
 class NodeSet {
-	typedef size_t NodeIDType;
 	unordered_set<NodeIDType> s;
 	vector<bool> belong;
 	size_t _max_size, _size = 0;
@@ -140,12 +139,9 @@ public:
 
 
 class NodeSetWithDepth :public NodeSetSimple {
-public:
-	typedef size_t NodeLabelType;
-	typedef vector<NodeIDType> Nodes;
 private:
 	vector<size_t> place, depthSpace;
-	Nodes p;
+	vector<NodeIDType> p;
 	size_t nowDepth = 0;
 
 	inline size_t& start_place(const size_t depth) {

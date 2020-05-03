@@ -1,13 +1,10 @@
 #pragma once
 #include"State.hpp"
 #include"AnswerReceiver.hpp"
-#include"ThreadRelatedClass.hpp"
-#include<si/MatchOrderSelector.hpp>
+#include"si/si_marcos.h"
 #include<vector>
 #include<iostream>
 #include<time.h>
-#include<fstream>
-#include<typeinfo>
 #include<utility>
 
 //#define DETAILS_TIME_COUNT
@@ -21,7 +18,6 @@ template<class GraphType>
 class SubgraphIsomorphismBase {
 protected:
 	typedef typename GraphType::NodeType NodeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename GraphType::EdgeType EdgeType;
 
 	
@@ -43,7 +39,7 @@ protected:
 	size_t searchDepth;
 	State<GraphType> mapState;
 	AnswerReceiverType& answerReceiver;
-	DynamicArray<pair<const NodeIDType*, const NodeIDType*>> cand_id;
+	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
 	bool run_timeCount()
 	{
 

@@ -1,4 +1,3 @@
-#pragma once;
 #ifndef DYNAMIC_THREAD_POOL_HPP
 #define DYNAMIC_THREAD_POOL_HPP
 

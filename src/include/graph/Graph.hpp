@@ -2,10 +2,9 @@
 #include<vector>
 #include"Node.hpp"
 #include"Edge.hpp"
-#include"common.h"
-#include<assert.h>
+#include"si/si_marcos.h"
 #include<unordered_map>
-#include<utility>
+#include<assert.h>
 using namespace std;
 namespace wg {
 template<typename NodeType, typename EdgeType>
@@ -13,7 +12,6 @@ class Graph
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
-	typedef size_t NodeIDType;
 	typedef Graph<NodeType, EdgeType> GraphType;
 	typedef NodeType NodeType;
 	typedef EdgeType EdgeType;

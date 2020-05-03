@@ -8,10 +8,11 @@
 #include<queue>
 #include<condition_variable>
 #include<assert.h>
+#include<si/si_marcos.h>
 
 class AnswerReceiver {
 protected:
-	typedef size_t NodeIDType;
+	using NodeIDType = wg::NodeIDType;
 	size_t count = 1;
 	void put_f(fstream& s, const vector<NodeIDType>& mapping) {
 		s << "solution " << count << endl;

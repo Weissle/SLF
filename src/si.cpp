@@ -7,13 +7,13 @@
 #include<string>
 #include<memory>
 #include"si/AnswerReceiver.hpp"
+#include"si/MatchOrderSelector.hpp"
 #include"si/SubgraphIsomorphismThread.hpp"
 using namespace std;
 static long t = 0;
 using namespace wg;
 
 int main(int argc, char * argv[]) {
-	typedef size_t NodeIDType;
 	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
