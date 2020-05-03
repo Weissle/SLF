@@ -13,6 +13,7 @@
 #include"si/TaskDistributor.hpp"
 #include<atomic>
 #include<time.h>
+mutex m;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> {
@@ -56,15 +57,26 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		while (num > 1 && min_depth_last_num > 1) {
 			auto free_unit = move(task_distributor->getFreeUnit(ok));
 			if (ok == false) return;
+			//	cout << 1;
 			size_t this_unit_need = (min_depth_last_num / num) + (((min_depth_last_num % num) != 0) ? 1 : 0);
-			assert(this_unit_need != min_depth_last_num && this_unit_need!=0);
+			assert(this_unit_need != min_depth_last_num && this_unit_need != 0);
 			SIUnit* siu = free_unit.get();
 			prepare(siu);
 			siu->cand_id[minDepth].first = siu->cand_id[minDepth].second - min_depth_last_num;
 			siu->cand_id[minDepth].second = siu->cand_id[minDepth].first + this_unit_need;
+			assert((siu->cand_id[minDepth].second - siu->cand_id[minDepth].first) + (cand_id[minDepth].second - cand_id[minDepth].first) == min_depth_last_num);
 			task_distributor->addPreparedUnit(move(free_unit));
-			min_depth_last_num -= this_unit_need;
 			min_depth_first += this_unit_need;
+			/*		if (((siu->cand_id[minDepth].second - siu->cand_id[minDepth].first) + (cand_id[minDepth].second - cand_id[minDepth].first)) != min_depth_last_num) {
+						m.lock();
+						cout << 3 << endl;
+						cout << (siu->cand_id[minDepth].second - siu->cand_id[minDepth].first) << endl;
+						cout << (cand_id[minDepth].second - cand_id[minDepth].first) << endl;
+						cout << min_depth_last_num << endl;
+						cout << 2 << endl;
+						m.unlock();
+					}*/
+			min_depth_last_num -= this_unit_need;
 			--num;
 		}
 		return;
@@ -81,15 +93,15 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		size_t allow_bifurcate_depth = (minDepth + maxDepth) / 2;
 		while (true) {
 			auto query_id = (*match_sequence_ptr)[searchDepth];
-			if (task_distributor->end == true)return;
-			if (task_distributor-> allowDistribute()) {
+	/*		if (task_distributor->end == true)return;
+			if (task_distributor->allowDistribute()) {
 				if (minDepth > allow_bifurcate_depth) 	allow_bifurcate_depth = minDepth;
 				else {
 					auto bifurcation_num = 1;// threadPoolAllowBifurcationNum();
 					bifurcation(bifurcation_num);
 				}
 
-			}
+			}*/
 
 			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
 				const auto target_id = *cand_id[searchDepth].first;
@@ -120,7 +132,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	}
 public:
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
-	shared_ptr<const SubgraphMatchState<GraphType>[]> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :
+		shared_ptr<const SubgraphMatchState<GraphType>[]> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _msp, _oneSolution), answerReceiver(_answerReceiver), maxDepth(_q.size()),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
@@ -128,18 +140,21 @@ public:
 		target_sequence.resize(_q.size(), NO_MAP);
 	}
 
-	void prepare(const NodeIDType query_id, const NodeIDType target_id) {
-		if (state.checkPair(query_id, target_id) == false) {
-			cand_id[1].first = cand_id[1].second = nullptr;
-			return;
-		}
-		state.pushPair(query_id, target_id);
-		state.calCandidatePairs((*match_sequence_ptr)[1], cand_id[1].first, cand_id[1].second);
-		searchDepth = 1;
-		minDepth = 1;
+	void prepare(const size_t min_depth_, const size_t dis_from_end, const size_t num) {
+
+		state.calCandidatePairs((*match_sequence_ptr)[min_depth_], cand_id[min_depth_].first, cand_id[min_depth_].second);
+		cand_id[min_depth_].first = cand_id[min_depth_].second - dis_from_end;
+		cand_id[min_depth_].second = cand_id[min_depth_].first + num;
+		minDepth = min_depth_;
+		searchDepth = min_depth_;
 		assert(min_state.depth() == 0);
-		//min_state = state;
-		target_sequence[0] = target_id;
+	/*	m.lock();
+		for (auto i = cand_id[min_depth_].first; i < cand_id[min_depth_].second; ++i) {
+			cout << *i << ' ';
+		}
+		cout << endl;
+		m.unlock();*/
+		//cout << cand_id[min_depth_].first << ' ' << cand_id[min_depth_].second << endl;
 		return;
 	}
 
@@ -156,15 +171,13 @@ class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType> {
 	typedef SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType> SIUnit;
 	AnswerReceiverType& answerReceiver;
 	size_t threadNum;
-	condition_variable work_cv;
 	shared_ptr<const SubgraphMatchState<GraphType>[]> subgraphStates;
 	State<GraphType> state;
 
-	atomic_bool end = false;
 public:
 	SubgraphIsomorphismThread() = default;
 	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t _threadN,
-		bool _onlyNeedOneSolution , shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
+		bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
 		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), threadNum(_threadN)
 	{
 		subgraphStates = makeSubgraphState<GraphType>(_queryGraph, match_sequence_ptr);
@@ -175,26 +188,43 @@ public:
 		const auto query_id = (*match_sequence_ptr)[0];
 		auto task_distributor = make_shared<TaskDistributor<SIUnit>>(threadNum);
 		state.calCandidatePairs(query_id, begin_ptr, end_ptr);
-		auto tasksDistribute = [&](const NodeIDType query_id, const NodeIDType target_id) {
+		auto tasksDistribute = [&](const size_t dis_from_end, const size_t num) {
 			if (task_distributor->end)return;
 			bool ok = false;
 			auto freeUnit = move(task_distributor->getFreeUnit(ok));
-			freeUnit->prepare(query_id, target_id);
+			assert(ok);
+			freeUnit->prepare(0, dis_from_end, num);
 			freeUnit->run();
 			task_distributor->addFreeUnit(move(freeUnit));
 		};
 		LOOP(i, 0, threadNum + 1) {
 			task_distributor->addTask([&]() {
-				auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, answerReceiver, match_sequence_ptr, needOneSolution,subgraphStates, task_distributor);
+				auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, answerReceiver, match_sequence_ptr, needOneSolution, subgraphStates, task_distributor);
 				task_distributor->addFreeUnit(move(p));
 				});
 		}
-		
-		while (begin_ptr != end_ptr) {
-			task_distributor->addTask(tasksDistribute, query_id, *begin_ptr);
-			++begin_ptr;
+		if (end_ptr - begin_ptr != targetGraphPtr->size()) { cout << 1; }
+		/*	while (begin_ptr != end_ptr) {
+				task_distributor->addTask(tasksDistribute, query_id, *begin_ptr);
+				++begin_ptr;
+			}
+	*/
+		size_t spilt = threadNum << 2;
+		size_t cand_node_num = end_ptr - begin_ptr;
+		size_t each_least = cand_node_num / spilt;
+		size_t mod_more = cand_node_num % spilt;
+		size_t temp = 0;
+		for (auto i = 0; i < spilt; ++i) {
+			size_t this_have = each_least;
+			if (mod_more) {
+				this_have++;
+				mod_more--;
+			}
+			temp += this_have;
+			cout << temp << endl;
+			task_distributor->addTask(tasksDistribute, cand_node_num, this_have);
+			cand_node_num -= this_have;
 		}
-
 		task_distributor->join();
 		return;
 	}

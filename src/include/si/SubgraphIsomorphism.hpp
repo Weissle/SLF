@@ -24,19 +24,14 @@ protected:
 	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename GraphType::EdgeType EdgeType;
 
-	typedef State<GraphType> StateType;
+	
 	const GraphType* targetGraphPtr, * queryGraphPtr;
 	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
 	bool needOneSolution;
-//	unique_ptr<vector<NodeIDType>[]> cand_id;
 public:
 	SubgraphIsomorphismBase() = default;
 	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const shared_ptr<const vector<NodeIDType>> _msp, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), match_sequence_ptr(_msp), needOneSolution(needOS)
 	{
-//		int max_degree=0;
-//		for (const auto& p : _t.labelMaxIn())max_degree = max(max_degree, p->second);
-//		for (const auto& p : _t.labelMaxOut())max_degree = max(max_degree, p->second);
-//		cand_id = move(unique_ptr<vector<NodeIDType>[]>(new vector<NodeIDType>[_q.size()](max_degree)));
 		assert(_msp->size() == _q.size());
 	}
 };
@@ -46,10 +41,10 @@ class SubgraphIsomorphism : public SubgraphIsomorphismBase<GraphType> {
 
 protected:
 	size_t searchDepth;
-	StateType mapState;
+	State<GraphType> mapState;
 	AnswerReceiverType& answerReceiver;
 	DynamicArray<pair<const NodeIDType*, const NodeIDType*>> cand_id;
-	bool goDeeper_timeCount()
+	bool run_timeCount()
 	{
 
 		if (searchDepth == queryGraphPtr->size()) {
@@ -94,39 +89,28 @@ protected:
 	inline void ToDoAfterFindASolution() {
 		answerReceiver << mapState.getMap();
 	}
-	void run_no_recursive() {
-		const auto& match_sequence = (*match_sequence_ptr);
-		const auto queryGraphSize = queryGraphPtr->size();
-		mapState.calCandidatePairs(match_sequence[0], cand_id[0].first, cand_id[0].second);
-		auto popOperation = [&]() {
-			searchDepth--;
-			mapState.popPair(match_sequence[searchDepth]);
-		};
-		auto pushOperation = [&](const NodeIDType& query_id, const NodeIDType& target_id) {
-			mapState.pushPair(query_id, target_id);
-			searchDepth++;
-		};
-
-		while (true) {
-			auto query_id = match_sequence[searchDepth];
-			while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
-				const auto target_id = *cand_id[searchDepth].first;
-				cand_id[searchDepth].first++;
-				if (!mapState.checkPair(query_id, target_id)) continue;
-				pushOperation(query_id, target_id);
-				if (searchDepth == queryGraphSize) {	//find a solution, just pop last pair ,it will not effect the correction of answer;
-					ToDoAfterFindASolution();
-					if (needOneSolution) return;
-					popOperation();
-				}
-				else {
-					query_id = match_sequence[searchDepth];
-					mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
-				}
-			}
-			if (searchDepth == 0)return;
-			else popOperation();
+	bool run_noTimeCount()
+	{
+		if (searchDepth == queryGraphPtr->size()) {
+			this->ToDoAfterFindASolution();
+			return true;
 		}
+
+		const auto query_id = (*match_sequence_ptr)[searchDepth];
+		mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
+
+		while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
+			const auto target_id = *cand_id[searchDepth].first;
+			cand_id[searchDepth].first++;
+			if (mapState.checkPair(query_id, target_id)) {
+				mapState.pushPair(query_id, target_id);
+				++searchDepth;
+				if (run_noTimeCount() && this->needOneSolution) return true;
+				mapState.popPair(query_id);
+				--searchDepth;
+			}
+		}
+		return false;
 	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
 	long long canditatePairCount = 0;
@@ -150,7 +134,7 @@ public:
 	void run()
 	{
 #ifdef DETAILS_TIME_COUNT
-		goDeeper_timeCount();
+		run_timeCount();
 /*		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
@@ -158,7 +142,7 @@ public:
 		cout << "hit times " << hitTime << endl;
 		cout << "canditate Pair Count " << canditatePairCount << endl;*/
 #else
-		run_no_recursive();
+		run_noTimeCount();
 #endif
 	}
 
