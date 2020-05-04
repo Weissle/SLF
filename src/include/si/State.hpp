@@ -19,7 +19,7 @@
 #error you should not defind INDUCE_ISO and NORMAL_ISO at the same time
 #endif
 
-
+#define TSTT 0
 using namespace std;
 
 namespace wg {
@@ -97,36 +97,44 @@ public:
 };
 
 template<typename GraphType>
-class SubgraphMatchState{
-	size_t search_depth = 0;
+class SubgraphMatchStates {
+	//	size_t search_depth = 0;
 	const GraphType* graphPointer;
-	shared_ptr<vector<size_t>> in_depth, out_depth;
-	shared_ptr<const vector<size_t>> match_depth;
+	vector<size_t> in_depth, out_depth;
+	const vector<size_t> match_depth;
 public:
-	SubgraphMatchState() = default;
-	SubgraphMatchState(const GraphType& g, shared_ptr<const vector<size_t>> _match_depth) :graphPointer(&g), match_depth(_match_depth),
-		in_depth(new vector<size_t>(g.size())), out_depth(new vector<size_t>(g.size()))
+	SubgraphMatchStates() = default;
+	SubgraphMatchStates(const GraphType& g, const vector<size_t>& _match_depth) :graphPointer(&g), match_depth(_match_depth),
+		in_depth(g.size()), out_depth(g.size())
 	{}
-	void addNode(NodeIDType id) {
+	void addNode(const NodeIDType id, const size_t search_depth) {
 		const GraphType& graph = *graphPointer;
-		search_depth++;
+		//		search_depth++;
 		const auto& node = graph.node(id);
 		for (const auto& tempEdge : node.inEdges()) {
 			const auto& nodeID = tempEdge.source();
 			// was not be mapped and not in set in
-			if (!inSetIn(nodeID) && inSetUnmap(nodeID)) 	(*in_depth)[nodeID] = search_depth;
+			if (!inSetIn(nodeID, search_depth) && inSetUnmap(nodeID, search_depth)) 	in_depth[nodeID] = search_depth;
 		}
 		for (const auto& tempEdge : node.outEdges()) {
 			const auto& nodeID = tempEdge.target();
-			if (!inSetOut(nodeID) && inSetUnmap(nodeID)) 	(*out_depth)[nodeID] = search_depth;
+			if (!inSetOut(nodeID, search_depth) && inSetUnmap(nodeID, search_depth)) 	out_depth[nodeID] = search_depth;
 		}
 		return;
 	}
-	inline size_t inDepth(const NodeIDType id)const { return (*in_depth)[id]; }
-	inline size_t outDepth(const NodeIDType id)const { return (*out_depth)[id]; }
-	inline bool inSetIn(const NodeIDType id)const { return inSetUnmap(id) && inDepth(id) && inDepth(id) <= search_depth; }
-	inline bool inSetOut(const NodeIDType id)const { return inSetUnmap(id) && outDepth(id) && outDepth(id) <= search_depth; }
-	inline bool inSetUnmap(const NodeIDType id)const { return (*match_depth)[id] >= search_depth; }
+	inline size_t inDepth(const NodeIDType id, const size_t search_depth)const {
+		const auto answer = in_depth[id];
+		if (answer && answer <= search_depth)return answer;
+		else return 0;
+	}
+	inline size_t outDepth(const NodeIDType id, const size_t search_depth)const {
+		const auto answer = out_depth[id];
+		if (answer && answer <= search_depth)return answer;
+		else return 0;
+	}
+	inline bool inSetIn(const NodeIDType id, const size_t search_depth)const { return inSetUnmap(id, search_depth) && inDepth(id, search_depth); }
+	inline bool inSetOut(const NodeIDType id, const size_t search_depth)const { return inSetUnmap(id, search_depth) && outDepth(id, search_depth); }
+	inline bool inSetUnmap(const NodeIDType id, const size_t search_depth)const { return match_depth[id] >= search_depth; }
 };
 
 template<typename GraphType>
@@ -139,9 +147,9 @@ class State {
 
 private:
 	TargetGraphMatchState<GraphType> targetState;
-	shared_ptr<const SubgraphMatchState<GraphType>[]> queryStates;
+	shared_ptr<const SubgraphMatchStates<GraphType>> queryStates;
 	const GraphType* targetGraphPtr, * queryGraphPtr;
-	size_t searchDepth = 0;
+	size_t search_depth = 0;
 	MapType mapping;
 	MapType mappingAux; //from target to query
 
@@ -197,10 +205,10 @@ private:
 		for (const auto& tempEdge : query_node.outEdges()) {
 			const auto& query_toid = tempEdge.target();
 			//this tempnode have been mapped
-			const bool notMapped = queryStates[searchDepth].inSetUnmap(query_toid);
+			const bool notMapped = queryStates->inSetUnmap(query_toid, search_depth);
 			if (notMapped && query_toid != query_id) {
-				const bool o = queryStates[searchDepth].inSetOut(query_toid);
-				const bool i = queryStates[searchDepth].inSetIn(query_toid);
+				const bool o = queryStates->inSetOut(query_toid, search_depth);
+				const bool i = queryStates->inSetIn(query_toid, search_depth);
 				const bool b = (o && i);
 				const auto label = queryGraph[query_toid].label();
 				if (b) {
@@ -254,10 +262,10 @@ private:
 
 		for (const auto& tempEdge : query_node.inEdges()) {
 			const auto& query_fromid = tempEdge.source();
-			const bool notMapped = queryStates[searchDepth].inSetUnmap(query_fromid);
+			const bool notMapped = queryStates->inSetUnmap(query_fromid, search_depth);
 			if (notMapped && query_id != query_fromid) {
-				const bool o = queryStates[searchDepth].inSetOut(query_fromid);
-				const bool i = queryStates[searchDepth].inSetIn(query_fromid);
+				const bool o = queryStates->inSetOut(query_fromid, search_depth);
+				const bool i = queryStates->inSetIn(query_fromid, search_depth);
 				const bool b = (o && i);
 				const auto label = queryGraph[query_fromid].label();
 				if (b) {
@@ -316,10 +324,10 @@ private:
 		for (const auto& tempEdge : query_node.outEdges()) {
 			const auto& query_toid = tempEdge.target();
 			//this tempnode have been mapped
-			const bool notMapped = queryStates[searchDepth].inSetUnmap(query_toid);
+			const bool notMapped = queryStates->inSetUnmap(query_toid);
 			if (notMapped && query_toid != query_id) {
-				const bool o = queryStates[searchDepth].inSetOut(query_toid);
-				const bool i = queryStates[searchDepth].inSetIn(query_toid);
+				const bool o = queryStates->inSetOut(query_toid);
+				const bool i = queryStates->inSetIn(query_toid);
 				const bool b = (o && i);
 				const auto label = queryGraph[query_toid].label();
 				if (b) {
@@ -372,10 +380,10 @@ private:
 
 		for (const auto& tempEdge : query_node.inEdges()) {
 			const auto& query_fromid = tempEdge.source();
-			const bool notMapped = queryStates[searchDepth].inSetUnmap(query_fromid);
+			const bool notMapped = queryStates->inSetUnmap(query_fromid);
 			if (notMapped && query_id != query_fromid) {
-				const bool o = queryStates[searchDepth].inSetOut(query_fromid);
-				const bool i = queryStates[searchDepth].inSetIn(query_fromid);
+				const bool o = queryStates->inSetOut(query_fromid);
+				const bool i = queryStates->inSetIn(query_fromid);
 				const bool b = (o && i);
 				const auto label = queryGraph[query_fromid].label();
 				if (b) {
@@ -404,7 +412,7 @@ private:
 	}
 
 public:
-	State(const GraphType& _q, const GraphType& _t, shared_ptr<const SubgraphMatchState<GraphType>[]> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size()), queryStates(_queryStates)
+	State(const GraphType& _q, const GraphType& _t, shared_ptr<const SubgraphMatchStates<GraphType>> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t), targetState(_t, _q.size()), queryStates(_queryStates)
 	{
 		const auto queryGraphSize = _q.size();
 		const auto targetGraphSize = _t.size();
@@ -422,38 +430,34 @@ public:
 	State() = default;
 
 public:
-/*	void calCandidatePairs(const NodeIDType query_id, vector<NodeIDType> &cantainer)const
-	{
-		const NodeIDType* begin, end;*/
+	/*	void calCandidatePairs(const NodeIDType query_id, vector<NodeIDType> &cantainer)const
+		{
+			const NodeIDType* begin, end;*/
 	void calCandidatePairs(const NodeIDType query_id, const NodeIDType*& begin, const NodeIDType*& end)const
 	{
 #if defined(INDUCE_ISO)
-		if (queryStates[searchDepth].inSetIn(query_id))	targetState.getInSet(queryStates[searchDepth].inDepth(query_id), begin, end);
-		else if (queryStates[searchDepth].inSetOut(query_id))	targetState.getOutSet(queryStates[searchDepth].outDepth(query_id), begin, end);
+		if (queryStates->inSetIn(query_id, search_depth))	targetState.getInSet(queryStates->inDepth(query_id, search_depth), begin, end);
+		else if (queryStates->inSetOut(query_id, search_depth))	targetState.getOutSet(queryStates->outDepth(query_id, search_depth), begin, end);
 		else targetState.getUnmapSet(begin, end);
 #endif
 
 #ifdef NORMAL_ISO
 		targetState.getUnmapSet(begin, end);
 #endif
-//		cantainer.assign(begin, end);
+		//		cantainer.assign(begin, end);
 	}
 
 	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)
 	{
 		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false) return false;
 #ifdef INDUCE_ISO
-//		if (queryStates[searchDepth].inRefTimes(query_id) != targetState.inRefTimes(target_id)) return false;
-//		if (queryStates[searchDepth].outRefTimes(query_id) != targetState.outRefTimes(target_id)) return false;
-		if (queryStates[searchDepth].inDepth(query_id) != targetState.inDepth(target_id))return false;
-		if (queryStates[searchDepth].outDepth(query_id) != targetState.outDepth(target_id))return false;
+		if (queryStates->inDepth(query_id, search_depth) != targetState.inDepth(target_id))return false;
+		if (queryStates->outDepth(query_id, search_depth) != targetState.outDepth(target_id))return false;
 
 		const bool answer = induceCheck(query_id, target_id);
 #elif defined(NORMAL_ISO)
-		if (queryStates[searchDepth].inRefTimes(query_id) > targetState.inRefTimes(target_id)) return false;
-		if (queryStates[searchDepth].outRefTimes(query_id) > targetState.outRefTimes(target_id)) return false;
-		if (queryStates[searchDepth].inDepth(query_id) < targetState.inDepth(target_id))return false;
-		if (queryStates[searchDepth].outDepth(query_id) < targetState.outDepth(target_id))return false;
+		if (queryStates->inDepth(query_id, search_depth) < targetState.inDepth(target_id))return false;
+		if (queryStates->outDepth(query_id, search_depth) < targetState.outDepth(target_id))return false;
 		const bool answer = normalCheck(query_id, target_id));
 #endif
 		return answer;
@@ -463,18 +467,18 @@ public:
 		mapping[query_id] = target_id;
 		mappingAux[target_id] = query_id;
 		targetState.addNode(target_id);
-		searchDepth++;
-}
+		search_depth++;
+	}
 	void popPair(const NodeIDType queryNodeID)  //query node id
 	{
 		NodeIDType& targetNodeID = mapping[queryNodeID];
 		targetState.deleteNode(targetNodeID);
 		mappingAux[targetNodeID] = NO_MAP;
 		targetNodeID = NO_MAP;
-		searchDepth--;
+		search_depth--;
 	}
 	inline bool isCoverQueryGraph()const {
-		return (queryGraphPtr->size() == searchDepth);
+		return (queryGraphPtr->size() == search_depth);
 	}
 	MapType getMap(bool showNotCoverWarning = true) const {
 		if (isCoverQueryGraph() == false && showNotCoverWarning) {
@@ -482,25 +486,22 @@ public:
 		}
 		return mapping;
 	}
-	size_t depth() const { return searchDepth; }
+	size_t depth() const { return search_depth; }
 
 
 };
 template<class GraphType>
-shared_ptr<const SubgraphMatchState<GraphType>[]> makeSubgraphState(const GraphType& g, shared_ptr<const vector<NodeIDType>> msp) {
+shared_ptr<const SubgraphMatchStates<GraphType>> makeSubgraphState(const GraphType& g, shared_ptr<const vector<NodeIDType>> msp) {
 	assert(g.size() == msp->size());
 	vector<size_t> match_place(msp->size());
 	for (int i = 0; i < msp->size(); ++i) {
 		(match_place)[(*msp)[i]] = i;
 	}
-	shared_ptr<const vector<size_t>> match_place_p(new const vector<size_t>(match_place));
-	//the final state will never be used , so this function will not generate the final state;
-	auto ptr = new SubgraphMatchState<GraphType>[msp->size()];
-	shared_ptr<const SubgraphMatchState<GraphType>[]> p(ptr);
-	ptr[0] = move(SubgraphMatchState<GraphType>(g,match_place_p));
+	auto ptr = new SubgraphMatchStates<GraphType>(g, match_place);
+	shared_ptr<const SubgraphMatchStates<GraphType>> p(ptr);
+
 	LOOP(i, 1, msp->size()) {
-		ptr[i] = ptr[i - 1];
-		ptr[i].addNode((*msp)[i - 1]);
+		ptr->addNode((*msp)[i - 1], i);
 	}
 	return p;
 }

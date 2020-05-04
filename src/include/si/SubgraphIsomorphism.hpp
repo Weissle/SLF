@@ -20,7 +20,7 @@ protected:
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename GraphType::EdgeType EdgeType;
 
-	
+
 	const GraphType* targetGraphPtr, * queryGraphPtr;
 	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
 	bool needOneSolution;
@@ -117,7 +117,7 @@ public:
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph,makeSubgraphState(_queryGraph,_match_sequence_ptr) ), cand_id(queryGraphPtr->size())
+		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
@@ -131,12 +131,12 @@ public:
 	{
 #ifdef DETAILS_TIME_COUNT
 		run_timeCount();
-/*		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
-		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
-		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
-		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
-		cout << "hit times " << hitTime << endl;
-		cout << "canditate Pair Count " << canditatePairCount << endl;*/
+		/*		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
+				cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
+				cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
+				cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
+				cout << "hit times " << hitTime << endl;
+				cout << "canditate Pair Count " << canditatePairCount << endl;*/
 #else
 		run_noTimeCount();
 #endif
