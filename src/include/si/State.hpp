@@ -19,7 +19,6 @@
 #error you should not defind INDUCE_ISO and NORMAL_ISO at the same time
 #endif
 
-#define TSTT 0
 using namespace std;
 
 namespace wg {
@@ -123,13 +122,11 @@ public:
 		return;
 	}
 	inline size_t inDepth(const NodeIDType id, const size_t search_depth)const {
-		const auto answer = in_depth[id];
-		if (answer && answer <= search_depth)return answer;
+		if (in_depth[id] <= search_depth)return in_depth[id];
 		else return 0;
 	}
 	inline size_t outDepth(const NodeIDType id, const size_t search_depth)const {
-		const auto answer = out_depth[id];
-		if (answer && answer <= search_depth)return answer;
+		if (out_depth[id] <= search_depth)return out_depth[id];
 		else return 0;
 	}
 	inline bool inSetIn(const NodeIDType id, const size_t search_depth)const { return inSetUnmap(id, search_depth) && inDepth(id, search_depth); }
@@ -175,6 +172,7 @@ private:
 		const auto& query_node = queryGraph.node(query_id);
 		const auto& target_node = targetGraph.node(target_id);
 
+		int out_edge_inmap_num = 0, in_edge_inmap_num = 0;
 		clearNewCount();
 		// targetSourceNode is the predecessor of three typies of nodes
 		//1. not in map AND not self loop  
@@ -197,6 +195,7 @@ private:
 				else ++notNewCount[label];
 			}
 			else {
+				++out_edge_inmap_num;
 				const auto query_toid = (notMapped) ? query_id : mappingAux[target_toid];
 				if (queryGraph.existEdge(query_id, query_toid, tempEdge.label()) == false) return false;
 			}
@@ -229,12 +228,11 @@ private:
 				}
 			}
 			else {
-				const auto target_toid = (notMapped) ? target_id : mapping[query_toid];
-				if (targetGraph.existEdge(target_id, target_toid, tempEdge.label()) == false)return false;
+				--out_edge_inmap_num;
 			}
 
 		}
-
+		if (out_edge_inmap_num) return false;
 		clearNewCount();
 
 		for (const auto& tempEdge : target_node.inEdges()) {
@@ -245,16 +243,14 @@ private:
 				const bool i = targetState.inSetIn(target_fromid);
 				const bool b = (o && i);
 				const auto label = targetGraph[target_fromid].label();
-				if (b) {
-					bothNewCount[label]++;
-
-				}
+				if (b) 	bothNewCount[label]++;
 				else if (o)	outNewCount[label]++;
 				else if (i) inNewCount[label]++;
 
 				else ++notNewCount[label];
 			}
 			else {
+				++in_edge_inmap_num;
 				const auto query_fromid = (notMapped) ? query_id : mappingAux[target_fromid];
 				if (queryGraph.existEdge(query_fromid, query_id, tempEdge.label()) == false)return false;
 			}
@@ -286,10 +282,10 @@ private:
 				}
 			}
 			else {
-				const auto target_fromid = (notMapped) ? target_id : mapping[query_fromid];
-				if (targetGraph.existEdge(target_fromid, target_id, tempEdge.label()) == false)return false;
+				--in_edge_inmap_num;
 			}
 		}
+		if (in_edge_inmap_num)return false;
 		return true;
 	}
 	bool normalCheck(const NodeIDType& query_id, const NodeIDType& target_id) {
@@ -426,7 +422,6 @@ public:
 		bothNewCount.resize(labelNum);
 		notNewCount.resize(labelNum);
 	};
-
 	State() = default;
 
 public:
@@ -451,8 +446,8 @@ public:
 	{
 		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false) return false;
 #ifdef INDUCE_ISO
-		if (queryStates->inDepth(query_id, search_depth) != targetState.inDepth(target_id))return false;
-		if (queryStates->outDepth(query_id, search_depth) != targetState.outDepth(target_id))return false;
+	//	if (queryStates->inDepth(query_id, search_depth) != targetState.inDepth(target_id))return false;
+	//	if (queryStates->outDepth(query_id, search_depth) != targetState.outDepth(target_id))return false;
 
 		const bool answer = induceCheck(query_id, target_id);
 #elif defined(NORMAL_ISO)

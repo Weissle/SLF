@@ -1,6 +1,7 @@
 #pragma once
 #include"Edge.hpp"
 #include"si/si_marcos.h"
+#include<functional>
 #include<algorithm>
 #include<vector>
 using namespace std;
@@ -20,6 +21,16 @@ private:
 
 	bool findEdge(const vector<EdgeType>& edges, const EdgeType&& edge) const {
 		return binary_search(edges.begin(), edges.end(), edge);
+	}
+	inline int _cmp_edge_target(const EdgeType& e, const NodeIDType id, const EdgeLabelType& label)const {
+		if (e.target() == id) { 
+			if (e.label() == label)return -1;
+			return e.label() < label; 
+		}
+		else {
+			if (e.target() == id)return -1;
+			else return e.target() < id;
+		}
 	}
 public:
 	Node() = default;
@@ -45,13 +56,21 @@ public:
 	bool operator>=(const NodeType& n) const {
 		return ((_inEdges.size() >= n.inEdgesNum()) && (_outEdges.size() >= n.outEdgesNum()));
 	}
-
-	bool existSameTypeEdgeToNode(const NodeIDType to, const EdgeLabelType elabel)const {
-		return findEdge(_outEdges, EdgeType(EDGE_RECORD_TYPE::TARGET, _id, to, elabel));
+	bool existSameTypeEdgeToNode(const NodeIDType to, const EdgeLabelType& elabel)const {
+		size_t begin = 0, end = _outEdges.size();
+		while (begin < end) {
+			const auto mid = (begin + end) / 2;
+			const auto& ele = _outEdges[mid];
+			if (_cmp_edge_target(ele, to, elabel) == -1) return true;
+			else if (_cmp_edge_target(ele, to, elabel) > 0) { begin = mid + 1; }
+			else end = mid;
+		}
+		return false;
 	}
-	bool existSameTypeEdgeFromNode(const NodeIDType from, const EdgeLabelType elabel)const {
-		return findEdge(_inEdges, EdgeType(EDGE_RECORD_TYPE::SOURCE, from, _id, elabel));
-	}
+	/*
+	bool existSameTypeEdgeFromNode(const NodeIDType from, const EdgeLabelType &elabel)const {
+		//return findEdge(_inEdges, EdgeType(EDGE_RECORD_TYPE::SOURCE, from, _id, elabel));
+	}*/
 	void reserve(const size_t s) {
 		_inEdges.reserve(s);
 		_outEdges.reserve(s);

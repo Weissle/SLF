@@ -6,55 +6,41 @@
 #include<limits.h>
 using namespace std;
 namespace wg {
-
-template<class T>
-class DynamicArray {
-	T* p = nullptr;
-	size_t size_ = 0;
+template<class _T>
+class ShareTasks {
+	mutex m;
+	vector<_T> _v;
 public:
-	DynamicArray() = default;
-	~DynamicArray() {
-		size_ = 0;
-		if (p)delete[]p;
-		p = nullptr;
+	ShareTasks() = default;
+	size_t size()const { return _v.size(); }
+/*	void addTask(_T t) {
+		lock_guard<mutex> lg(m);
+		_v.push_back(move(t));
+	}*/
+	template<class _It>
+	void addTask(const _It begin, const _It end) {
+		lock_guard<mutex> lg(m);
+		_v.assign(begin, end);
 	}
-	DynamicArray(size_t max) :size_(max) {
-		p = new T[max]();
-	}
-	inline T& operator[](const size_t place) {
-		return p[place];
-	}
-	inline const T& operator[](const size_t place)const {
-		return p[place];
-	}
-	DynamicArray(const DynamicArray<T>& other) {
-		size_ = other.size_;
-		p = new T[size_];
-		std::copy(other.p, other.p + size_, p);
-	}
-	DynamicArray<T>& operator=(const DynamicArray<T>& other) {
-		if (this == &other)return *this;
-		if (size_ != other.size_) {
-			if (p)delete[]p;
-			p = new T[size_];
+	_T getTask(bool* ok) {
+		lock_guard<mutex> lg(m);
+		if (_v.size()) {
+			*ok = true;
+			auto temp = move(_v.back());
+			_v.pop_back();
+			return move(temp);
 		}
-		size_ = other.size_;
-		std::copy(other.p, other.p + size_, p);
-		return *this;
+		else {
+			*ok = false;
+			return _T();
+		}
 	}
-	inline T* data() {
-		return p;
-	}
-	inline size_t size()const { return size_; }
-	inline T* begin() { return p; }
-	inline T* end() { return p + size_; }
-	inline const T* begin()const { return p; }
-	inline const T* end()const { return p + size_; }
+
 };
 
+
 class bitmap {
-	vector<size_t> p1;
-	DynamicArray<size_t> p;
+	vector<size_t> p;
 	static size_t* for_true;
 	static size_t* for_false;
 	static bool usable;
@@ -62,9 +48,8 @@ public:
 	bitmap() = default;
 	bitmap(size_t max) {
 		int size = max / 64 + ((max % 64 == 0) ? 0 : 1);
-		p = DynamicArray<size_t>(size);
-		if (usable == false) {
-			usable = true;
+		p = vector<size_t>(size);
+		if (for_true==nullptr && for_false==nullptr) {
 			for_true = new size_t[64];
 			for_false = new size_t[64];
 			size_t temp = 1;
@@ -73,7 +58,9 @@ public:
 				temp <<= 1;
 				for_false[i] = for_true[i] ^ SIZE_MAX;
 			}
+			usable = true;
 		}
+		while (usable == false);
 	}
 	inline bool content(size_t place) const {
 		return (p[place / 64] & for_true[place % 64]);

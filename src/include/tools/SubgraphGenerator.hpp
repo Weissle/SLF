@@ -10,13 +10,13 @@
 #include"graph/Graph.hpp"
 #include"graph/Node.hpp"
 #define FLOAT_ZERO 1E-6
+typedef size_t NodeIDType;
 namespace sg {
 
 
 	template<typename GraphType>
 	class SubgraphGenerator {
 		typedef typename GraphType::NodeType NodeType;
-		typedef typename NodeType::NodeIDType NodeIDType;
 		typedef typename GraphType::EdgeType EdgeType;
 
 		unordered_set<NodeIDType> inSmall, inquery;

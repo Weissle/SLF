@@ -20,13 +20,20 @@ class TaskDistributor :public ThreadPool {
 			prepared_units.pop();
 		}
 		prepared_unit->run();
-		free_units.push(move(prepared_unit));
+		addFreeUnit(move(prepared_unit));
 	}
 	mutex prepared_units_mutex, free_units_mutex;
 	queue<unique_ptr<SIUnit>> prepared_units, free_units;
+
+	mutex share_tasks_container_mutex;
+	queue<shared_ptr<ShareTasks<NodeIDType>>> share_tasks_container;
 public:
-	atomic_bool end = false, distribute_period = false;
-	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {}
+	atomic_bool end = false;
+	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
+		for (auto i = 0; i < thread_num_; ++i) {
+			share_tasks_container.push(make_shared<ShareTasks<NodeIDType>>());
+		}
+	}
 	void addPreparedUnit(unique_ptr<SIUnit> prepared_unit) {
 		{
 			lock_guard<mutex> lg(prepared_units_mutex);
@@ -58,7 +65,23 @@ public:
 		return answer;
 	
 	}
-
+	void addShareTasksContainer(shared_ptr<ShareTasks<NodeIDType>> _c) {
+		lock_guard<mutex> lg(share_tasks_container_mutex);
+		share_tasks_container.push(_c);
+	}
+	shared_ptr<ShareTasks<NodeIDType>> getShareTasksContainer(bool* ok) {
+		lock_guard<mutex> lg(share_tasks_container_mutex);
+		auto answer = share_tasks_container.front();
+		share_tasks_container.pop();
+		//push it to the back and it make sure it 
+		share_tasks_container.push(answer);
+		if (answer->size() != 0 || answer.use_count() != 2) {
+			cout << "error 79" << endl;
+			*ok = false;
+		}
+		else *ok = true;
+		return answer;
+	}
 };
 
 }
