@@ -21,7 +21,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	State<GraphType> state;
 
 	size_t minDepth;
-	vector<NodeIDType> target_sequence;
+	//	vector<NodeIDType> target_sequence;
 	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
 
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
@@ -47,7 +47,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 			const auto target_id = *begin_p;
 			begin_p++;
 			if (state.checkPair(query_id, target_id)) {
-				target_sequence[search_depth] = target_id;
+				//				target_sequence[search_depth] = target_id;
 				state.pushPair(query_id, target_id);
 				if (run_(search_depth + 1) && task_distributor->end) return true;
 				state.popPair(query_id);
@@ -55,13 +55,13 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		}
 		return false;
 	}
-	void prepareState() {
-		size_t p = 0;
-		while (target_sequence[p] != NO_MAP) {
-			state.pushPair((*match_sequence_ptr)[p], target_sequence[0]);
-			p++;
-		}
-	}
+	/*	void prepareState() {
+			size_t p = 0;
+			while (target_sequence[p] != NO_MAP) {
+				state.pushPair((*match_sequence_ptr)[p], target_sequence[0]);
+				p++;
+			}
+		}*/
 
 public:
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
@@ -69,9 +69,9 @@ public:
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _msp, _oneSolution), answerReceiver(_answerReceiver),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
-		target_sequence.resize(_q.size(), NO_MAP);
+		//	target_sequence.resize(_q.size(), NO_MAP);
 	}
-	void prepare(shared_ptr<ShareTasks<NodeIDType>> _tasks,size_t _min_depth) {
+	void prepare(shared_ptr<ShareTasks<NodeIDType>> _tasks, size_t _min_depth) {
 		minDepth = _min_depth;
 		tasks = _tasks;
 		return;
@@ -112,7 +112,7 @@ public:
 			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, _onlyNeedOneSolution, subgraph_states, task_distributor);
 			task_distributor->addFreeUnit(move(p));
 		};
-		LOOP(i, 0, _thread_num + 1) {
+		LOOP(i, 0, _thread_num) {
 			task_distributor->addTask(f);
 		}
 
@@ -124,7 +124,7 @@ public:
 			bool ok = false;
 			auto freeUnit = move(task_distributor->getFreeUnit(ok));
 			assert(ok);
-			freeUnit->prepare(tasks,0);
+			freeUnit->prepare(tasks, 0);
 			tasks.reset();
 			freeUnit->run();
 			task_distributor->addFreeUnit(move(freeUnit));
@@ -137,7 +137,7 @@ public:
 		bool ok;
 		shared_ptr<ShareTasks<NodeIDType>> task_container = task_distributor->getShareTasksContainer(&ok);
 		if (ok == false) {
-			cout << "error occur" << endl;
+			cout << "error occur : " << __FILE__ << __LINE__ << endl;
 			exit(0);
 		}
 		task_container->addTask(tasks, tasks + targetGraphPtr->size());

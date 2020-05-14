@@ -34,7 +34,7 @@ int main(int argc, char * argv[]) {
     cmdl({"-self-order","-so"})>>matchOrderPath;
 
 	//match order
-#define MOS_SI
+#define MOS_SI_TEST
 #ifdef MOS_TEST
     typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_NORMAL)

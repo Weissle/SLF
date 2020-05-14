@@ -71,7 +71,7 @@ protected:
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
-				if (goDeeper_timeCount() && this->needOneSolution) return true;
+				if (run_timeCount() && this->needOneSolution) return true;
 				t1 = clock();
 				mapState.popPair(query_id);
 				--searchDepth;

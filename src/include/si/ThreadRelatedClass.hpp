@@ -38,7 +38,29 @@ public:
 
 };
 
+template<class _T>
+class TwoDArray {
+	_T* _p;
+	size_t _row, _col;
+public:
+	TwoDArray() = default;
+	TwoDArray(size_t row_, size_t col_):_row(row_),_col(col_) {
+		_p = new _T[row_ * col_]();
 
+	}
+	size_t row()const { return _row; }
+	size_t column()const { return _col; }
+	_T* operator[](size_t row)const {
+		assert(row < _row);
+		return _p + (row * _col);
+	}
+	_T* get()const {
+		return _p;
+	}
+	~TwoDArray() {
+		delete[]_p;
+	}
+};
 class bitmap {
 	vector<size_t> p;
 	static size_t* for_true;

@@ -4,6 +4,7 @@
 #include<set>
 #include<map>
 #include"graph/Graph.hpp"
+#include"si/ThreadRelatedClass.hpp"
 #include<utility>
 #include<numeric>
 using namespace std;
@@ -116,10 +117,12 @@ public:
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
 		typedef unordered_set<NodeIDType> Set;
 		Set nodeNotInMatchSet;
+		nodeNotInMatchSet.reserve(graph->size());
 		for (const auto node : graph.nodes()) {
 			nodeNotInMatchSet.insert(node.id());
 		}
 		Set ioSet;
+		ioSet.reserve(graph->size());
 
 		typedef const NodeType* NodeCPointer;
 		typedef KVPair<NodeCPointer, double> NodeMatchPointPair;
@@ -351,7 +354,6 @@ class MatchOrderSelectorSI_T {
 public:
 	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
 		vector<NodeIDType> matchSequence;
@@ -359,8 +361,7 @@ public:
 		unordered_map<NodeLabelType, size_t> pgLabelNum = graph.labelNum(), tgLabelNum = targetGraph.labelNum();
 		unordered_map<NodeLabelType, size_t> pgLabelInMax = graph.labelMaxIn(), tgLabelInMax = targetGraph.labelMaxIn();
 		unordered_map<NodeLabelType, size_t> pgLabelOutMax = graph.labelMaxOut(), tgLabelOutMax = targetGraph.labelMaxOut();
-		vector< vector< size_t > > tgin, tgout;
-		vector<size_t> tgin_record, tgout_record, qgin_record, qgout_record;
+		vector<size_t> label_count;
 		//a simple check;
 		{
 			if (pgLabelNum.size() > tgLabelNum.size()) {
@@ -376,49 +377,32 @@ public:
 				}
 			}
 		}
-		size_t labelMax = 0;
+		size_t labelMax = 0, in_max = 0, out_max=0;
 		for (auto& p : tgLabelNum)labelMax = max(labelMax, p.first);
-		tgin.resize(labelMax + 1);
-		tgout.resize(labelMax + 1);
-		LOOP(i, 0, tgLabelNum.size()) {
-			tgin[i].resize(tgLabelInMax[i] + 1);
-			tgout[i].resize(tgLabelOutMax[i] + 1);
-		}
-		tgin_record.reserve(targetGraph.size());
-		tgout_record.reserve(targetGraph.size());
+		for (auto& p : tgLabelInMax)in_max = max(in_max, p.second);
+		for (auto& p : tgLabelOutMax)out_max = max(out_max, p.second);
+		label_count.resize(labelMax + 1);
+		TwoDArray<size_t> degree_count(in_max+1, out_max+1);
+	
 		for (auto& node : targetGraph.nodes()) {
-			tgin[node.label()][node.inEdgesNum()]++;
-			tgout[node.label()][node.outEdgesNum()]++;
-			tgin_record.push_back(node.inEdgesNum());
-			tgout_record.push_back(node.inEdgesNum());
+			degree_count[node.inEdgesNum()][node.outEdgesNum()]++;
+			label_count[node.label()]++;
 		}
-		LOOP(i, 0, labelMax + 1) {
-			size_t nodeCount = tgLabelNum[i];
-			int last = 0;
-			LOOP(j, 0, tgout[i].size()) {
-				nodeCount -= last;
-				last = tgout[i][j];
-				tgout[i][j] = nodeCount;
-			}
-			last = 0;
-			nodeCount = tgLabelNum[i];
-			LOOP(j, 0, tgin[i].size()) {
-				nodeCount -= last;
-				last = tgin[i][j];
-				tgin[i][j] = nodeCount;
+		for (long long i = in_max - 1; i >= 0; --i) {
+			for (long long j = out_max - 1; j >= 0; --j) {
+				degree_count[i][j] += degree_count[i + 1][j] + degree_count[i][j + 1] - degree_count[i + 1][j + 1];
 			}
 		}
+	
 		double* possibility = new double[graph.size()];
 		pair<NodeIDType, pair<double, size_t>>* sortPoss = new pair<NodeIDType, pair<double, size_t>>[graph.size()];
 
-		auto tg_in_variance = variance(tgin_record.begin(), tgin_record.end());
-		auto tg_out_variance = variance(tgout_record.begin(), tgout_record.end());
 		unordered_set<NodeIDType> notInSeq;
 		for (auto& node : graph.nodes()) {
 			auto id = node.id();
 			notInSeq.insert(id);
 			auto label = node.label();
-			possibility[id] = (double)(tgin[label][node.inEdgesNum()] * tgout[label][node.outEdgesNum()] ) / (targetGraph.size() * targetGraph.size() );
+			possibility[id] = (double)(label_count[label] * degree_count[node.inEdgesNum()][node.outEdgesNum()]) / (targetGraph.size() * targetGraph.size() );
 
 			sortPoss[id] = pair<NodeIDType, pair<double, size_t>>(id, pair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
 
