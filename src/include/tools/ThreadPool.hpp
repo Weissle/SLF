@@ -75,9 +75,6 @@ public:
 		}
 	}
 
-	/*	This function will not stop all thread immediately.
-		It will stop a thread  */
-
 	size_t threadNum()const {
 		return threads_num.load();
 	}

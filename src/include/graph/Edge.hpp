@@ -6,18 +6,18 @@ namespace wg {
 //BOTH edge allows to get both source and target  nodes id
 enum EDGE_RECORD_TYPE { SOURCE, TARGET, BOTH };
 template<typename _EdgeLabelType>
-class Edge {
+class EdgeLogic {
 public:
 	typedef _EdgeLabelType EdgeLabelType;
-	typedef Edge<EdgeLabelType> EdgeType;
+	typedef EdgeLogic<EdgeLabelType> EdgeType;
 private:
 	NodeIDType _source, _target;
 	EDGE_RECORD_TYPE recordType;
 	EdgeLabelType _label;
 public:
-	Edge() = default;
-	~Edge() = default;
-	Edge(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :
+	EdgeLogic() = default;
+	~EdgeLogic() = default;
+	EdgeLogic(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :
 		recordType(_recordType), _source(_s), _target(_t), _label(_l) {
 	}
 
@@ -64,27 +64,20 @@ public:
 	typedef _EdgeLabelType EdgeLabelType;
 	typedef EdgeSimple<EdgeLabelType> EdgeType;
 private:
-	NodeIDType id; //source or target node id
+	NodeIDType _source,_target; 
 	EdgeLabelType _label;
 public:
 	EdgeSimple() = default;
 	~EdgeSimple() = default;
-	EdgeSimple(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :_label(_l) 
-	{
-		if (_recordType == EDGE_RECORD_TYPE::SOURCE) id = _s;
-		else if (_recordType == EDGE_RECORD_TYPE::TARGET) id = _t;
-		else {
-			cerr << "not allow both type";
-			exit(0);
-		}
-	}
+	EdgeSimple(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :_label(_l),_source(_s),_target(_t)
+	{}
 
 	const NodeIDType& source() const {
-		return id;
+		return _source;
 	}
 	const NodeIDType& target()const
 	{
-		return id;
+		return _target;
 	}
 	const EdgeLabelType& label()const
 	{
@@ -95,11 +88,16 @@ public:
 	}
 
 	bool operator<(const EdgeType & e)const {
-		if (id == e.id) return _label < e.label();
-		else return id < e.id;
+		if (_source == e._source) {
+			if (_target == e._target) {
+				return _label < e._label;
+			}
+			return _target < e._target;
+		}
+		return _source < e._source;
 	};
 	bool operator==(const EdgeType & e)const {
-		return (id == e.id && _label == e._label);
+		return (_source == e._source && _label == e._label && _target == e._target);
 	}
 
 };

@@ -20,12 +20,10 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	AnswerReceiverType& answerReceiver;
 	State<GraphType> state;
 
-	size_t minDepth;
-	//	vector<NodeIDType> target_sequence;
 	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
 
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
-	shared_ptr<ShareTasks<NodeIDType>> tasks;
+	shared_ptr<ShareTasks> tasks, next_tasks;
 
 	inline void ToDoAfterFindASolution() {
 		if (this->needOneSolution)task_distributor->end = true;
@@ -33,35 +31,47 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	}
 
 
-	bool run_(const size_t search_depth)
+	void run_()
 	{
+		const auto search_depth = state.depth();
 		if (search_depth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
-			return true;
+			return;
 		}
 		auto& begin_p = cand_id[search_depth].first, & end_p = cand_id[search_depth].second;
 		const auto query_id = (*match_sequence_ptr)[search_depth];
-		if (search_depth)state.calCandidatePairs(query_id, begin_p, end_p);
+		state.calCandidatePairs(query_id, begin_p, end_p);
 
 		while (begin_p != end_p) {
 			const auto target_id = *begin_p;
 			begin_p++;
 			if (state.checkPair(query_id, target_id)) {
-				//				target_sequence[search_depth] = target_id;
 				state.pushPair(query_id, target_id);
-				if (run_(search_depth + 1) && task_distributor->end) return true;
+				run_();
+				if (task_distributor->end) return;
 				state.popPair(query_id);
 			}
 		}
-		return false;
 	}
-	/*	void prepareState() {
-			size_t p = 0;
-			while (target_sequence[p] != NO_MAP) {
-				state.pushPair((*match_sequence_ptr)[p], target_sequence[0]);
-				p++;
-			}
-		}*/
+
+	void prepareState() {
+		const auto& to_seq = tasks->getTargetSequence();
+		const auto& state_seq = state.getMap(false);
+		size_t diff_point = 0;
+		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
+			if (state_seq[(*match_sequence_ptr)[diff_point]] != to_seq[diff_point])break;
+		}
+		while (state.depth() > diff_point) { state.popPair((*match_sequence_ptr)[state.depth() - 1]); }
+		for (auto i = diff_point; i < to_seq.size(); ++i) {
+			state.pushPair((*match_sequence_ptr)[diff_point], to_seq[i]);
+		}
+	}
+	void prepare_all() {
+		if (next_tasks->size()) {
+			tasks.swap(next_tasks);
+			prepareState();
+		}
+	}
 
 public:
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
@@ -71,26 +81,29 @@ public:
 	{
 		//	target_sequence.resize(_q.size(), NO_MAP);
 	}
-	void prepare(shared_ptr<ShareTasks<NodeIDType>> _tasks, size_t _min_depth) {
-		minDepth = _min_depth;
-		tasks = _tasks;
+	void prepare(shared_ptr<ShareTasks> _tasks) {
+		next_tasks.swap(_tasks);
+		//	tasks = _tasks;
+
 		return;
 	}
 	void run() {
-		bool ok;
 		NodeIDType query_id;
-		while (tasks->size()) {
-			if (task_distributor->end)break;
-			auto target_id = tasks->getTask(&ok);
-			if (!ok)continue;
-			query_id = (*match_sequence_ptr)[minDepth];
-			if (state.checkPair(query_id, target_id)) {
-				state.pushPair(query_id, target_id);
-				run_(minDepth + 1);
-				state.popPair(query_id);
+		do {
+			prepare_all();
+			query_id = (*match_sequence_ptr)[state.depth()];
+			while (tasks->size()) {
+				if (task_distributor->end)break;
+				auto target_id = tasks->getTask();
+				if (target_id == NO_MAP)continue;
+				if (state.checkPair(query_id, target_id)) {
+					state.pushPair(query_id, target_id);
+					run_();
+					state.popPair(query_id);
+				}
+				
 			}
-
-		}
+		} while (next_tasks.use_count());
 
 		tasks.reset();
 	}
@@ -111,31 +124,23 @@ public:
 		auto f = [&, subgraph_states]() {
 			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, _onlyNeedOneSolution, subgraph_states, task_distributor);
 			task_distributor->addFreeUnit(move(p));
+			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
+			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
 		};
 		LOOP(i, 0, _thread_num) {
 			task_distributor->addTask(f);
 		}
-
+		auto fut = task_distributor->addTask([]() {return true; });
+		fut.get();
 	}
 	void run() {
 
-		auto tasksDistribute = [&](shared_ptr<ShareTasks<NodeIDType>> tasks) {
-			if (task_distributor->end)return;
-			bool ok = false;
-			auto freeUnit = move(task_distributor->getFreeUnit(ok));
-			assert(ok);
-			freeUnit->prepare(tasks, 0);
-			tasks.reset();
-			freeUnit->run();
-			task_distributor->addFreeUnit(move(freeUnit));
-
-		};
 		NodeIDType* tasks = new NodeIDType[targetGraphPtr->size()];
 		for (auto i = 0; i < targetGraphPtr->size(); ++i) {
 			tasks[i] = i;
 		}
 		bool ok;
-		shared_ptr<ShareTasks<NodeIDType>> task_container = task_distributor->getShareTasksContainer(&ok);
+		shared_ptr<ShareTasks> task_container = task_distributor->getShareTasksContainer(&ok);
 		if (ok == false) {
 			cout << "error occur : " << __FILE__ << __LINE__ << endl;
 			exit(0);
@@ -143,11 +148,10 @@ public:
 		task_container->addTask(tasks, tasks + targetGraphPtr->size());
 		delete[]tasks;
 
-		for (auto i = 0; i < task_distributor->threadNum(); ++i) {
-			task_distributor->addTask(tasksDistribute, task_container);
-		}
 		cout << task_container.use_count() << endl;
-		task_container.reset();
+		task_distributor->addTasks(move(task_container));
+		cout << task_container.use_count() << endl;
+		
 		task_distributor->join();
 		return;
 	}

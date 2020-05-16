@@ -4,38 +4,36 @@
 #include<mutex>
 #include<assert.h>
 #include<limits.h>
+#include"si/si_marcos.h"
 using namespace std;
 namespace wg {
-template<class _T>
 class ShareTasks {
 	mutex m;
-	vector<_T> _v;
+	vector<NodeIDType> _task;
+	vector<NodeIDType> target_sequence;
 public:
 	ShareTasks() = default;
-	size_t size()const { return _v.size(); }
-/*	void addTask(_T t) {
-		lock_guard<mutex> lg(m);
-		_v.push_back(move(t));
-	}*/
+	size_t size()const { return _task.size(); }
+
 	template<class _It>
 	void addTask(const _It begin, const _It end) {
 		lock_guard<mutex> lg(m);
-		_v.assign(begin, end);
+		_task.assign(begin, end);
 	}
-	_T getTask(bool* ok) {
+	NodeIDType getTask() {
 		lock_guard<mutex> lg(m);
-		if (_v.size()) {
-			*ok = true;
-			auto temp = move(_v.back());
-			_v.pop_back();
+		if (_task.size()) {
+			auto temp = move(_task.back());
+			_task.pop_back();
 			return move(temp);
 		}
 		else {
-			*ok = false;
-			return _T();
+			return NO_MAP;
 		}
 	}
-
+	const vector<NodeIDType>& getTargetSequence()const { return target_sequence; }
+	template<class _It>
+	void setTargetSequence(const _It first, const _It end) { target_sequence.assign(first, end); }
 };
 
 template<class _T>
