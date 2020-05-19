@@ -42,7 +42,7 @@ class TaskDistributor :public ThreadPool {
 			free_unit->prepare(using_tasks[the_best_task_index]);
 			lock_guard<mutex> lg(prepared_units_mutex);
 			prepared_units.push(move(free_unit));
-			addTask(&TaskDistributor::giveTaskToThreadPool, this);
+			addThreadTask(&TaskDistributor::giveTaskToThreadPool, this);
 			return true;
 		}
 	}
@@ -108,7 +108,7 @@ public:
 		*ok = true;
 		return move(answer);
 	}
-	void addTasks(shared_ptr<ShareTasks> tasks) {
+	void addSearchTasks(shared_ptr<ShareTasks> tasks) {
 		{
 			lock_guard<mutex> lg(share_tasks_container_mutex);
 			using_tasks.push_back(move(tasks));

@@ -46,7 +46,8 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		for (auto i = 0; i < min_depth; ++i) {
 			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
 		}
-		task_distributor->addTasks(next_tasks);
+		//task_distributor->addTasks(next_tasks);
+		task_distributor->addThreadTask(&TaskDistributor<SIUnit>::addSearchTasks, task_distributor.get(),next_tasks);
 	}
 
 	void run_()
@@ -56,18 +57,13 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 			this->ToDoAfterFindASolution();
 			return;
 		}
-	//	auto& begin_p = cand_id[search_depth].first, & end_p = cand_id[search_depth].second;
-		const NodeIDType* begin_p, * end_p;
 		const auto query_id = (*match_sequence_ptr)[search_depth];
-		state.calCandidatePairs(query_id, begin_p, end_p);
-		cand_id[search_depth].assign(begin_p, end_p);
+		state.calCandidatePairs(query_id, cand_id[search_depth]);
 		if (task_distributor->allowDistribute() && tasks->size() == 0 && next_tasks.use_count() == 0) {
 			distributeTask();
 		}
 
 		while (cand_id[search_depth].size()) {
-		/*	const auto target_id = *begin_p;
-			begin_p++;*/
 			const auto target_id = cand_id[search_depth].back();
 			cand_id[search_depth].pop_back();
 			if (state.checkPair(query_id, target_id)) {
@@ -112,7 +108,6 @@ public:
 		SubgraphIsomorphismBase<GraphType>(_q, _t, _msp, _oneSolution), answerReceiver(_answerReceiver),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
-		//	target_sequence.resize(_q.size(), NO_MAP);
 	}
 	void prepare(shared_ptr<ShareTasks> _tasks) {
 		next_tasks= move(_tasks);
@@ -160,11 +155,10 @@ public:
 			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
 		};
 		LOOP(i, 0, _thread_num) {
-			task_distributor->addTask(f);
+			task_distributor->addThreadTask(f);
 		}
 	}
 	void run() {
-		//size_t first_task_num = min(size_t(1),targetGraphPtr->size());
 		size_t first_task_num = targetGraphPtr->size();
 		//prepare the first task , all target nodes.
 		NodeIDType* tasks = new NodeIDType[first_task_num];
@@ -178,7 +172,7 @@ public:
 		task_container->addTask(tasks, tasks + first_task_num);
 		delete[]tasks;
 
-		task_distributor->addTasks(move(task_container));
+		task_distributor->addSearchTasks(move(task_container));
 		
 		task_distributor->join();
 		return;

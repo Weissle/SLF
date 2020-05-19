@@ -14,7 +14,6 @@
 class ThreadPool {
 	std::queue<std::function<void()>> tasks;
 	std::mutex tasks_mutex;
-
 	std::vector<std::thread> threads;
 	std::condition_variable wake_up_cv;
 protected:
@@ -61,7 +60,7 @@ public:
 		return std::move(task->get_future());
 	}
 	template<class F, class... Args>
-	auto addTask(F&& f, Args&&... args)
+	auto addThreadTask(F&& f, Args&&... args)
 	{
 		using return_type = typename std::result_of<F(Args...)>::type;
 		std::function<return_type()> func = std::function<return_type()>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));

@@ -428,8 +428,9 @@ public:
 	/*	void calCandidatePairs(const NodeIDType query_id, vector<NodeIDType> &cantainer)const
 		{
 			const NodeIDType* begin, end;*/
-	void calCandidatePairs(const NodeIDType query_id, const NodeIDType*& begin, const NodeIDType*& end)const
+	void calCandidatePairs(const NodeIDType query_id, vector<NodeIDType> & container)const
 	{
+		const NodeIDType* begin, * end;
 #if defined(INDUCE_ISO)
 		if (queryStates->inSetIn(query_id, search_depth))	targetState.getInSet(queryStates->inDepth(query_id, search_depth), begin, end);
 		else if (queryStates->inSetOut(query_id, search_depth))	targetState.getOutSet(queryStates->outDepth(query_id, search_depth), begin, end);
@@ -439,7 +440,7 @@ public:
 #ifdef NORMAL_ISO
 		targetState.getUnmapSet(begin, end);
 #endif
-		//		cantainer.assign(begin, end);
+		container.assign(begin, end);
 	}
 
 	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)

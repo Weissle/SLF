@@ -54,15 +54,15 @@ protected:
 		}
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
 		auto t1 = clock();
-		mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
+		mapState.calCandidatePairs(query_id, cand_id[searchDepth]);
 		auto t2 = clock();
 		cal += t2 - t1;
-		canditatePairCount += cand_id[searchDepth].second - cand_id[searchDepth].first;
+		canditatePairCount += cand_id[searchDepth].size();
 
-		while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
+		while (cand_id[searchDepth].size()) {
 			t1 = clock();
-			const auto target_id = *cand_id[searchDepth].first;
-			cand_id[searchDepth].first++;
+			const auto target_id = cand_id[searchDepth].back();
+			cand_id[searchDepth].pop_back();
 			const bool suitable = mapState.checkPair(query_id, target_id);
 			t2 = clock();
 			check += t2 - t1;
@@ -93,10 +93,9 @@ protected:
 			this->ToDoAfterFindASolution();
 			return true;
 		}
-		const NodeIDType* begin_p, * end_p;
+
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
-		mapState.calCandidatePairs(query_id, begin_p, end_p);
-		cand_id[search_depth].assign(begin_p, end_p);
+		mapState.calCandidatePairs(query_id, cand_id[search_depth]);
 
 		while (cand_id[search_depth].size()) {
 			const auto target_id = cand_id[search_depth].back();
