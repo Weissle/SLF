@@ -14,27 +14,21 @@ About MatchOrderSelector,if MatchOrderSelector is  void type and you do not spec
 
 */
 namespace wg {
-template<class GraphType>
+
 class SubgraphIsomorphismBase {
 protected:
-	typedef typename GraphType::NodeType NodeType;
-	typedef typename GraphType::EdgeType EdgeType;
-
-
-	const GraphType* targetGraphPtr, * queryGraphPtr;
 	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
 	bool needOneSolution;
 public:
 	SubgraphIsomorphismBase() = default;
-	SubgraphIsomorphismBase(const GraphType& _q, const GraphType& _t, const shared_ptr<const vector<NodeIDType>> _msp, bool needOS = false) :queryGraphPtr(&_q), targetGraphPtr(&_t), match_sequence_ptr(_msp), needOneSolution(needOS)
+	SubgraphIsomorphismBase(const shared_ptr<const vector<NodeIDType>> _msp, bool needOS = false) : match_sequence_ptr(_msp), needOneSolution(needOS)
 	{
-		assert(_msp->size() == _q.size());
 	}
 };
 //for single thread
 template<typename GraphType, typename AnswerReceiverType>
-class SubgraphIsomorphism : public SubgraphIsomorphismBase<GraphType> {
-
+class SubgraphIsomorphism : public SubgraphIsomorphismBase {
+	const GraphType* queryGraphPtr, * targetGraphPtr;
 protected:
 	size_t searchDepth;
 	State<GraphType> mapState;
@@ -119,7 +113,8 @@ public:
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
 	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver), mapState(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
+		:SubgraphIsomorphismBase(_match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver),queryGraphPtr(&_queryGraph),targetGraphPtr(&_targetGraph),
+		mapState(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE

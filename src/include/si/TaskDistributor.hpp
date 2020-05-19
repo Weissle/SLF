@@ -67,10 +67,10 @@ class TaskDistributor :public ThreadPool {
 			if (giveTask(move(free_unit)) == false)return;
 		}
 	}
-public: 
-	atomic_bool end = false;
+public:
+	atomic_bool end;
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
-		lock_guard<mutex> lg(share_tasks_container_mutex);
+		end.store(false);
 		using_tasks.reserve(thread_num_ * 2);
 		share_tasks_container.push(make_shared<ShareTasks>());
 	}
@@ -94,7 +94,7 @@ public:
 		lock_guard<mutex> lg(share_tasks_container_mutex);
 
 		for (auto i = 0; i < using_tasks.size(); ++i) {
-			if (using_tasks[i].use_count() == 1 ) {
+			if (using_tasks[i].use_count() == 1) {
 				*ok = true;
 				auto answer = using_tasks[i];
 				using_tasks[i] = using_tasks.back();

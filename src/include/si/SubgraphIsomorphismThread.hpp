@@ -15,11 +15,11 @@
 mutex m;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
-class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> {
+class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	using SIUnit = SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType>;
+	const GraphType* queryGraphPtr, * targetGraphPtr;
 	AnswerReceiverType& answerReceiver;
 	State<GraphType> state;
-
 	vector<vector<NodeIDType>> cand_id;
 
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
@@ -104,8 +104,8 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 
 public:
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
-		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :
-		SubgraphIsomorphismBase<GraphType>(_q, _t, _msp, _oneSolution), answerReceiver(_answerReceiver),
+		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),
+		SubgraphIsomorphismBase(_msp, _oneSolution), answerReceiver(_answerReceiver),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
 	}
@@ -138,14 +138,15 @@ public:
 };
 
 template<typename GraphType, typename AnswerReceiverType>
-class SubgraphIsomorphismThread : public SubgraphIsomorphismBase<GraphType> {
+class SubgraphIsomorphismThread : public SubgraphIsomorphismBase {
 	typedef SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType> SIUnit;
+	const GraphType* queryGraphPtr, * targetGraphPtr;
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 public:
 	SubgraphIsomorphismThread() = default;
 	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answer_receiver, size_t _thread_num,
-		bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
-		:SubgraphIsomorphismBase<GraphType>(_queryGraph, _targetGraph, _match_sequence_ptr, _onlyNeedOneSolution), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
+		bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr):queryGraphPtr(&_queryGraph), targetGraphPtr(&_targetGraph),
+		SubgraphIsomorphismBase(_match_sequence_ptr, _onlyNeedOneSolution), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
 	{
 		auto subgraph_states = makeSubgraphState<GraphType>(_queryGraph, _match_sequence_ptr);
 		auto f = [&, subgraph_states]() {

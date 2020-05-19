@@ -4,3 +4,4 @@
 build/
 src/.idea/
 src/cmake-build-debug
+build_linux/

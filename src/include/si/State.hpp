@@ -32,17 +32,17 @@ class TargetGraphMatchState {
 	vector<size_t> in_depth, out_depth;
 public:
 	TargetGraphMatchState() = default;
-	TargetGraphMatchState(const GraphType& g, const size_t maxDepth = 0) :graphPointer(&g), in(g.size(), maxDepth), out(g.size(), maxDepth), unmap(g.size(), maxDepth),
+	TargetGraphMatchState(const GraphType& g, const size_t maxDepth) :graphPointer(&g), in(g.size(), maxDepth), out(g.size(), maxDepth), unmap(g.size(), 0),
 		in_depth(g.size()), out_depth(g.size())
 	{
 		for (const auto& node : g.nodes()) unmap.insert(node.id(), 0);
 	}
 	void addNode(NodeIDType id) {
 		const GraphType& graph = *graphPointer;
+		search_depth++;
 		in.erase(id, in_depth[id]);
 		out.erase(id, out_depth[id]);
 		unmap.erase(id, 0);
-		search_depth++;
 		in.prepare(search_depth);
 		out.prepare(search_depth);
 		const auto& node = graph.node(id);
@@ -80,10 +80,10 @@ public:
 		}
 		in.pop(search_depth);
 		out.pop(search_depth);
-		--search_depth;
 		if (in_depth[id]) 	in.insert(id, in_depth[id]);
 		if (out_depth[id]) 	out.insert(id, out_depth[id]);
 		unmap.insert(id, 0);
+		--search_depth;
 	}
 	inline size_t inDepth(const NodeIDType id)const { return in_depth[id]; }
 	inline size_t outDepth(const NodeIDType id)const { return out_depth[id]; }

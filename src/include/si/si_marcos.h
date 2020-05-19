@@ -19,7 +19,7 @@ namespace wg {
 
 typedef size_t NodeIDType;
 using MapPair = std::pair<NodeIDType, NodeIDType>;
-using  MapType = std::vector<NodeIDType>;
+using MapType = std::vector<NodeIDType>;
 const size_t NO_MAP = SIZE_MAX;
 const MapPair error_pair = MapPair(NO_MAP, NO_MAP);
 std::vector<size_t> readMatchSequence(std::string& matchOrderPath) {

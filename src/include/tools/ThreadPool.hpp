@@ -17,8 +17,8 @@ class ThreadPool {
 	std::vector<std::thread> threads;
 	std::condition_variable wake_up_cv;
 protected:
-	std::atomic_bool wait_stop = false;
-	std::atomic_size_t threads_num = 0,running_thread_num = 0;
+	std::atomic_bool wait_stop;
+	std::atomic_size_t threads_num, running_thread_num;
 private:
 	void run_unit(size_t id) {
 		running_thread_num++;
@@ -29,7 +29,7 @@ private:
 					std::unique_lock<std::mutex> ul(tasks_mutex);
 					running_thread_num--;
 					wake_up_cv.wait(ul, [this]() {return tasks.size() != 0 || (running_thread_num == 0 && wait_stop); });
-					if (tasks.size()==0) {
+					if (tasks.size() == 0) {
 						wake_up_cv.notify_one();
 						return;
 					}
@@ -45,7 +45,10 @@ public:
 	ThreadPool() = default;
 	ThreadPool(const ThreadPool&) = delete;
 	ThreadPool& operator=(const ThreadPool&) = delete;
-	ThreadPool(size_t threads_num_) :threads_num(threads_num_) {
+	ThreadPool(size_t threads_num_) {
+		threads_num.store(threads_num_);
+		wait_stop.store(false);
+		running_thread_num.store(0);
 		threads.resize(threads_num.load());
 		for (int i = 0; i < threads_num_; ++i) {
 			threads[i] = std::move(std::thread(&ThreadPool::run_unit, this, i));

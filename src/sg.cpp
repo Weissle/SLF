@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 	cmdl({ "-variance" }) >> variance;
 	assert(sNeed != 0);
 	assert((graphPath.empty() ^ bNeed == 0));
-	typedef Edge<int> EdgeType;
+	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
 

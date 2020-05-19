@@ -11,7 +11,7 @@ using namespace wg;
 static long t = 0;
 
 int main(int argc, char* argv[]) {
-	typedef Edge<int> EdgeType;
+	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
 

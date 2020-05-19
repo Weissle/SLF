@@ -47,10 +47,10 @@ class AnswerReceiverThread{
 	using NodeIDType = wg::NodeIDType;
 	mutex m;
 	bool isFinish = false;
-	atomic_size_t count = 0;
+	atomic_size_t count;
 public:
-	AnswerReceiverThread() = default;
-	AnswerReceiverThread(const std::string& SolutionPath) {}
+	AnswerReceiverThread() {count.store(0); }
+	AnswerReceiverThread(const std::string& SolutionPath):AnswerReceiverThread(){}
 	void operator<<(const vector<NodeIDType>& mapping) {
 		assert(isFinish == false && "is not finish?");
 	//	lock_guard<mutex> lg(m);

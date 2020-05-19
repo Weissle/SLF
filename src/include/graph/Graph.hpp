@@ -7,14 +7,14 @@
 #include<assert.h>
 using namespace std;
 namespace wg {
-template<typename NodeType, typename EdgeType>
+template<typename _Node, typename _Edge>
 class Graph
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
+	using NodeType = _Node;
+	using EdgeType = _Edge;
 	typedef Graph<NodeType, EdgeType> GraphType;
-	typedef NodeType NodeType;
-	typedef EdgeType EdgeType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
 	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
@@ -79,6 +79,7 @@ public:
 	const vector<NodeType>& nodes()const { return _nodes; }
 
 	const NodeType& node(const NodeIDType& nodeID) const {
+		if (nodeID >= _size)cout << nodeID << endl;
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
