@@ -6,6 +6,7 @@
 #include<mutex>
 #include<fstream>
 #include<queue>
+#include<atomic>
 #include<condition_variable>
 #include<assert.h>
 #include<si/si_marcos.h>
@@ -41,22 +42,26 @@ public:
 	size_t solutions_count() { return count - 1; }
 };
 
-class AnswerReceiverThread :public AnswerReceiver {
+class AnswerReceiverThread{
 #define OUTPUT_ONCE
+	using NodeIDType = wg::NodeIDType;
 	mutex m;
 	bool isFinish = false;
+	atomic_size_t count = 0;
 public:
 	AnswerReceiverThread() = default;
-	AnswerReceiverThread(const std::string& SolutionPath) :AnswerReceiver() {}
+	AnswerReceiverThread(const std::string& SolutionPath) {}
 	void operator<<(const vector<NodeIDType>& mapping) {
 		assert(isFinish == false && "is not finish?");
-		lock_guard<mutex> lg(m);
-		AnswerReceiver::operator<<(mapping);
+	//	lock_guard<mutex> lg(m);
+		count++;
+	
 	}
 	void finish() {
-		lock_guard<mutex> lg(m);
+	//	lock_guard<mutex> lg(m);
 		isFinish = true;
-		AnswerReceiver::finish();
+	
 	}
+	size_t solutions_count() { return count; }
 
 };

@@ -22,18 +22,20 @@ public:
 	}
 	NodeIDType getTask() {
 		lock_guard<mutex> lg(m);
-		if (_task.size()) {
-			auto temp = move(_task.back());
-			_task.pop_back();
-			return move(temp);
-		}
+		if(_task.empty())return NO_MAP;
 		else {
-			return NO_MAP;
+			const auto answer = _task.back();
+			_task.pop_back();
+			return answer;
 		}
 	}
 	const vector<NodeIDType>& getTargetSequence()const { return target_sequence; }
 	template<class _It>
-	void setTargetSequence(const _It first, const _It end) { target_sequence.assign(first, end); }
+	void setTargetSequence(const _It first, const _It end) { 
+		lock_guard<mutex> lg(m);
+		target_sequence.assign(first, end); 
+	}
+	vector<NodeIDType>& targetSeq() { return target_sequence; }
 };
 
 template<class _T>
@@ -64,16 +66,17 @@ class bitmap {
 	static size_t* for_true;
 	static size_t* for_false;
 	static bool usable;
+	const static size_t bits = sizeof(size_t) * 8;
 public:
 	bitmap() = default;
 	bitmap(size_t max) {
-		int size = max / 64 + ((max % 64 == 0) ? 0 : 1);
+		int size = max / bits + ((max % bits == 0) ? 0 : 1);
 		p = vector<size_t>(size);
 		if (for_true==nullptr && for_false==nullptr) {
-			for_true = new size_t[64];
-			for_false = new size_t[64];
+			for_true = new size_t[bits];
+			for_false = new size_t[bits];
 			size_t temp = 1;
-			LOOP(i, 0, 64) {
+			LOOP(i, 0, bits) {
 				for_true[i] = temp;
 				temp <<= 1;
 				for_false[i] = for_true[i] ^ SIZE_MAX;
@@ -83,13 +86,13 @@ public:
 		while (usable == false);
 	}
 	inline bool content(size_t place) const {
-		return (p[place / 64] & for_true[place % 64]);
+		return (p[place / bits] & for_true[place % bits]);
 	}
 	inline void setTrue(size_t place) {
-		p[place / 64] |= for_true[place % 64];
+		p[place / bits] |= for_true[place % bits];
 	}
 	inline void setFalse(size_t place) {
-		p[place / 64] &= for_false[place % 64];
+		p[place / bits] &= for_false[place % bits];
 	}
 
 };

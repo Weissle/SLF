@@ -11,12 +11,12 @@
 #include"si/TaskDistributor.hpp"
 #include<atomic>
 #include<time.h>
-//mutex m;
+#include<assert.h>
+mutex m;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> {
 	using SIUnit = SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType>;
-
 	AnswerReceiverType& answerReceiver;
 	State<GraphType> state;
 
@@ -29,7 +29,25 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		if (this->needOneSolution)task_distributor->end = true;
 		answerReceiver << state.getMap();
 	}
+	void distributeTask() {
+		bool ok;
+		next_tasks = task_distributor->getShareTasksContainer(&ok);
+		if (!ok)return;
 
+		size_t min_depth = tasks->getTargetSequence().size() + 1;
+		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].first == cand_id[min_depth].second)++min_depth;
+		if (min_depth == queryGraphPtr->size()) return;
+
+		next_tasks->addTask(cand_id[min_depth].first, cand_id[min_depth].second);
+		cand_id[min_depth].second = cand_id[min_depth].first = nullptr;
+		auto& seq = next_tasks->targetSeq();
+		const auto& state_seq = state.getMap(false);
+		seq.clear();
+		for (auto i = 0; i < min_depth; ++i) {
+			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
+		}
+		task_distributor->addTasks(next_tasks);
+	}
 
 	void run_()
 	{
@@ -42,6 +60,10 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		const auto query_id = (*match_sequence_ptr)[search_depth];
 		state.calCandidatePairs(query_id, begin_p, end_p);
 
+		if (task_distributor->allowDistribute() && tasks->size() == 0 && next_tasks.use_count() == 0) {
+			distributeTask();
+		}
+
 		while (begin_p != end_p) {
 			const auto target_id = *begin_p;
 			begin_p++;
@@ -52,6 +74,8 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 				state.popPair(query_id);
 			}
 		}
+
+		
 	}
 
 	void prepareState() {
@@ -61,14 +85,20 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
 			if (state_seq[(*match_sequence_ptr)[diff_point]] != to_seq[diff_point])break;
 		}
-		while (state.depth() > diff_point) { state.popPair((*match_sequence_ptr)[state.depth() - 1]); }
+		if (state.depth() != 0) {
+			int a = 0;
+		}
+		while (state.depth() > diff_point) { 
+			const auto pop_query_node = (*match_sequence_ptr)[state.depth() - 1];
+			state.popPair(pop_query_node); 
+		}
 		for (auto i = diff_point; i < to_seq.size(); ++i) {
-			state.pushPair((*match_sequence_ptr)[diff_point], to_seq[i]);
+			state.pushPair((*match_sequence_ptr)[i], to_seq[i]);
 		}
 	}
 	void prepare_all() {
-		if (next_tasks->size()) {
-			tasks.swap(next_tasks);
+		tasks=move(next_tasks);
+		if (tasks->size()) {
 			prepareState();
 		}
 	}
@@ -82,9 +112,7 @@ public:
 		//	target_sequence.resize(_q.size(), NO_MAP);
 	}
 	void prepare(shared_ptr<ShareTasks> _tasks) {
-		next_tasks.swap(_tasks);
-		//	tasks = _tasks;
-
+		next_tasks= move(_tasks);
 		return;
 	}
 	void run() {
@@ -92,20 +120,21 @@ public:
 		do {
 			prepare_all();
 			query_id = (*match_sequence_ptr)[state.depth()];
+	
 			while (tasks->size()) {
 				if (task_distributor->end)break;
 				auto target_id = tasks->getTask();
 				if (target_id == NO_MAP)continue;
 				if (state.checkPair(query_id, target_id)) {
+					assert(state.getMap(false)[query_id] == NO_MAP);
 					state.pushPair(query_id, target_id);
 					run_();
 					state.popPair(query_id);
 				}
 				
 			}
+			tasks.reset();
 		} while (next_tasks.use_count());
-
-		tasks.reset();
 	}
 
 };
@@ -130,27 +159,23 @@ public:
 		LOOP(i, 0, _thread_num) {
 			task_distributor->addTask(f);
 		}
-		auto fut = task_distributor->addTask([]() {return true; });
-		fut.get();
 	}
 	void run() {
-
-		NodeIDType* tasks = new NodeIDType[targetGraphPtr->size()];
-		for (auto i = 0; i < targetGraphPtr->size(); ++i) {
-			tasks[i] = i;
-		}
+		//size_t first_task_num = min(size_t(1),targetGraphPtr->size());
+		size_t first_task_num = targetGraphPtr->size();
+		//prepare the first task , all target nodes.
+		NodeIDType* tasks = new NodeIDType[first_task_num];
+		for (auto i = 0; i < first_task_num; ++i) 	tasks[i] = i;
 		bool ok;
 		shared_ptr<ShareTasks> task_container = task_distributor->getShareTasksContainer(&ok);
 		if (ok == false) {
 			cout << "error occur : " << __FILE__ << __LINE__ << endl;
 			exit(0);
 		}
-		task_container->addTask(tasks, tasks + targetGraphPtr->size());
+		task_container->addTask(tasks, tasks + first_task_num);
 		delete[]tasks;
 
-		cout << task_container.use_count() << endl;
 		task_distributor->addTasks(move(task_container));
-		cout << task_container.use_count() << endl;
 		
 		task_distributor->join();
 		return;
