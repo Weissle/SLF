@@ -20,7 +20,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 	AnswerReceiverType& answerReceiver;
 	State<GraphType> state;
 
-	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
+	vector<vector<NodeIDType>> cand_id;
 
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 	shared_ptr<ShareTasks> tasks, next_tasks;
@@ -35,11 +35,11 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 		if (!ok)return;
 
 		size_t min_depth = tasks->getTargetSequence().size() + 1;
-		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].first == cand_id[min_depth].second)++min_depth;
+		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].empty())++min_depth;
 		if (min_depth == queryGraphPtr->size()) return;
 
-		next_tasks->addTask(cand_id[min_depth].first, cand_id[min_depth].second);
-		cand_id[min_depth].second = cand_id[min_depth].first = nullptr;
+		next_tasks->addTask(cand_id[min_depth].begin(), cand_id[min_depth].end());
+		cand_id[min_depth].clear();
 		auto& seq = next_tasks->targetSeq();
 		const auto& state_seq = state.getMap(false);
 		seq.clear();
@@ -56,17 +56,20 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase<GraphType> 
 			this->ToDoAfterFindASolution();
 			return;
 		}
-		auto& begin_p = cand_id[search_depth].first, & end_p = cand_id[search_depth].second;
+	//	auto& begin_p = cand_id[search_depth].first, & end_p = cand_id[search_depth].second;
+		const NodeIDType* begin_p, * end_p;
 		const auto query_id = (*match_sequence_ptr)[search_depth];
 		state.calCandidatePairs(query_id, begin_p, end_p);
-
+		cand_id[search_depth].assign(begin_p, end_p);
 		if (task_distributor->allowDistribute() && tasks->size() == 0 && next_tasks.use_count() == 0) {
 			distributeTask();
 		}
 
-		while (begin_p != end_p) {
-			const auto target_id = *begin_p;
-			begin_p++;
+		while (cand_id[search_depth].size()) {
+		/*	const auto target_id = *begin_p;
+			begin_p++;*/
+			const auto target_id = cand_id[search_depth].back();
+			cand_id[search_depth].pop_back();
 			if (state.checkPair(query_id, target_id)) {
 				state.pushPair(query_id, target_id);
 				run_();

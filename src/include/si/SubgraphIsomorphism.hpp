@@ -39,7 +39,8 @@ protected:
 	size_t searchDepth;
 	State<GraphType> mapState;
 	AnswerReceiverType& answerReceiver;
-	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
+//	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
+	vector<vector<NodeIDType>> cand_id;
 	bool run_timeCount()
 	{
 
@@ -87,17 +88,19 @@ protected:
 	}
 	bool run_noTimeCount()
 	{
+		const auto search_depth = searchDepth;
 		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
 			return true;
 		}
-
+		const NodeIDType* begin_p, * end_p;
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
-		mapState.calCandidatePairs(query_id, cand_id[searchDepth].first, cand_id[searchDepth].second);
+		mapState.calCandidatePairs(query_id, begin_p, end_p);
+		cand_id[search_depth].assign(begin_p, end_p);
 
-		while (cand_id[searchDepth].first != cand_id[searchDepth].second) {
-			const auto target_id = *cand_id[searchDepth].first;
-			cand_id[searchDepth].first++;
+		while (cand_id[search_depth].size()) {
+			const auto target_id = cand_id[search_depth].back();
+			cand_id[search_depth].pop_back();
 			if (mapState.checkPair(query_id, target_id)) {
 				mapState.pushPair(query_id, target_id);
 				++searchDepth;
@@ -131,12 +134,12 @@ public:
 	{
 #ifdef DETAILS_TIME_COUNT
 		run_timeCount();
-		/*		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
-				cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
-				cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
-				cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
-				cout << "hit times " << hitTime << endl;
-				cout << "canditate Pair Count " << canditatePairCount << endl;*/
+		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
+		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
+		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
+		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
+		cout << "hit times " << hitTime << endl;
+		cout << "canditate Pair Count " << canditatePairCount << endl;
 #else
 		run_noTimeCount();
 #endif
