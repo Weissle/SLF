@@ -14,7 +14,7 @@ class ShareTasks {
 public:
 	ShareTasks() = default;
 	size_t size()const { return _task.size(); }
-
+	
 	template<class _It>
 	void addTask(const _It begin, const _It end) {
 		lock_guard<mutex> lg(m);
@@ -36,17 +36,32 @@ public:
 		target_sequence.assign(first, end); 
 	}
 	vector<NodeIDType>& targetSeq() { return target_sequence; }
+	bool empty()const { return _task.empty(); }
 };
 
 template<class _T>
 class TwoDArray {
-	_T* _p;
+	_T* _p = nullptr;
 	size_t _row, _col;
 public:
 	TwoDArray() = default;
 	TwoDArray(size_t row_, size_t col_):_row(row_),_col(col_) {
 		_p = new _T[row_ * col_]();
-
+	}
+	TwoDArray(const TwoDArray<_T>& r):_row(r._row),_col(r._col) {
+		_p = new _T[_row * _col]();
+		copy(r._p, r._p + (_row * _col), _p);
+	}
+	TwoDArray<_T>& operator=(const TwoDArray<_T>& r) {
+		if (&r == this)return *this;
+		else {
+			delete[]_p;
+			_row = r._row;
+			_col = r._col;
+			_p = new _T[_row * _col]();
+			copy(r._p, r._p + (_row * _col), _p);
+		}
+		return *this;
 	}
 	size_t row()const { return _row; }
 	size_t column()const { return _col; }

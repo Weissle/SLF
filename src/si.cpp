@@ -35,11 +35,7 @@ int main(int argc, char * argv[]) {
 
 	//match order
 #define MOS_SI_TEST
-#ifdef MOS_TEST
-    typedef MatchOrderSelectorTest<GraphType> MatchOrderSelectorType;
-#elif defined(MOS_NORMAL)
-	typedef MatchOrderSelector<GraphType> MatchOrderSelectorType;
-#elif defined(MOS_SI)
+#if defined(MOS_SI)
 	typedef MatchOrderSelectorSI<GraphType> MatchOrderSelectorType;
 #elif defined(MOS_SI_TEST)
 	typedef MatchOrderSelectorSI_T<GraphType> MatchOrderSelectorType;

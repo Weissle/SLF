@@ -31,85 +31,6 @@ double variance(const T begin, const T end) {
 
 
 template<class _GraphType>
-class MatchOrderSelector {
-public:
-	typedef _GraphType GraphType;
-	typedef typename GraphType::NodeType NodeType;
-	typedef typename NodeType::NodeIDType NodeIDType;
-	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
-		typedef set<NodeIDType> Set;
-		Set nodeNotInMatchSet;
-		for (const auto node : graph.nodes()) {
-			nodeNotInMatchSet.insert(node.id());
-		}
-		Set ioSet;
-
-		typedef const NodeType* NodeCPointer;
-		typedef pair<NodeCPointer, double> NodeMatchPointPair;
-		vector<int>  ioMap;
-
-		ioMap.resize(graph.size() + 1);
-
-		const auto calNodeMatchPoint = [&](const NodeType& node) {
-			double p1 = node.inEdgesNum() + node.outEdgesNum() + ioMap[node.id()] * 2;
-			return p1;
-		};
-		const auto seleteAGoodNodeToMatch = [&](const Set& s) {
-			double nodePoint = -1;
-			NodeCPointer answer = nullptr;
-			for (const auto& tempNodeID : s) {
-				const auto& tempNode = graph.node(tempNodeID);
-				const auto tempPoint = calNodeMatchPoint(tempNode);
-				if (tempPoint > nodePoint) {
-					answer = &tempNode;
-					nodePoint = tempPoint;
-				}
-			}
-			return NodeMatchPointPair(answer, nodePoint);
-		};
-
-		vector<NodeIDType> matchSequence;
-		matchSequence.reserve(graph.size() + 1);
-
-		while (nodeNotInMatchSet.empty() == false) {
-			NodeMatchPointPair nodePointPair;
-			if (ioSet.empty() == false) {
-				const auto pair = seleteAGoodNodeToMatch(ioSet);
-				nodePointPair = pair;
-			}
-			else nodePointPair = seleteAGoodNodeToMatch(nodeNotInMatchSet);
-			assert(nodePointPair.first != nullptr && "error happened");
-			const auto& node = *nodePointPair.first;
-
-			const auto nodeID = node.id();
-			matchSequence.push_back(nodeID);
-			nodeNotInMatchSet.erase(nodeID);
-			ioSet.erase(nodeID);
-
-			for (const auto& tempEdge : node.inEdges()) {
-				const auto sourceNodeID = tempEdge.source();
-				if (IN_SET(nodeNotInMatchSet, sourceNodeID)) {
-					ioSet.insert(sourceNodeID);
-					ioMap[sourceNodeID]++;
-
-				}
-			}
-			for (const auto& tempEdge : node.outEdges()) {
-				const auto targetNodeID = tempEdge.target();
-				if (IN_SET(nodeNotInMatchSet, targetNodeID)) {
-					ioSet.insert(targetNodeID);
-					ioMap[targetNodeID]++;
-				}
-			}
-
-		}
-		return matchSequence;
-	}
-
-
-};
-
-template<class _GraphType>
 class MatchOrderSelectorSI {
 public:
 	typedef _GraphType GraphType;
@@ -267,42 +188,38 @@ public:
 	static vector<NodeIDType> run(const GraphType& graph, const GraphType& targetGraph) {
 		vector<NodeIDType> matchSequence;
 		matchSequence.reserve(graph.size() + 1);
-		unordered_map<NodeLabelType, size_t> pgLabelNum = graph.labelNum(), tgLabelNum = targetGraph.labelNum();
-		unordered_map<NodeLabelType, size_t> pgLabelInMax = graph.labelMaxIn(), tgLabelInMax = targetGraph.labelMaxIn();
-		unordered_map<NodeLabelType, size_t> pgLabelOutMax = graph.labelMaxOut(), tgLabelOutMax = targetGraph.labelMaxOut();
-		vector<size_t> label_count;
+		unordered_map<NodeLabelType, size_t> pgLabelNum = graph.labelNum(), tgLabelNum= graph.labelNum();
+		unordered_map<NodeLabelType, size_t> pgLabelInMax = graph.labelMaxIn();
+		unordered_map<NodeLabelType, size_t> pgLabelOutMax = graph.labelMaxOut();
 		//a simple check;
 		{
 			if (pgLabelNum.size() > tgLabelNum.size()) {
 				cout << "No solution" << endl;
 				exit(0);
 			}
-			for (const auto p : pgLabelNum) {
-				auto l = p.first;
-				auto num = p.second;
-				if (pgLabelInMax[l] > tgLabelInMax[l] || num > tgLabelNum[l] || pgLabelOutMax[l] > tgLabelOutMax[l]) {
-					cout << "no solution\n";
-					exit(1);
+		}
+		vector<TwoDArray<size_t>> degree_count_label(max(graph.maxLabel(), targetGraph.maxLabel()) + 1);
+		for (auto i = 0; i < degree_count_label.size(); ++i) {
+			degree_count_label[i] = TwoDArray<size_t>(pgLabelInMax[i]+1, pgLabelOutMax[i]+1);
+		}
+		for (auto& node : targetGraph.nodes()) {
+			auto label = node.label();
+			auto row = min(node.inEdgesNum(), degree_count_label[label].row()-1);
+			auto col = min(node.outEdgesNum(), degree_count_label[label].column()-1);
+			degree_count_label[label][row][col]++;
+		}
+		for (auto z = 0; z < degree_count_label.size(); ++z) {
+			size_t row_max = degree_count_label[z].row() - 1, col_max = degree_count_label[z].column() - 1;
+			for (long long  i = degree_count_label[z].row()-1; i >= 0; --i) {
+				for (long long j = degree_count_label[z].column()-1; j >= 0; --j) {
+					auto top = ((i + 1) > row_max) ? 0 : degree_count_label[z][i + 1][j];
+					auto right = ((j + 1) > col_max) ? 0 : degree_count_label[z][i][j + 1];
+					auto top_right = ((j + 1 <= col_max) && (i + 1) <= row_max) ? degree_count_label[z][i + 1][j + 1] : 0;
+					degree_count_label[z][i][j] += top + right - top_right;
 				}
 			}
 		}
-		size_t labelMax = 0, in_max = 0, out_max=0;
-		for (auto& p : tgLabelNum)labelMax = max(labelMax, p.first);
-		for (auto& p : tgLabelInMax)in_max = max(in_max, p.second);
-		for (auto& p : tgLabelOutMax)out_max = max(out_max, p.second);
-		label_count.resize(labelMax + 1);
-		TwoDArray<size_t> degree_count(in_max+1, out_max+1);
-	
-		for (auto& node : targetGraph.nodes()) {
-			degree_count[node.inEdgesNum()][node.outEdgesNum()]++;
-			label_count[node.label()]++;
-		}
-		for (long long i = in_max - 1; i >= 0; --i) {
-			for (long long j = out_max - 1; j >= 0; --j) {
-				degree_count[i][j] += degree_count[i + 1][j] + degree_count[i][j + 1] - degree_count[i + 1][j + 1];
-			}
-		}
-	
+
 		double* possibility = new double[graph.size()];
 		pair<NodeIDType, pair<double, size_t>>* sortPoss = new pair<NodeIDType, pair<double, size_t>>[graph.size()];
 
@@ -311,7 +228,11 @@ public:
 			auto id = node.id();
 			notInSeq.insert(id);
 			auto label = node.label();
-			possibility[id] = (double)(label_count[label] * degree_count[node.inEdgesNum()][node.outEdgesNum()]) / (targetGraph.size() * targetGraph.size() );
+		//	cout << degree_count_label[label][node.inEdgesNum()][node.outEdgesNum()] << endl;
+			auto w1 = degree_count_label[label];
+			auto w2 = w1[node.inEdgesNum()];
+			auto w3 = w2[node.outEdgesNum()];
+			possibility[id] = (double)(degree_count_label[label][node.inEdgesNum()][node.outEdgesNum()]) / (targetGraph.size() * targetGraph.size());
 
 			sortPoss[id] = pair<NodeIDType, pair<double, size_t>>(id, pair<double, size_t>(possibility[id], node.outEdgesNum() + node.inEdgesNum()));
 
@@ -327,12 +248,13 @@ public:
 
 		size_t maxDegreeInSeq = 0;
 		map<NodeIDType, double> ioMap;
+		map<NodeIDType, int> connect_num;
 		auto* sortPossPoint = sortPoss;
 		int seqID = -1;
 		auto chooseNode = [&]() {
 			int nowid = -1;
 			double nowposs = 2;
-			if (ioMap.empty() == false) {
+	/*		if (ioMap.empty() == false) {
 				for (auto it = ioMap.begin(); it != ioMap.end(); ++it) {
 					if (fabs(it->second - nowposs) < 1e-300) {
 						if (graph[it->first].outEdgesNum() + graph[it->first].inEdgesNum() > graph[nowid].outEdgesNum() + graph[nowid].inEdgesNum()) {
@@ -345,6 +267,25 @@ public:
 						nowid = it->first;
 					}
 				}
+			}*/
+			if (connect_num.size()) {
+				auto answer_it = connect_num.begin();
+				auto test_it = connect_num.begin()++;
+				while (test_it != connect_num.end()) {
+					if (test_it->second > answer_it->second) answer_it = test_it;
+					else {
+						auto answer_id = answer_it->first;
+						auto test_id = test_it->first;
+						if (fabs(possibility[answer_id] - possibility[test_id] < 1e-20)) {
+							if(graph[answer_id].inEdgesNum() + graph[answer_id].outEdgesNum() < graph[test_id].inEdgesNum() + graph[test_id].outEdgesNum()) answer_it = test_it;
+						}
+						else {
+							if (possibility[answer_id] > possibility[test_id]) answer_it = test_it;
+						}
+					}
+					test_it++;
+				}
+				return (int) answer_it->first;
 			}
 			else {
 				while (NOT_IN_SET(notInSeq, sortPossPoint->first))sortPossPoint++;  //node already in seq;
@@ -359,6 +300,7 @@ public:
 			matchSequence.push_back(seqID);
 			notInSeq.erase(seqID);
 			ioMap.erase(seqID);
+			connect_num.erase(seqID);
 			if (notInSeq.empty())break;
 			auto& node = graph.node(seqID);
 			for (auto& edge : node.inEdges()) {
@@ -366,6 +308,7 @@ public:
 				if (IN_SET(notInSeq, temp)) {
 					if (fabs(ioMap[temp] - 0) < 1e-300)ioMap[temp] = possibility[temp];
 					ioMap[temp] *= possibility[seqID];
+					connect_num[temp]++;
 				};
 			}
 			for (auto& edge : node.outEdges()) {
@@ -373,9 +316,10 @@ public:
 				if (IN_SET(notInSeq, temp)) {
 					if (fabs(ioMap[temp] - 0) < 1e-300)ioMap[temp] = possibility[temp];
 					ioMap[temp] *= possibility[seqID];
+					connect_num[temp]++;
 				}
 			}
-			
+
 			seqID = chooseNode();
 		} while (true);
 		delete[]sortPoss;

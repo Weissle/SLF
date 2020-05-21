@@ -12,7 +12,7 @@
 #include<atomic>
 #include<time.h>
 #include<assert.h>
-mutex m;
+
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
@@ -41,9 +41,10 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		next_tasks->addTask(cand_id[min_depth].begin(), cand_id[min_depth].end());
 		cand_id[min_depth].clear();
 		auto& seq = next_tasks->targetSeq();
+		seq.assign(tasks->getTargetSequence().begin(), tasks->getTargetSequence().end());
 		const auto& state_seq = state.getMap(false);
 		seq.clear();
-		for (auto i = 0; i < min_depth; ++i) {
+		for (auto i = seq.size(); i < min_depth; ++i) {
 			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
 		}
 		//task_distributor->addTasks(next_tasks);
@@ -129,9 +130,13 @@ public:
 					run_();
 					state.popPair(query_id);
 				}
-				
 			}
 			tasks.reset();
+			if (next_tasks.use_count() == 0) {
+				bool ok;
+				next_tasks = task_distributor->chooseSearchTasks(&ok);
+				if (ok == false) return;
+			}
 		} while (next_tasks.use_count());
 	}
 
@@ -173,6 +178,7 @@ public:
 		task_container->addTask(tasks, tasks + first_task_num);
 		delete[]tasks;
 
+		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
 		task_distributor->addSearchTasks(move(task_container));
 		
 		task_distributor->join();
