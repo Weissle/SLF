@@ -14,20 +14,20 @@ private:
 	NodeIDType _source, _target;
 	EDGE_RECORD_TYPE recordType;
 	EdgeLabelType _label;
-public:
 	EdgeLogic() = default;
+public:
 	~EdgeLogic() = default;
 	EdgeLogic(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :
 		recordType(_recordType), _source(_s), _target(_t), _label(_l) {
 	}
 
 	const NodeIDType& source() const {
-		assert(recordType != EDGE_RECORD_TYPE::TARGET&&  "this is a edge record target node!!");
+		assert(recordType != EDGE_RECORD_TYPE::TARGET && "this is a edge record target node!!");
 		return _source;
 	}
 	const NodeIDType& target()const
 	{
-		assert (recordType != EDGE_RECORD_TYPE::SOURCE && "this is a edge record source node!!");
+		assert(recordType != EDGE_RECORD_TYPE::SOURCE && "this is a edge record source node!!");
 		return _target;
 	}
 	const EdgeLabelType& label()const
@@ -64,30 +64,19 @@ public:
 	typedef _EdgeLabelType EdgeLabelType;
 	typedef EdgeSimple<EdgeLabelType> EdgeType;
 private:
-	NodeIDType _source,_target; 
+	NodeIDType _source, _target;
 	EdgeLabelType _label;
-public:
 	EdgeSimple() = default;
+public:
 	~EdgeSimple() = default;
-	EdgeSimple(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :_label(_l),_source(_s),_target(_t)
+	EdgeSimple(EDGE_RECORD_TYPE _recordType, const NodeIDType _s, const NodeIDType _t, const EdgeLabelType _l = EdgeLabelType()) :_label(_l), _source(_s), _target(_t)
 	{}
 
-	const NodeIDType& source() const {
-		return _source;
-	}
-	const NodeIDType& target()const
-	{
-		return _target;
-	}
-	const EdgeLabelType& label()const
-	{
-		return _label;
-	}
-	bool isSameTypeEdge(const EdgeType & n) const {
-		return _label == n.label();
-	}
-
-	bool operator<(const EdgeType & e)const {
+	inline const NodeIDType& source() const { return _source; }
+	inline const NodeIDType& target()const { return _target; }
+	inline const EdgeLabelType& label()const { return _label; }
+	inline bool isSameTypeEdge(const EdgeType& n) const {return _label == n.label();}
+	bool operator<(const EdgeType& e)const {
 		if (_source == e._source) {
 			if (_target == e._target) {
 				return _label < e._label;
@@ -96,7 +85,7 @@ public:
 		}
 		return _source < e._source;
 	};
-	bool operator==(const EdgeType & e)const {
+	inline bool operator==(const EdgeType& e)const {
 		return (_source == e._source && _label == e._label && _target == e._target);
 	}
 

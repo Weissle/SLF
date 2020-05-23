@@ -30,20 +30,15 @@ private:
 	// NodeLabel -> quantity of nodes have this label
 	unordered_map<NodeLabelType, size_t> aux_LabelNum;
 	NodeLabelType _maxLabel = 0;
-public:
 	Graph() = default;
-	Graph(const vector<NodeType>& __nodes) :_nodes(__nodes) {
-		_size = _nodes.size();
-	}
-	~Graph() = default;
-
+public:
 	Graph(const size_t s, GRAPH_TYPE _graphType = GRAPH_TYPE::DIRECTION) :_size(s), graphType(_graphType) {
 		vector<NodeType> n;
 		n.reserve(s + 1);
 		for (auto i = 0; i < s; ++i) n.push_back(NodeType(i));
 		swap(_nodes, n);
-
 	}
+
 	void edgeVectorReserve(const NodeIDType id, size_t s) {
 		assert(id < _size);
 		_nodes[id].reserve(s);
@@ -52,7 +47,6 @@ public:
 	void setNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
 		assert((_id < _size) && "node ID overflow");
 		_nodes[_id].setLabel(_label);
-		return;
 	}
 	void addEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel = EdgeLabelType()) {
 
@@ -79,7 +73,6 @@ public:
 	const vector<NodeType>& nodes()const { return _nodes; }
 
 	const NodeType& node(const NodeIDType& nodeID) const {
-		if (nodeID >= _size)cout << nodeID << endl;
 		assert((nodeID < _size) && "node ID overflow");
 		return _nodes[nodeID];
 	}
