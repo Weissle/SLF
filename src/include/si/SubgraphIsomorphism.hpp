@@ -18,10 +18,10 @@ namespace wg {
 class SubgraphIsomorphismBase {
 protected:
 	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
-	bool needOneSolution;
+	size_t _limits;
 public:
 	SubgraphIsomorphismBase() = default;
-	SubgraphIsomorphismBase(const shared_ptr<const vector<NodeIDType>> _msp, bool needOS = false) : match_sequence_ptr(_msp), needOneSolution(needOS)
+	SubgraphIsomorphismBase(const shared_ptr<const vector<NodeIDType>> _msp, size_t __limits ) : match_sequence_ptr(_msp), _limits(__limits)
 	{
 	}
 };
@@ -35,7 +35,8 @@ protected:
 	AnswerReceiverType& answerReceiver;
 //	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
 	vector<vector<NodeIDType>> cand_id;
-	bool run_timeCount()
+	bool end = false;
+	void run_timeCount()
 	{
 
 		if (searchDepth == queryGraphPtr->size()) {
@@ -66,11 +67,12 @@ protected:
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
-				if (run_timeCount() && this->needOneSolution) return true;
+				run_timeCount();
 				t1 = clock();
 				mapState.popPair(query_id);
 				--searchDepth;
 				t2 = clock();
+				if (end)return;
 				del += t2 - t1;
 			}
 		}
@@ -79,13 +81,14 @@ protected:
 
 	inline void ToDoAfterFindASolution() {
 		answerReceiver << mapState.getMap();
+		if ( _limits && answerReceiver.solutionsCount() >= _limits) end = true;
 	}
-	bool run_noTimeCount()
+	void run_noTimeCount()
 	{
 		const auto search_depth = searchDepth;
 		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
-			return true;
+			return;
 		}
 
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
@@ -97,12 +100,13 @@ protected:
 			if (mapState.checkPair(query_id, target_id)) {
 				mapState.pushPair(query_id, target_id);
 				++searchDepth;
-				if (run_noTimeCount() && this->needOneSolution) return true;
+				run_noTimeCount();
+				if (end)return;
 				mapState.popPair(query_id);
 				--searchDepth;
 			}
 		}
-		return false;
+		return;
 	}
 	size_t cal = 0, check = 0, add = 0, del = 0, hitTime = 0;
 	long long canditatePairCount = 0;
@@ -112,8 +116,8 @@ public:
 
 	SubgraphIsomorphism() = default;
 	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
-		:SubgraphIsomorphismBase(_match_sequence_ptr, _onlyNeedOneSolution), answerReceiver(_answerReceiver),queryGraphPtr(&_queryGraph),targetGraphPtr(&_targetGraph),
+	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
+		:SubgraphIsomorphismBase(_match_sequence_ptr, __limits), answerReceiver(_answerReceiver),queryGraphPtr(&_queryGraph),targetGraphPtr(&_targetGraph),
 		mapState(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
 
 	{

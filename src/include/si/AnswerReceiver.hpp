@@ -39,7 +39,7 @@ public:
 	void finish() {
 //		cout << "solution count : "<<count-1 << endl;
 	}
-	size_t solutions_count() { return count - 1; }
+	size_t solutionsCount() { return count - 1; }
 };
 
 class AnswerReceiverThread{
@@ -62,6 +62,6 @@ public:
 		isFinish = true;
 	
 	}
-	size_t solutions_count() { return count; }
+	size_t solutionsCount() { return count; }
 
 };

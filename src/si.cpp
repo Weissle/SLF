@@ -13,26 +13,25 @@ using namespace std;
 static long t = 0;
 using namespace wg;
 
-int main(int argc, char * argv[]) {
+int main(int argc, char* argv[]) {
 	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
 	typedef Graph<NodeType, EdgeType> GraphType;
 
 
 
-	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-qg","self-order","-so","-thread","-t","-o" });
+	argh::parser cmdl({ "self-order","-so","-thread","-t","-limits","-l" });
 	cmdl.parse(argc, argv);
-	string queryGraphPath, targetGraphPath,matchOrderPath,answerPath="";
+	string queryGraphPath, targetGraphPath, matchOrderPath;
 	size_t threadNum = 0;
-	bool induceGraph = true, onlyNeedOneSolution = false,matchOrder = false;
-	cmdl({ "-target-graph","-tg" }) >> targetGraphPath;
-	cmdl({ "-query-graph","-qg" }) >> queryGraphPath;
-	cmdl({ "-o" }) >> answerPath;
-//	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
-	onlyNeedOneSolution = cmdl[{"-one-solution", "-one"}];
+	bool induceGraph = true, matchOrder = false;
+	size_t limits = 0;
+	queryGraphPath = cmdl[1];
+	targetGraphPath = cmdl[2];
+	//	induceGraph = (cmdl[{"-no-induce"}]) ? false : true;
 	cmdl({ "-thread","-t" }) >> threadNum;
-    cmdl({"-self-order","-so"})>>matchOrderPath;
-
+	cmdl({ "-self-order","-so" }) >> matchOrderPath;
+	cmdl({ "-limits","-l" }) >> limits;
 	//match order
 #define MOS_SI_TEST
 #if defined(MOS_SI)
@@ -43,7 +42,7 @@ int main(int argc, char * argv[]) {
 	// graph type ( store in files ) and read graph
 #define GRF_L
 #ifdef GRF_L
-	typedef GRFGraphLabel<GraphType,size_t> GraphReader;
+	typedef GRFGraphLabel<GraphType, size_t> GraphReader;
 #elif defined(LAD)
 	typedef LADReader<GraphType> GraphReader;
 #elif defined ARG_NL
@@ -51,8 +50,8 @@ int main(int argc, char * argv[]) {
 #endif
 	IndexTurner<size_t> turner;
 	time_t t1 = time(0);
-	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath,turner),
-		        *targetGraph = GraphReader::readGraph(targetGraphPath,turner);
+	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath, turner),
+		* targetGraph = GraphReader::readGraph(targetGraphPath, turner);
 
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
@@ -64,25 +63,25 @@ int main(int argc, char * argv[]) {
 	size_t call_times = 0;
 
 	if (threadNum > 1) {
-		AnswerReceiverThread answerReceiver(answerPath);
-		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, onlyNeedOneSolution, ms_ptr);
+		AnswerReceiverThread answerReceiver;
+		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, limits, ms_ptr);
 		si.run();
 		answerReceiver.finish();
-		solutions = answerReceiver.solutions_count();
+		solutions = answerReceiver.solutionsCount();
 	}
 	else {
 		AnswerReceiver answerReceiver;
-		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, onlyNeedOneSolution, ms_ptr);
+		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, limits, ms_ptr);
 		si.run();
 		answerReceiver.finish();
-		solutions = answerReceiver.solutions_count();
+		solutions = answerReceiver.solutionsCount();
 		call_times = si.callTimes();
 	}
-	time_t TimeC = time(0)-t1;
+	time_t TimeC = time(0) - t1;
 	delete queryGraph;
 	delete targetGraph;
 	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(TimeC) + "]" << endl;
-	if(call_times)	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
+	if (call_times)	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
 
 
 	return 0;

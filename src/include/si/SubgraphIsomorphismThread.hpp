@@ -26,7 +26,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	shared_ptr<ShareTasks> tasks, next_tasks;
 
 	inline void ToDoAfterFindASolution() {
-		if (this->needOneSolution)task_distributor->setEnd(true);
+		if (_limits && answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
 		answerReceiver << state.getMap();
 	}
 	void distributeTask() {
@@ -104,9 +104,9 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	}
 
 public:
-	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, bool _oneSolution,
+	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, size_t __limits,
 		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),
-		SubgraphIsomorphismBase(_msp, _oneSolution), answerReceiver(_answerReceiver),
+		SubgraphIsomorphismBase(_msp, __limits), answerReceiver(_answerReceiver),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
 	}
@@ -151,12 +151,12 @@ class SubgraphIsomorphismThread : public SubgraphIsomorphismBase {
 public:
 	SubgraphIsomorphismThread() = default;
 	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answer_receiver, size_t _thread_num,
-		bool _onlyNeedOneSolution, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr):queryGraphPtr(&_queryGraph), targetGraphPtr(&_targetGraph),
-		SubgraphIsomorphismBase(_match_sequence_ptr, _onlyNeedOneSolution), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
+		size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr):queryGraphPtr(&_queryGraph), targetGraphPtr(&_targetGraph),
+		SubgraphIsomorphismBase(_match_sequence_ptr, __limits), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
 	{
 		auto subgraph_states = makeSubgraphState<GraphType>(_queryGraph, _match_sequence_ptr);
-		auto f = [&, subgraph_states,_onlyNeedOneSolution]() {
-			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, _onlyNeedOneSolution, subgraph_states, task_distributor);
+		auto f = [&, subgraph_states,__limits]() {
+			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, __limits, subgraph_states, task_distributor);
 			task_distributor->addFreeUnit(move(p));
 			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
 			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
