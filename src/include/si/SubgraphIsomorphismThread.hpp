@@ -26,7 +26,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	shared_ptr<ShareTasks> tasks, next_tasks;
 
 	inline void ToDoAfterFindASolution() {
-		if (this->needOneSolution)task_distributor->end = true;
+		if (this->needOneSolution)task_distributor->setEnd(true);
 		answerReceiver << state.getMap();
 	}
 	void distributeTask() {
@@ -70,7 +70,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 			if (state.checkPair(query_id, target_id)) {
 				state.pushPair(query_id, target_id);
 				run_();
-				if (task_distributor->end) return;
+				if (task_distributor->end()) return;
 				state.popPair(query_id);
 			}
 		}
@@ -121,13 +121,14 @@ public:
 			query_id = (*match_sequence_ptr)[state.depth()];
 	
 			while (tasks->size()) {
-				if (task_distributor->end)break;
+				if (task_distributor->end())break;
 				auto target_id = tasks->getTask();
 				if (target_id == NO_MAP)continue;
 				if (state.checkPair(query_id, target_id)) {
 					assert(state.getMap(false)[query_id] == NO_MAP);
 					state.pushPair(query_id, target_id);
 					run_();
+					if(task_distributor->end())return;
 					state.popPair(query_id);
 				}
 			}
@@ -154,7 +155,7 @@ public:
 		SubgraphIsomorphismBase(_match_sequence_ptr, _onlyNeedOneSolution), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
 	{
 		auto subgraph_states = makeSubgraphState<GraphType>(_queryGraph, _match_sequence_ptr);
-		auto f = [&, subgraph_states]() {
+		auto f = [&, subgraph_states,_onlyNeedOneSolution]() {
 			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, _onlyNeedOneSolution, subgraph_states, task_distributor);
 			task_distributor->addFreeUnit(move(p));
 			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());

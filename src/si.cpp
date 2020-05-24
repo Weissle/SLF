@@ -50,11 +50,9 @@ int main(int argc, char * argv[]) {
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
 	IndexTurner<size_t> turner;
-	auto t1 = clock();
+	time_t t1 = time(0);
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath,turner),
 		        *targetGraph = GraphReader::readGraph(targetGraphPath,turner);
-
-	t1 = clock();
 
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
@@ -80,10 +78,10 @@ int main(int argc, char * argv[]) {
 		solutions = answerReceiver.solutions_count();
 		call_times = si.callTimes();
 	}
-	double TimeC = clock()-t1;
+	time_t TimeC = time(0)-t1;
 	delete queryGraph;
 	delete targetGraph;
-	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string((double)TimeC / CLOCKS_PER_SEC) + "]" << endl;
+	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(TimeC) + "]" << endl;
 	if(call_times)	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
 
 

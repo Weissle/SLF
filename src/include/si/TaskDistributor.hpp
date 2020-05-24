@@ -18,6 +18,7 @@ class TaskDistributor :public ThreadPool {
 	queue<shared_ptr<ShareTasks>> share_tasks_container;
 	vector<shared_ptr<ShareTasks>> using_tasks;
 
+	atomic_bool _end;
 	bool allow_distribute = false;
 
 	//true is left better.
@@ -64,13 +65,17 @@ class TaskDistributor :public ThreadPool {
 		}
 	}
 public:
-	atomic_bool end;
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
-		end.store(false);
+		_end.store(false);
 		using_tasks.reserve(thread_num_ * 2);
 		share_tasks_container.push(make_shared<ShareTasks>());
 	}
-
+	bool end()const{
+		return _end.load();
+	}
+	void setEnd(const bool end_){
+		_end.store(end_);
+	}
 	void addFreeUnit(unique_ptr<SIUnit> free_unit) {
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
