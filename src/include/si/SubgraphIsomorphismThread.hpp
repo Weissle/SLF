@@ -60,7 +60,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		}
 		const auto query_id = (*match_sequence_ptr)[search_depth];
 		state.calCandidatePairs(query_id, cand_id[search_depth]);
-		if (task_distributor->allowDistribute() && tasks->size() == 0 && next_tasks.use_count() == 0) {
+		if (task_distributor->allowDistribute() && tasks->size() == 0 && (next_tasks.use_count() == 0 || next_tasks->size() == 0)) {
 			distributeTask();
 		}
 
