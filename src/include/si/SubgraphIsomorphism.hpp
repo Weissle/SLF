@@ -41,7 +41,7 @@ protected:
 
 		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
-			return true;
+			return;
 		}
 		++hitTime;
 		if ((int)hitTime % (int)1E4 == 0) {
@@ -76,7 +76,6 @@ protected:
 				del += t2 - t1;
 			}
 		}
-		return false;
 	}
 
 	inline void ToDoAfterFindASolution() {
