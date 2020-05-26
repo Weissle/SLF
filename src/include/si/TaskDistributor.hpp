@@ -19,7 +19,10 @@ class TaskDistributor :public ThreadPool {
 	vector<shared_ptr<ShareTasks>> using_tasks;
 
 	atomic_bool _end;
+	mutex allow_mutex;
 	bool allow_distribute = false;
+	size_t allow_depth = 0;
+	int allow_count_times = 0;
 
 	//true is left better.
 	bool cmp_good_task(const shared_ptr<ShareTasks>& l, const shared_ptr<ShareTasks>& r) const {
@@ -85,6 +88,16 @@ public:
 	//	const bool answer = (threads_num.load() > running_thread_num.load()) && restTaskNum() == 0;
 	//	return answer;
 	}
+	bool haveQuality(const size_t depth){
+	//	return true;
+		lock_guard<mutex> lg(allow_mutex);
+		allow_depth = min(allow_depth,depth);
+		if(allow_count_times <= 0) return depth <= (allow_depth + 1);
+		else{
+			allow_count_times--;
+			return false;
+		}
+	}
 	void addShareTasksContainer(shared_ptr<ShareTasks> _c) {
 		lock_guard<mutex> lg(share_tasks_container_mutex);
 		share_tasks_container.push(_c);
@@ -128,8 +141,10 @@ public:
 		}
 		if (using_tasks.empty() || using_tasks[the_best_task_index]->size() == 0) {
 			allow_distribute = true;
+			allow_count_times = threads_num.load();
+			allow_depth = SIZE_MAX;
 			*ok = false;
-			return shared_ptr<ShareTasks>();
+			return make_shared<ShareTasks>();
 		}
 		else {
 			*ok = true;

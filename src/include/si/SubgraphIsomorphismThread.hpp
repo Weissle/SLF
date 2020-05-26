@@ -12,7 +12,8 @@
 #include<atomic>
 #include<time.h>
 #include<assert.h>
-
+#include<iostream>
+using namespace std;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
@@ -29,13 +30,17 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		if (_limits && answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
 		answerReceiver << state.getMap();
 	}
+	inline size_t minDepth() {
+		size_t min_depth = tasks->getTargetSequence().size()+1;
+		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].empty())++min_depth;
+		return min_depth;
+	}
 	void distributeTask() {
 		bool ok;
 		next_tasks = task_distributor->getShareTasksContainer(&ok);
 		if (!ok)return;
 
-		size_t min_depth = tasks->getTargetSequence().size() + 1;
-		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].empty())++min_depth;
+		auto min_depth = minDepth();
 		if (min_depth == queryGraphPtr->size()) return;
 
 		next_tasks->addTask(cand_id[min_depth].begin(), cand_id[min_depth].end());
@@ -47,7 +52,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		for (auto i = seq.size(); i < min_depth; ++i) {
 			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
 		}
-		//task_distributor->addTasks(next_tasks);
+		
 		task_distributor->addThreadTask(&TaskDistributor<SIUnit>::addSearchTasks, task_distributor.get(),next_tasks);
 	}
 
@@ -61,7 +66,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		const auto query_id = (*match_sequence_ptr)[search_depth];
 		state.calCandidatePairs(query_id, cand_id[search_depth]);
 		if (task_distributor->allowDistribute() && tasks->size() == 0 && (next_tasks.use_count() == 0 || next_tasks->size() == 0)) {
-			distributeTask();
+			if(task_distributor->haveQuality(minDepth()))	distributeTask();
 		}
 
 		while (cand_id[search_depth].size()) {
@@ -85,9 +90,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
 			if (state_seq[(*match_sequence_ptr)[diff_point]] != to_seq[diff_point])break;
 		}
-		if (state.depth() != 0) {
-			int a = 0;
-		}
+
 		while (state.depth() > diff_point) { 
 			const auto pop_query_node = (*match_sequence_ptr)[state.depth() - 1];
 			state.popPair(pop_query_node); 
@@ -181,7 +184,6 @@ public:
 
 		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
 		task_distributor->addSearchTasks(move(task_container));
-		
 		task_distributor->join();
 		return;
 	}
