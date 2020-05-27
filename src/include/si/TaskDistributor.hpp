@@ -19,15 +19,14 @@ class TaskDistributor :public ThreadPool {
 	vector<shared_ptr<ShareTasks>> using_tasks;
 
 	atomic_bool _end;
-	mutex allow_mutex;
+
 	bool allow_distribute = false;
-	size_t allow_depth = 0;
-	int allow_count_times = 0;
+	atomic_size_t allow_depth_count;
 
 	//true is left better.
 	bool cmp_good_task(const shared_ptr<ShareTasks>& l, const shared_ptr<ShareTasks>& r) const {
 		if (l->size() == 0)return false;
-		if (l->getTargetSequence().size() < r->getTargetSequence().size())return true;
+		if (l->targetSequence().size() < r->targetSequence().size())return true;
 		else return false;
 	}
 	bool giveTask(unique_ptr<SIUnit> free_unit) {
@@ -69,6 +68,7 @@ class TaskDistributor :public ThreadPool {
 	}
 public:
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
+		allow_depth_count.store(0);
 		_end.store(false);
 		using_tasks.reserve(thread_num_ * 2);
 		share_tasks_container.push(make_shared<ShareTasks>());
@@ -83,18 +83,14 @@ public:
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
 	}
-	bool allowDistribute() {
-		return allow_distribute;
-	//	const bool answer = (threads_num.load() > running_thread_num.load()) && restTaskNum() == 0;
-	//	return answer;
-	}
+	inline bool allowDistribute() {return allow_distribute;}
 	bool haveQuality(const size_t depth){
-	//	return true;
-		lock_guard<mutex> lg(allow_mutex);
-		allow_depth = min(allow_depth,depth);
-		if(allow_count_times <= 0) return depth <= (allow_depth + 1);
+		if(depth <= allow_depth_count.load() / threadNum()) {
+			allow_depth_count.fetch_sub(threadNum());
+			return true;
+		}
 		else{
-			allow_count_times--;
+			allow_depth_count++;
 			return false;
 		}
 	}
@@ -108,8 +104,8 @@ public:
 			for (auto i = 0; i < using_tasks.size(); ++i) {
 				if (using_tasks[i].use_count() == 1) {
 					*ok = true;
-					auto answer = using_tasks[i];
-					using_tasks[i] = using_tasks.back();
+					auto answer = move(using_tasks[i]);
+					using_tasks[i] = move(using_tasks.back());
 					using_tasks.pop_back();
 					return answer;
 				}
@@ -127,8 +123,8 @@ public:
 			lock_guard<mutex> lg(using_tasks_mutex);
 			using_tasks.push_back(move(tasks));
 		}
-		distributeTasks();
 		allow_distribute = false;
+		distributeTasks();
 	}
 	shared_ptr<ShareTasks> chooseSearchTasks(bool* ok) {
 		size_t the_best_task_index = 0;
@@ -141,10 +137,8 @@ public:
 		}
 		if (using_tasks.empty() || using_tasks[the_best_task_index]->size() == 0) {
 			allow_distribute = true;
-			allow_count_times = threads_num.load();
-			allow_depth = SIZE_MAX;
 			*ok = false;
-			return make_shared<ShareTasks>();
+			return move(make_shared<ShareTasks>());
 		}
 		else {
 			*ok = true;

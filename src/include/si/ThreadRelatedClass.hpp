@@ -21,7 +21,7 @@ public:
 		_task.assign(begin, end);
 	}
 	NodeIDType getTask() {
-		lock_guard<mutex> lg(m);
+		lock_guard<mutex> lg(m); 
 		if(_task.empty())return NO_MAP;
 		else {
 			const auto answer = _task.back();
@@ -29,13 +29,13 @@ public:
 			return answer;
 		}
 	}
-	const vector<NodeIDType>& getTargetSequence()const { return target_sequence; }
+	const vector<NodeIDType>& targetSequence()const { return target_sequence; }
+	vector<NodeIDType>& targetSequence() { return target_sequence; }
 	template<class _It>
 	void setTargetSequence(const _It first, const _It end) { 
 		lock_guard<mutex> lg(m);
 		target_sequence.assign(first, end); 
 	}
-	vector<NodeIDType>& targetSeq() { return target_sequence; }
 	bool empty()const { return _task.empty(); }
 };
 
