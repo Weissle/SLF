@@ -36,6 +36,9 @@ public:
 		lock_guard<mutex> lg(m);
 		target_sequence.assign(first, end); 
 	}
+	size_t depth()const{
+		return target_sequence.size();
+	}
 	bool empty()const { return _task.empty(); }
 };
 
