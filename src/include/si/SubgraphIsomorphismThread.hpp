@@ -12,7 +12,8 @@
 #include<atomic>
 #include<time.h>
 #include<assert.h>
-
+#include<iostream>
+using namespace std;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
@@ -25,29 +26,35 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 	shared_ptr<ShareTasks> tasks, next_tasks;
 
+	size_t min_depth;
+	size_t renewMinDepth(){
+		assert(tasks->size()==0);
+		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].empty())++min_depth;
+		return min_depth;
+	}
 	inline void ToDoAfterFindASolution() {
 		if (_limits && answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
 		answerReceiver << state.getMap();
 	}
+
 	void distributeTask() {
 		bool ok;
 		next_tasks = task_distributor->getShareTasksContainer(&ok);
 		if (!ok)return;
 
-		size_t min_depth = tasks->getTargetSequence().size() + 1;
-		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].empty())++min_depth;
+	//	auto min_depth = minDepth();
+		renewMinDepth();
 		if (min_depth == queryGraphPtr->size()) return;
 
 		next_tasks->addTask(cand_id[min_depth].begin(), cand_id[min_depth].end());
 		cand_id[min_depth].clear();
-		auto& seq = next_tasks->targetSeq();
-		seq.assign(tasks->getTargetSequence().begin(), tasks->getTargetSequence().end());
+		auto& seq = next_tasks->targetSequence();
+		seq.assign(tasks->targetSequence().begin(), tasks->targetSequence().end());
 		const auto& state_seq = state.getMap(false);
-		seq.clear();
 		for (auto i = seq.size(); i < min_depth; ++i) {
 			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
 		}
-		//task_distributor->addTasks(next_tasks);
+		
 		task_distributor->addThreadTask(&TaskDistributor<SIUnit>::addSearchTasks, task_distributor.get(),next_tasks);
 	}
 
@@ -61,7 +68,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		const auto query_id = (*match_sequence_ptr)[search_depth];
 		state.calCandidatePairs(query_id, cand_id[search_depth]);
 		if (task_distributor->allowDistribute() && tasks->size() == 0 && (next_tasks.use_count() == 0 || next_tasks->size() == 0)) {
-			distributeTask();
+			if(task_distributor->haveQuality(renewMinDepth()))	distributeTask();
 		}
 
 		while (cand_id[search_depth].size()) {
@@ -79,15 +86,13 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	}
 
 	void prepareState() {
-		const auto& to_seq = tasks->getTargetSequence();
+		const auto& to_seq = tasks->targetSequence();
 		const auto& state_seq = state.getMap(false);
 		size_t diff_point = 0;
 		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
 			if (state_seq[(*match_sequence_ptr)[diff_point]] != to_seq[diff_point])break;
 		}
-		if (state.depth() != 0) {
-			int a = 0;
-		}
+
 		while (state.depth() > diff_point) { 
 			const auto pop_query_node = (*match_sequence_ptr)[state.depth() - 1];
 			state.popPair(pop_query_node); 
@@ -99,6 +104,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	void prepare_all() {
 		tasks=move(next_tasks);
 		if (tasks->size()) {
+			min_depth = tasks->targetSequence().size() + 1;
 			prepareState();
 		}
 	}
@@ -116,6 +122,7 @@ public:
 	}
 	void run() {
 		NodeIDType query_id;
+		bool ok;
 		do {
 			prepare_all();
 			query_id = (*match_sequence_ptr)[state.depth()];
@@ -134,7 +141,6 @@ public:
 			}
 			tasks.reset();
 			if (next_tasks.use_count() == 0) {
-				bool ok;
 				next_tasks = task_distributor->chooseSearchTasks(&ok);
 				if (ok == false) return;
 			}
@@ -181,7 +187,6 @@ public:
 
 		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
 		task_distributor->addSearchTasks(move(task_container));
-		
 		task_distributor->join();
 		return;
 	}
