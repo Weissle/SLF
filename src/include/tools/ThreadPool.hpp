@@ -29,7 +29,6 @@ private:
 					std::unique_lock<std::mutex> ul(tasks_mutex);
 					running_thread_num--;
 					wake_up_cv.wait(ul, [this]() {return tasks.size() != 0 || (running_thread_num == 0 && wait_stop); });
-<<<<<<< HEAD
 					if (tasks.size()){
 						running_thread_num++;
 						task = move(tasks.front());
@@ -39,16 +38,6 @@ private:
 						wake_up_cv.notify_one();
 						return;
 					}
-=======
-					if (running_thread_num == 0 && wait_stop) 	{
-						wake_up_cv.notify_all();
-						return;
-					}
-					
-					running_thread_num++;
-					task = move(tasks.front());
-					tasks.pop();
->>>>>>> allow-distribute
 				}
 				task();
 			}
