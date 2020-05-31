@@ -18,7 +18,7 @@
 #if defined(INDUCE_ISO) && defined(NORMAL_ISO)
 #error you should not defind INDUCE_ISO and NORMAL_ISO at the same time
 #endif
-
+int cnc = 0;
 using namespace std;
 
 namespace wg {
@@ -60,7 +60,7 @@ public:
 	inline bool inSetIn(const NodeIDType id, const size_t search_depth)const { return inSetUnmap(id, search_depth) && inDepth(id, search_depth); }
 	inline bool inSetOut(const NodeIDType id, const size_t search_depth)const { return inSetUnmap(id, search_depth) && outDepth(id, search_depth); }
 	inline bool inSetUnmap(const NodeIDType id, const size_t search_depth)const { return match_depth[id] > search_depth; }
-	inline size_t matchDepth(const NodeIDType id)const { return (*match_depth)[id]; }
+	inline size_t matchDepth(const NodeIDType id)const { return match_depth[id]; }
 	inline NodeIDType matchID(const size_t depth)const { return (*match_sequence)[depth]; }
 };
 
@@ -79,8 +79,6 @@ private:
 	size_t search_depth = 0;
 	MapType mapping;
 	MapType mappingAux; //from target to query
-
-	size_t labelNum;
 
 	vector<int> inNewCount, outNewCount, bothNewCount, notNewCount;
 	//used in look forward 2 
@@ -153,7 +151,10 @@ private:
 
 		}
 		if (out_edge_inmap_num) return false;
-		if (checkNewCount() == false)return false;
+		if (checkNewCount() == false) {
+	//		++cnc;
+			return false;
+		}
 		clearNewCount();
 
 		for (const auto& tempEdge : target_node.inEdges()) {
@@ -193,7 +194,10 @@ private:
 			else --in_edge_inmap_num;	
 		}
 		if (in_edge_inmap_num)return false;
-		if (checkNewCount() == false)return false;
+		if (checkNewCount() == false) {
+	//		cnc++;
+			return false;
+		}
 		return true;
 	}
 
@@ -249,7 +253,10 @@ private:
 			}
 
 		}
-		if (checkNewCount() == false)return false;
+		if (checkNewCount() == false) {
+			cnc++;
+			return false;
+		}
 		clearNewCount();
 
 		for (const auto& tempEdge : target_node.inEdges()) {
@@ -296,7 +303,10 @@ private:
 				if (targetGraph.existEdge(target_fromid, target_id, tempEdge.label()) == false)return false;
 			}
 		}
-		if (checkNewCount() == false)return false;
+		if (checkNewCount() == false) {
+			cnc++;
+			return false;
+		}
 		return true;
 	}
 
@@ -314,7 +324,7 @@ public:
 
 		mappingAux.resize(targetGraphSize, NO_MAP);
 		mapping.resize(queryGraphSize, NO_MAP);
-		labelNum = max(_q.maxLabel(), _t.maxLabel()) + 1;
+		const auto labelNum = max(_q.maxLabel(), _t.maxLabel()) + 1;
 
 		inNewCount.resize(labelNum);
 		outNewCount.resize(labelNum);
