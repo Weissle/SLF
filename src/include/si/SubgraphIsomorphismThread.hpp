@@ -46,10 +46,11 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		renewMinDepth();
 		if (min_depth == queryGraphPtr->size()) return;
 
-		next_tasks->addTask(cand_id[min_depth].begin(), cand_id[min_depth].end());
-		cand_id[min_depth].clear();
+		//cand_id[min_depth] will be empty
+		next_tasks->giveTask(cand_id[min_depth]);
+
 		auto& seq = next_tasks->targetSequence();
-		seq.assign(tasks->targetSequence().begin(), tasks->targetSequence().end());
+		seq = tasks->targetSequence(); //.assign(tasks->targetSequence().begin(), tasks->targetSequence().end());
 		const auto& state_seq = state.getMap(false);
 		for (auto i = seq.size(); i < min_depth; ++i) {
 			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
@@ -174,19 +175,19 @@ public:
 	void run() {
 		size_t first_task_num = targetGraphPtr->size();
 		//prepare the first task , all target nodes.
-		NodeIDType* tasks = new NodeIDType[first_task_num];
-		for (auto i = 0; i < first_task_num; ++i) 	tasks[i] = i;
+		vector<NodeIDType> root_task(first_task_num);
+		for (auto i = 0; i < first_task_num; ++i)root_task[i] = i;
 		bool ok;
 		shared_ptr<ShareTasks> task_container = task_distributor->getShareTasksContainer(&ok);
 		if (ok == false) {
 			cout << "error occur : " << __FILE__ << __LINE__ << endl;
 			exit(0);
 		}
-		task_container->addTask(tasks, tasks + first_task_num);
-		delete[]tasks;
+		task_container->giveTask(root_task);
 
 		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
-		task_distributor->addSearchTasks(move(task_container));
+		task_distributor->addSearchTasks(task_container);
+		task_container.reset();
 		task_distributor->join();
 		return;
 	}

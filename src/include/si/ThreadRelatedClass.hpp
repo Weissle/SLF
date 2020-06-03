@@ -15,10 +15,9 @@ public:
 	ShareTasks() = default;
 	size_t size()const { return _task.size(); }
 	
-	template<class _It>
-	void addTask(const _It begin, const _It end) {
+	void giveTask(vector<NodeIDType> &new_task) {
 		lock_guard<mutex> lg(m);
-		_task.assign(begin, end);
+		_task.swap(new_task);
 	}
 	NodeIDType getTask() {
 		lock_guard<mutex> lg(m); 

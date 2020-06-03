@@ -25,7 +25,7 @@ class TaskDistributor :public ThreadPool {
 
 	//true is left better.
 	bool cmp_good_task(const shared_ptr<ShareTasks>& l, const shared_ptr<ShareTasks>& r) const {
-		if (l->size() == 0)return false;
+		if (l.get() == nullptr ||  l->size() == 0)return false;
 		if (l->targetSequence().size() < r->targetSequence().size())return true;
 		else return false;
 	}
@@ -54,7 +54,6 @@ class TaskDistributor :public ThreadPool {
 		addFreeUnit(move(unit));
 	}
 	void distributeTasks() {
-		if (using_tasks.empty())return;
 		while (free_units.size()) {
 			unique_ptr<SIUnit> free_unit;
 			{
@@ -71,6 +70,7 @@ public:
 		allow_depth_count.store(0);
 		_end.store(false);
 		using_tasks.reserve(thread_num_ * 2);
+		using_tasks.emplace_back(nullptr);
 		share_tasks_container.push(make_shared<ShareTasks>());
 	}
 	bool end()const{
@@ -85,12 +85,13 @@ public:
 	}
 	inline bool allowDistribute() {return allow_distribute;}
 	bool haveQuality(const size_t depth){
-		if(depth <= allow_depth_count.load() / threadNum()) {
-			allow_depth_count.fetch_sub(threadNum());
+		const auto allow_depth = allow_depth_count / threadNum();
+		if(depth <= allow_depth) {
+			allow_depth_count -= threadNum();
 			return true;
 		}
 		else{
-			allow_depth_count++;
+			allow_depth_count += depth - allow_depth;
 			return false;
 		}
 	}
@@ -99,21 +100,14 @@ public:
 		share_tasks_container.push(_c);
 	}
 	shared_ptr<ShareTasks> getShareTasksContainer(bool* ok) {
-		{
-			lock_guard<mutex> lg(using_tasks_mutex);
-			for (auto i = 0; i < using_tasks.size(); ++i) {
-				if (using_tasks[i].use_count() == 1) {
-					*ok = true;
-					auto answer = move(using_tasks[i]);
-					using_tasks[i] = move(using_tasks.back());
-					using_tasks.pop_back();
-					return answer;
-				}
-			}
-		}
-		assert(share_tasks_container.size() != 0);
+
 		lock_guard<mutex> lg(share_tasks_container_mutex);
-		auto answer = share_tasks_container.front();
+		if (share_tasks_container.empty()) {
+			*ok = false;
+			cout << "error " << __FILE__ << " line " << __LINE__ << " share_tasks_container is empty" << endl;
+			return make_shared<ShareTasks>();
+		}
+		auto answer = move(share_tasks_container.front());
 		share_tasks_container.pop();
 		*ok = true;
 		return move(answer);
@@ -131,14 +125,21 @@ public:
 		lock_guard<mutex> lg(using_tasks_mutex);
 		{
 			for (auto i = 1; i < using_tasks.size(); ++i) {
-				if (using_tasks[i]->size() == 0)continue;
+				if (using_tasks[i].use_count() == 1) {
+					swap(using_tasks[i], using_tasks.back());
+					lock_guard<mutex> lg2(share_tasks_container_mutex);
+					share_tasks_container.push(move(using_tasks.back()));
+					using_tasks.pop_back();
+					--i;
+				}
+				else if (using_tasks[i]->size() == 0)continue;
 				if (cmp_good_task(using_tasks[the_best_task_index], using_tasks[i]) == false) the_best_task_index = i;
 			}
 		}
-		if (using_tasks.empty() || using_tasks[the_best_task_index]->size() == 0) {
+		if (the_best_task_index == 0 || using_tasks[the_best_task_index]->empty()) {
 			allow_distribute = true;
 			*ok = false;
-			return move(make_shared<ShareTasks>());
+			return nullptr;
 		}
 		else {
 			*ok = true;

@@ -18,7 +18,8 @@ class ThreadPool {
 	std::condition_variable wake_up_cv;
 protected:
 	std::atomic_bool wait_stop;
-	std::atomic_size_t threads_num, running_thread_num;
+	std::atomic_size_t running_thread_num;
+	size_t threads_num;
 private:
 	void run_unit(size_t id) {
 		running_thread_num++;
@@ -47,11 +48,10 @@ public:
 	ThreadPool() = default;
 	ThreadPool(const ThreadPool&) = delete;
 	ThreadPool& operator=(const ThreadPool&) = delete;
-	ThreadPool(size_t threads_num_) {
-		threads_num.store(threads_num_);
+	ThreadPool(size_t threads_num_):threads_num(threads_num_) {
 		wait_stop.store(false);
 		running_thread_num.store(0);
-		threads.resize(threads_num.load());
+		threads.resize(threads_num);
 		for (int i = 0; i < threads_num_; ++i) {
 			threads[i] = std::move(std::thread(&ThreadPool::run_unit, this, i));
 		}
@@ -80,7 +80,7 @@ public:
 	}
 
 	size_t threadNum()const {
-		return threads_num.load();
+		return threads_num;
 	}
 	size_t runningThreadNum()const {
 		return running_thread_num;
