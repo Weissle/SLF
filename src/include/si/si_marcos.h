@@ -11,7 +11,6 @@
 
 #define INDUCE_ISO
 //#define NORMAL_ISO
-//#define PRINT_ALL_SOLUTIONS
 //#define WG_MEMORY_SAVE
 
 

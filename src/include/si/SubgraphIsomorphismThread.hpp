@@ -27,14 +27,19 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	shared_ptr<ShareTasks> tasks, next_tasks;
 
 	size_t min_depth;
+	size_t solutions_count = 0;//Only use if we don't print out solutions and no limit of solutions number;
 	size_t renewMinDepth(){
 		assert(tasks->size()==0);
 		while (min_depth < queryGraphPtr->size() && cand_id[min_depth].empty())++min_depth;
 		return min_depth;
 	}
+
 	inline void ToDoAfterFindASolution() {
-		if (_limits && answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
-		answerReceiver << state.getMap();
+		if (_limits || answerReceiver.printSolution()) {
+			answerReceiver << state.getMap();
+			if (answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
+		}
+		else ++solutions_count;
 	}
 
 	void distributeTask() {
@@ -58,9 +63,10 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		
 		task_distributor->addThreadTask(&TaskDistributor<SIUnit>::addSearchTasks, task_distributor.get(),next_tasks);
 	}
-
+	
 	void run_()
 	{
+	//	++hitTime;
 		const auto search_depth = state.depth();
 		if (search_depth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
@@ -107,10 +113,12 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		if (tasks->size()) {
 			min_depth = tasks->targetSequence().size() + 1;
 			prepareState();
+	//		if (tasks->empty()) cout << "prepare all but no task" << endl;
 		}
 	}
 
 public:
+	size_t hitTime = 0;
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, size_t __limits,
 		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),
 		SubgraphIsomorphismBase(_msp, __limits), answerReceiver(_answerReceiver),
@@ -129,11 +137,9 @@ public:
 			query_id = (*match_sequence_ptr)[state.depth()];
 	
 			while (tasks->size()) {
-				if (task_distributor->end())break;
 				auto target_id = tasks->getTask();
 				if (target_id == NO_MAP)continue;
 				if (state.checkPair(query_id, target_id)) {
-					assert(state.getMap(false)[query_id] == NO_MAP);
 					state.pushPair(query_id, target_id);
 					run_();
 					if(task_distributor->end())return;
@@ -143,9 +149,11 @@ public:
 			tasks.reset();
 			if (next_tasks.use_count() == 0) {
 				next_tasks = task_distributor->chooseSearchTasks(&ok);
-				if (ok == false) return;
+				if (ok == false) break;
 			}
 		} while (next_tasks.use_count());
+		answerReceiver.solutionCountAdd(solutions_count);
+		solutions_count = 0;
 	}
 
 };
@@ -189,6 +197,7 @@ public:
 		task_distributor->addSearchTasks(task_container);
 		task_container.reset();
 		task_distributor->join();
+	//	task_distributor->output_hittimes();
 		return;
 	}
 

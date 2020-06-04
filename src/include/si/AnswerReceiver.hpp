@@ -10,58 +10,47 @@
 #include<condition_variable>
 #include<assert.h>
 #include<si/si_marcos.h>
-
+namespace wg{
+inline void printoutSolution(const vector<NodeIDType>& mapping,const size_t &no) {
+	cout << "solution " << no << endl;
+	for (auto i = 0; i < mapping.size(); ++i) cout << "(" << i << ',' << mapping[i] << ") ";
+	cout << endl;
+}
 class AnswerReceiver {
 protected:
-	using NodeIDType = wg::NodeIDType;
-	size_t count = 1;
-	void put_f(fstream& s, const vector<NodeIDType>& mapping) {
-		s << "solution " << count << endl;
-		s << mapping.size() << endl;
-		for (auto i = 0; i < mapping.size(); ++i) {
-			s << i << ' ' << mapping[i] << endl;
-		}
-	}
-	void put_cout(ostream& s, const vector<NodeIDType>& mapping) {
-		s << "solution " << count << endl;
-		for (auto i = 0; i < mapping.size(); ++i) cout << "(" << i << ',' << mapping[i] << ") ";
-		cout << endl;
-	}
+	size_t count = 0;
+	bool print_solution = false;
 public:
 	AnswerReceiver() = default;
+	AnswerReceiver(bool print_solution_) :print_solution(print_solution_) {}
 	void operator<<(const vector<NodeIDType>& mapping) {
-#ifdef PRINT_ALL_SOLUTIONS
-		put_cout(cout, mapping);
-#endif
-		count++;
+		++count;
+		if (print_solution) {
+			printoutSolution(mapping, count);
+		}
 		return;
 	}
-	void finish() {
-//		cout << "solution count : "<<count-1 << endl;
-	}
-	size_t solutionsCount() { return count - 1; }
-};
 
-class AnswerReceiverThread{
-#define OUTPUT_ONCE
-	using NodeIDType = wg::NodeIDType;
-	mutex m;
-	bool isFinish = false;
-	atomic_size_t count;
-public:
-	AnswerReceiverThread() {count.store(0); }
-	AnswerReceiverThread(const std::string& SolutionPath):AnswerReceiverThread(){}
-	void operator<<(const vector<NodeIDType>& mapping) {
-		assert(isFinish == false && "is not finish?");
-	//	lock_guard<mutex> lg(m);
-		count++;
-	
-	}
-	void finish() {
-	//	lock_guard<mutex> lg(m);
-		isFinish = true;
-	
-	}
 	size_t solutionsCount() { return count; }
+};
+
+class AnswerReceiverThread {
+	mutex m;
+	atomic_size_t atomic_count;
+	bool print_solution = false;
+public:
+	AnswerReceiverThread() { atomic_count.store(0); }
+	AnswerReceiverThread(bool print_solution_) :print_solution(print_solution_) { atomic_count.store(0); }
+	void operator<<(const vector<NodeIDType>& mapping) {
+		atomic_count++;
+		lock_guard<mutex> lg(m);
+		printoutSolution(mapping, atomic_count.load());
+	}
+	void solutionCountAdd(size_t s) { 
+		atomic_count += s;
+	}
+	bool printSolution() const { return print_solution; }
+	size_t solutionsCount() const { return atomic_count.load(); }
 
 };
+}

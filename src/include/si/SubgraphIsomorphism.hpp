@@ -18,7 +18,7 @@ namespace wg {
 class SubgraphIsomorphismBase {
 protected:
 	shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
-	size_t _limits;
+	size_t _limits; //how many _limits you need , _limits == 0 means no _limits;
 public:
 	SubgraphIsomorphismBase() = default;
 	SubgraphIsomorphismBase(const shared_ptr<const vector<NodeIDType>> _msp, size_t __limits ) : match_sequence_ptr(_msp), _limits(__limits)

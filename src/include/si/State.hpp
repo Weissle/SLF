@@ -375,7 +375,7 @@ public:
 #ifdef INDUCE_ISO
 		const bool answer = induceCheck(query_id, target_id);
 #elif defined(NORMAL_ISO)
-		const bool answer = normalCheck(query_id, target_id));
+		const bool answer = normalCheck(query_id, target_id);
 #endif
 		return answer;
 	}

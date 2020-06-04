@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
 
 
-	argh::parser cmdl({ "self-order","-so","-thread","-t","-limits","-l" });
+	argh::parser cmdl({ "self-order","-so","-thread","-t","-limits","-l","-print-solution"});
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath, matchOrderPath;
 	size_t threadNum = 0;
@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
 	cmdl({ "-thread","-t" }) >> threadNum;
 	cmdl({ "-self-order","-so" }) >> matchOrderPath;
 	cmdl({ "-limits","-l" }) >> limits;
+	bool print_solution = cmdl["-print-solution"];
 	//match order
 #define MOS_SI_TEST
 #if defined(MOS_SI)
@@ -63,17 +64,15 @@ int main(int argc, char* argv[]) {
 	size_t call_times = 0;
 
 	if (threadNum > 1) {
-		AnswerReceiverThread answerReceiver;
+		AnswerReceiverThread answerReceiver(print_solution);
 		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, limits, ms_ptr);
 		si.run();
-		answerReceiver.finish();
 		solutions = answerReceiver.solutionsCount();
 	}
 	else {
-		AnswerReceiver answerReceiver;
+		AnswerReceiver answerReceiver(print_solution);
 		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, limits, ms_ptr);
 		si.run();
-		answerReceiver.finish();
 		solutions = answerReceiver.solutionsCount();
 		call_times = si.callTimes();
 	}
