@@ -254,7 +254,7 @@ private:
 
 		}
 		if (checkNewCount() == false) {
-			cnc++;
+		//	cnc++;
 			return false;
 		}
 		clearNewCount();
@@ -304,7 +304,7 @@ private:
 			}
 		}
 		if (checkNewCount() == false) {
-			cnc++;
+	//		cnc++;
 			return false;
 		}
 		return true;

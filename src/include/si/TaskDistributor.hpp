@@ -26,8 +26,12 @@ class TaskDistributor :public ThreadPool {
 	//true is left better.
 	bool cmp_good_task(const shared_ptr<ShareTasks>& l, const shared_ptr<ShareTasks>& r) const {
 		if (l.get() == nullptr ||  l->size() == 0)return false;
-		if (l->targetSequence().size() < r->targetSequence().size())return true;
-		else return false;
+		if (l->size() == 0)return true;
+		if (l->depth() == r->depth()) {
+			if (l->size() == r->size())return l.use_count() <= r.use_count();
+			else return l->size() > r->size();
+		}
+		else return l->depth() < r->depth();
 	}
 	bool giveTask(unique_ptr<SIUnit> free_unit) {
 		bool ok;
@@ -72,6 +76,18 @@ public:
 		using_tasks.reserve(thread_num_ * 2);
 		using_tasks.emplace_back(nullptr);
 		share_tasks_container.push(make_shared<ShareTasks>());
+	}
+	void output_hittimes() {
+		while (free_units.size()) {
+			unique_ptr<SIUnit> free_unit;
+			{
+				lock_guard<mutex> lg(free_units_mutex);
+				if (free_units.empty())	return;
+				free_unit = move(free_units.front());
+				free_units.pop();
+			}
+			cout << free_unit->hitTime << endl;
+		}
 	}
 	bool end()const{
 		return _end.load();
@@ -121,6 +137,7 @@ public:
 		distributeTasks();
 	}
 	shared_ptr<ShareTasks> chooseSearchTasks(bool* ok) {
+		static size_t count = 0;
 		size_t the_best_task_index = 0;
 		lock_guard<mutex> lg(using_tasks_mutex);
 		{
@@ -136,6 +153,12 @@ public:
 				if (cmp_good_task(using_tasks[the_best_task_index], using_tasks[i]) == false) the_best_task_index = i;
 			}
 		}
+		/*
+		cout << count++ << endl;
+		for (auto i = 1; i < using_tasks.size(); ++i) {
+			cout << using_tasks[i]->size() << " " << using_tasks[i]->depth() << " " << using_tasks[i].use_count() << endl;
+		}
+		*/
 		if (the_best_task_index == 0 || using_tasks[the_best_task_index]->empty()) {
 			allow_distribute = true;
 			*ok = false;
