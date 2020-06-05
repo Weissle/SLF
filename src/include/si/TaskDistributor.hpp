@@ -21,18 +21,10 @@ class TaskDistributor :public ThreadPool {
 	atomic_bool _end;
 
 	bool allow_distribute = false;
-	atomic_size_t allow_depth_count;
+	size_t allow_depth_count = 0;	//It is used to guess a allow depth, owing to the "guess", we can use size_t instead of atomic_size_t;
 
-	//true is left better.
-	bool cmp_good_task(const shared_ptr<ShareTasks>& l, const shared_ptr<ShareTasks>& r) const {
-		if (l.get() == nullptr ||  l->size() == 0)return false;
-		if (l->size() == 0)return true;
-		if (l->depth() == r->depth()) {
-			if (l->size() == r->size())return l.use_count() <= r.use_count();
-			else return l->size() > r->size();
-		}
-		else return l->depth() < r->depth();
-	}
+	
+
 	bool giveTask(unique_ptr<SIUnit> free_unit) {
 		bool ok;
 		auto tasks = chooseSearchTasks(&ok);
@@ -71,9 +63,9 @@ class TaskDistributor :public ThreadPool {
 	}
 public:
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
-		allow_depth_count.store(0);
+	//	allow_depth_count.store(0);
 		_end.store(false);
-		using_tasks.reserve(thread_num_ * 2);
+		using_tasks.reserve(thread_num_ * 3);
 		using_tasks.emplace_back(nullptr);
 		share_tasks_container.push(make_shared<ShareTasks>());
 	}
@@ -86,7 +78,7 @@ public:
 				free_unit = move(free_units.front());
 				free_units.pop();
 			}
-			cout << free_unit->hitTime << endl;
+			cout << free_unit->run_clock << endl;
 		}
 	}
 	bool end()const{
@@ -111,21 +103,16 @@ public:
 			return false;
 		}
 	}
-	void addShareTasksContainer(shared_ptr<ShareTasks> _c) {
-		lock_guard<mutex> lg(share_tasks_container_mutex);
-		share_tasks_container.push(_c);
-	}
-	shared_ptr<ShareTasks> getShareTasksContainer(bool* ok) {
+
+	shared_ptr<ShareTasks> getShareTasksContainer() {
 
 		lock_guard<mutex> lg(share_tasks_container_mutex);
 		if (share_tasks_container.empty()) {
-			*ok = false;
-			cout << "error " << __FILE__ << " line " << __LINE__ << " share_tasks_container is empty" << endl;
 			return make_shared<ShareTasks>();
 		}
 		auto answer = move(share_tasks_container.front());
 		share_tasks_container.pop();
-		*ok = true;
+	
 		return move(answer);
 	}
 	void addSearchTasks(shared_ptr<ShareTasks> tasks) {
@@ -150,15 +137,10 @@ public:
 					--i;
 				}
 				else if (using_tasks[i]->size() == 0)continue;
-				if (cmp_good_task(using_tasks[the_best_task_index], using_tasks[i]) == false) the_best_task_index = i;
+				else if (using_tasks[the_best_task_index].get() == nullptr || using_tasks[the_best_task_index]->size() < using_tasks[i]->size()) the_best_task_index = i;
 			}
 		}
-		/*
-		cout << count++ << endl;
-		for (auto i = 1; i < using_tasks.size(); ++i) {
-			cout << using_tasks[i]->size() << " " << using_tasks[i]->depth() << " " << using_tasks[i].use_count() << endl;
-		}
-		*/
+
 		if (the_best_task_index == 0 || using_tasks[the_best_task_index]->empty()) {
 			allow_distribute = true;
 			*ok = false;

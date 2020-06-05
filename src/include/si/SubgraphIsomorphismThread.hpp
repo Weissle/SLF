@@ -44,8 +44,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 
 	void distributeTask() {
 		bool ok;
-		next_tasks = task_distributor->getShareTasksContainer(&ok);
-		if (!ok)return;
+		next_tasks = task_distributor->getShareTasksContainer();
 
 	//	auto min_depth = minDepth();
 		renewMinDepth();
@@ -66,7 +65,6 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 	
 	void run_()
 	{
-	//	++hitTime;
 		const auto search_depth = state.depth();
 		if (search_depth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
@@ -75,6 +73,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		const auto query_id = (*match_sequence_ptr)[search_depth];
 		state.calCandidatePairs(query_id, cand_id[search_depth]);
 		if (task_distributor->allowDistribute() && tasks->size() == 0 && (next_tasks.use_count() == 0 || next_tasks->size() == 0)) {
+			next_tasks.reset();
 			if(task_distributor->haveQuality(renewMinDepth()))	distributeTask();
 		}
 
@@ -113,12 +112,12 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		if (tasks->size()) {
 			min_depth = tasks->targetSequence().size() + 1;
 			prepareState();
-	//		if (tasks->empty()) cout << "prepare all but no task" << endl;
+			if (tasks->empty()) cout << "prepare all but no task" << endl;
 		}
 	}
 
 public:
-	size_t hitTime = 0;
+	clock_t run_clock = 0;
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, size_t __limits,
 		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),
 		SubgraphIsomorphismBase(_msp, __limits), answerReceiver(_answerReceiver),
@@ -133,6 +132,7 @@ public:
 		NodeIDType query_id;
 		bool ok;
 		do {
+	//		auto c1 = clock();
 			prepare_all();
 			query_id = (*match_sequence_ptr)[state.depth()];
 	
@@ -147,6 +147,7 @@ public:
 				}
 			}
 			tasks.reset();
+	//		run_clock += clock() - c1;
 			if (next_tasks.use_count() == 0) {
 				next_tasks = task_distributor->chooseSearchTasks(&ok);
 				if (ok == false) break;
@@ -173,8 +174,6 @@ public:
 		auto f = [&, subgraph_states,__limits]() {
 			auto p = make_unique<SIUnit>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence_ptr, __limits, subgraph_states, task_distributor);
 			task_distributor->addFreeUnit(move(p));
-			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
-			task_distributor->addShareTasksContainer(make_shared<ShareTasks>());
 		};
 		LOOP(i, 0, _thread_num) {
 			task_distributor->addThreadTask(f);
@@ -185,19 +184,15 @@ public:
 		//prepare the first task , all target nodes.
 		vector<NodeIDType> root_task(first_task_num);
 		for (auto i = 0; i < first_task_num; ++i)root_task[i] = i;
-		bool ok;
-		shared_ptr<ShareTasks> task_container = task_distributor->getShareTasksContainer(&ok);
-		if (ok == false) {
-			cout << "error occur : " << __FILE__ << __LINE__ << endl;
-			exit(0);
-		}
+
+		shared_ptr<ShareTasks> task_container = task_distributor->getShareTasksContainer();
 		task_container->giveTask(root_task);
 
 		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
 		task_distributor->addSearchTasks(task_container);
 		task_container.reset();
 		task_distributor->join();
-	//	task_distributor->output_hittimes();
+//		task_distributor->output_hittimes();
 		return;
 	}
 
