@@ -13,6 +13,7 @@ using namespace std;
 static long t = 0;
 using namespace wg;
 
+std::vector<size_t> readMatchSequence(std::string&);
 int main(int argc, char* argv[]) {
 	typedef EdgeSimple<int> EdgeType;
 	typedef Node<EdgeType> NodeType;
@@ -87,3 +88,21 @@ int main(int argc, char* argv[]) {
 
 }
 
+std::vector<size_t> readMatchSequence(std::string& matchOrderPath) {
+	std::vector<size_t> ms;
+	if (matchOrderPath.empty() == false) {
+		std::fstream f;
+		f.open(matchOrderPath.c_str(), std::ios_base::in);
+		if (f.is_open() == false) {
+			std::cout << matchOrderPath << " open fail" << std::endl;
+			exit(1);
+		}
+		while (f.eof() == false) {
+			size_t temp = UINT32_MAX;
+			f >> temp;
+			if (temp != UINT32_MAX)ms.push_back(temp);
+		}
+		f.close();
+	}
+	return move(ms);
+}

@@ -2,6 +2,7 @@
 #include"State.hpp"
 #include"AnswerReceiver.hpp"
 #include"si/si_marcos.h"
+#include"si/Tasks.hpp"
 #include<vector>
 #include<iostream>
 #include<time.h>
@@ -29,12 +30,14 @@ public:
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphism : public SubgraphIsomorphismBase {
 	const GraphType* queryGraphPtr, * targetGraphPtr;
+	using EdgeType = typename GraphType::EdgeType;
 protected:
 	size_t searchDepth;
 	State<GraphType> mapState;
 	AnswerReceiverType& answerReceiver;
 //	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
-	vector<vector<NodeIDType>> cand_id;
+//	vector<vector<NodeIDType>> cand_id;
+	vector<Tasks<EdgeType>> cand_id;
 	bool end = false;
 	void run_timeCount()
 	{
@@ -84,6 +87,7 @@ protected:
 	}
 	void run_noTimeCount()
 	{
+		++hitTime;
 		const auto search_depth = searchDepth;
 		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
@@ -92,10 +96,8 @@ protected:
 
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
 		mapState.calCandidatePairs(query_id, cand_id[search_depth]);
-
 		while (cand_id[search_depth].size()) {
-			const auto target_id = cand_id[search_depth].back();
-			cand_id[search_depth].pop_back();
+			const auto target_id = cand_id[search_depth].getTask();
 			if (mapState.checkPair(query_id, target_id)) {
 				mapState.pushPair(query_id, target_id);
 				++searchDepth;

@@ -10,7 +10,7 @@
 #include"common.h"
 #include<si/si_marcos.h>
 #include<cstring>
-
+#include"si/Tasks.hpp"
 //defind INDUCE_ISO or NORMAL_ISO in si_marcos.h
 #if !defined(INDUCE_ISO) && !defined(NORMAL_ISO)
 #error  you should defind INDUCE_ISO or NORMAL_ISO
@@ -314,6 +314,11 @@ private:
 	bool inSetIn(NodeIDType target_id)const { return inSetUnmap(target_id) && in_depth[target_id]; }
 	bool inSetOut(NodeIDType target_id)const { return inSetUnmap(target_id) && out_depth[target_id]; }
 
+	inline bool simpleCheckPair(const NodeIDType& query_id, const NodeIDType& target_id)const {
+		if (mappingAux[target_id] != NO_MAP)return false;
+		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;
+		return true;
+	}
 
 public:
 	State(const GraphType& _q, const GraphType& _t, shared_ptr<const SubgraphMatchStates<GraphType>> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t),
@@ -333,43 +338,27 @@ public:
 
 	};
 	State() = default;
-	bool simpleCheckPair(const NodeIDType& query_id, const NodeIDType& target_id)const {
-		if (mappingAux[target_id] != NO_MAP)return false;
-		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;
-		return true;
-	}
-	void calCandidatePairs(const NodeIDType query_id, vector<NodeIDType> &container)const
-	{
 
+	void calCandidatePairs(const NodeIDType query_id, Tasks<EdgeType>& container)const {
 		if (queryStates->inSetIn(query_id, search_depth)) {
-			auto target_pre_index = queryStates->inDepth(query_id,search_depth);
+			auto target_pre_index = queryStates->inDepth(query_id, search_depth);
 			auto target_pre_id = mapping[queryStates->matchID(target_pre_index - 1)];
-			for (const auto& e : targetGraphPtr->node(target_pre_id).inEdges()) {
-				auto temp_id = e.source();
-				if (simpleCheckPair(query_id, temp_id) == false)continue;
-				container.push_back(temp_id);
-			}
+			const auto& edges = targetGraphPtr->node(target_pre_id).inEdges();
+			container.giveTasks(edges.size(), edges.data(), TASK_TYPE::S);
 		}
 		else if (queryStates->inSetOut(query_id, search_depth)) {
-			auto target_pre_index = queryStates->outDepth(query_id,search_depth);
+			auto target_pre_index = queryStates->outDepth(query_id, search_depth);
 			auto target_pre_id = mapping[queryStates->matchID(target_pre_index - 1)];
-			for (const auto& e : targetGraphPtr->node(target_pre_id).outEdges()) {
-				auto temp_id = e.target();
-				if (simpleCheckPair(query_id, temp_id) == false)continue;
-				container.push_back(temp_id);
-			}
+			const auto& edges = targetGraphPtr->node(target_pre_id).outEdges();
+			container.giveTasks(edges.size(), edges.data(), TASK_TYPE::T);
 		}
 		else {
-			for (NodeIDType id = 0; id < targetGraphPtr->size(); ++id) {
-				if (simpleCheckPair(query_id, id) == false)continue; 
-				container.push_back(id);
-			}
+			container.giveTasks(targetGraphPtr->size());
 		}
-
 	}
-
 	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)
 	{
+		if (simpleCheckPair(query_id, target_id) == false) return false;
 	/*	if (mappingAux[target_id] != NO_MAP) return false;
 		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false) return false;*/
 #ifdef INDUCE_ISO

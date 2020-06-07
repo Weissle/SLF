@@ -17,14 +17,18 @@ using namespace std;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
+public:
+	using EdgeType = typename GraphType::EdgeType;
+private:
 	using SIUnit = SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType>;
+	using ShareTasksType = ShareTasks<EdgeType>;
 	const GraphType* queryGraphPtr, * targetGraphPtr;
 	AnswerReceiverType& answerReceiver;
 	State<GraphType> state;
-	vector<vector<NodeIDType>> cand_id;
+	vector<Tasks<EdgeType>> cand_id;
 
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
-	shared_ptr<ShareTasks> tasks, next_tasks;
+	shared_ptr<ShareTasksType> tasks, next_tasks;
 
 	size_t min_depth;
 	size_t solutions_count = 0;//Only use if we don't print out solutions and no limit of solutions number;
@@ -51,7 +55,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		if (min_depth == queryGraphPtr->size()) return;
 
 		//cand_id[min_depth] will be empty
-		next_tasks->giveTask(cand_id[min_depth]);
+		next_tasks->giveTasks(cand_id[min_depth]);
 
 		auto& seq = next_tasks->targetSequence();
 		seq = tasks->targetSequence(); //.assign(tasks->targetSequence().begin(), tasks->targetSequence().end());
@@ -78,8 +82,7 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		}
 
 		while (cand_id[search_depth].size()) {
-			const auto target_id = cand_id[search_depth].back();
-			cand_id[search_depth].pop_back();
+			const auto target_id = cand_id[search_depth].getTask();
 			if (state.checkPair(query_id, target_id)) {
 				state.pushPair(query_id, target_id);
 				run_();
@@ -112,11 +115,14 @@ class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 		if (tasks->size()) {
 			min_depth = tasks->targetSequence().size() + 1;
 			prepareState();
-			if (tasks->empty()) cout << "prepare all but no task" << endl;
+	/*		if (tasks->empty()) {
+				cout << "prepare all but no task" << endl;
+			}*/
 		}
 	}
 
 public:
+	
 	clock_t run_clock = 0;
 	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, size_t __limits,
 		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),
@@ -124,7 +130,7 @@ public:
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
 	{
 	}
-	void prepare(shared_ptr<ShareTasks> _tasks) {
+	void prepare(shared_ptr<ShareTasksType> _tasks) {
 		next_tasks= move(_tasks);
 		return;
 	}
@@ -181,12 +187,9 @@ public:
 	}
 	void run() {
 		size_t first_task_num = targetGraphPtr->size();
-		//prepare the first task , all target nodes.
-		vector<NodeIDType> root_task(first_task_num);
-		for (auto i = 0; i < first_task_num; ++i)root_task[i] = i;
 
-		shared_ptr<ShareTasks> task_container = task_distributor->getShareTasksContainer();
-		task_container->giveTask(root_task);
+		auto task_container = task_distributor->getShareTasksContainer();
+		task_container->giveTasks(first_task_num);
 
 		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
 		task_distributor->addSearchTasks(task_container);

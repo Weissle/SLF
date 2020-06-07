@@ -7,39 +7,6 @@
 #include"si/si_marcos.h"
 using namespace std;
 namespace wg {
-class ShareTasks {
-	mutex m;
-	vector<NodeIDType> _task;
-	vector<NodeIDType> target_sequence;
-public:
-	ShareTasks() = default;
-	size_t size()const { return _task.size(); }
-	
-	void giveTask(vector<NodeIDType> &new_task) {
-		lock_guard<mutex> lg(m);
-		_task.swap(new_task);
-	}
-	NodeIDType getTask() {
-		lock_guard<mutex> lg(m); 
-		if(_task.empty())return NO_MAP;
-		else {
-			const auto answer = _task.back();
-			_task.pop_back();
-			return answer;
-		}
-	}
-	const vector<NodeIDType>& targetSequence()const { return target_sequence; }
-	vector<NodeIDType>& targetSequence() { return target_sequence; }
-	template<class _It>
-	void setTargetSequence(const _It first, const _It end) { 
-		lock_guard<mutex> lg(m);
-		target_sequence.assign(first, end); 
-	}
-	size_t depth()const{
-		return target_sequence.size();
-	}
-	bool empty()const { return _task.empty(); }
-};
 
 template<class _T>
 class TwoDArray {
