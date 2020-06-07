@@ -13,7 +13,6 @@ class TaskDistributor :public ThreadPool {
 
 	mutex free_units_mutex, prepared_units_mutex;
 	queue<unique_ptr<SIUnit>> free_units, prepared_units;
-
 	mutex share_tasks_container_mutex, using_tasks_mutex;
 	queue<shared_ptr<ShareTasks>> share_tasks_container;
 	vector<shared_ptr<ShareTasks>> using_tasks;
@@ -23,7 +22,7 @@ class TaskDistributor :public ThreadPool {
 	bool allow_distribute = false;
 	size_t allow_depth_count = 0;	//It is used to guess a allow depth, owing to the "guess", we can use size_t instead of atomic_size_t;
 
-	
+
 
 	bool giveTask(unique_ptr<SIUnit> free_unit) {
 		bool ok;
@@ -63,7 +62,7 @@ class TaskDistributor :public ThreadPool {
 	}
 public:
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
-	//	allow_depth_count.store(0);
+		//	allow_depth_count.store(0);
 		_end.store(false);
 		using_tasks.reserve(thread_num_ * 3);
 		using_tasks.emplace_back(nullptr);
@@ -81,24 +80,24 @@ public:
 			cout << free_unit->run_clock << endl;
 		}
 	}
-	bool end()const{
+	bool end()const {
 		return _end.load();
 	}
-	void setEnd(const bool end_){
+	void setEnd(const bool end_) {
 		_end.store(end_);
 	}
 	void addFreeUnit(unique_ptr<SIUnit> free_unit) {
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
 	}
-	inline bool allowDistribute() {return allow_distribute;}
-	bool haveQuality(const size_t depth){
+	inline bool allowDistribute() { return allow_distribute; }
+	bool haveQuality(const size_t depth) {
 		const auto allow_depth = allow_depth_count / threadNum();
-		if(depth <= allow_depth) {
+		if (depth <= allow_depth) {
 			allow_depth_count -= threadNum();
 			return true;
 		}
-		else{
+		else {
 			allow_depth_count += depth - allow_depth;
 			return false;
 		}
@@ -112,7 +111,7 @@ public:
 		}
 		auto answer = move(share_tasks_container.front());
 		share_tasks_container.pop();
-	
+
 		return move(answer);
 	}
 	void addSearchTasks(shared_ptr<ShareTasks> tasks) {
