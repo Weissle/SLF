@@ -50,8 +50,6 @@ private:
 		bool ok;
 		next_tasks = task_distributor->getShareTasksContainer();
 
-	//	auto min_depth = minDepth();
-		renewMinDepth();
 		if (min_depth == queryGraphPtr->size()) return;
 
 		//cand_id[min_depth] will be empty
