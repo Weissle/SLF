@@ -39,18 +39,23 @@ private:
 	}
 
 	inline void ToDoAfterFindASolution() {
-		if (_limits || answerReceiver.printSolution()) {
+		if (answerReceiver.printSolution()) {
 			answerReceiver << state.getMap();
 			if (answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
+			return;
 		}
-		else ++solutions_count;
+		++solutions_count;
+		if ( _limits && ((_limits - answerReceiver.solutionsCount()) / task_distributor->threadNum()) <= solutions_count ) {
+			answerReceiver.solutionCountAdd(solutions_count);
+			solutions_count = 0;
+			if (answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
+		}
 	}
 
 	void distributeTask() {
-		bool ok;
-		next_tasks = task_distributor->getShareTasksContainer();
-
 		if (min_depth == queryGraphPtr->size()) return;
+
+		next_tasks = task_distributor->getShareTasksContainer();
 
 		//cand_id[min_depth] will be empty
 		next_tasks->giveTasks(cand_id[min_depth]);

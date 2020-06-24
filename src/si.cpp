@@ -51,7 +51,6 @@ int main(int argc, char* argv[]) {
 	typedef ARGGraphNoLabel<GraphType> GraphReader;
 #endif
 	IndexTurner<size_t> turner;
-	time_t t1 = time(0);
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath, turner),
 		* targetGraph = GraphReader::readGraph(targetGraphPath, turner);
 
@@ -64,6 +63,7 @@ int main(int argc, char* argv[]) {
 	size_t solutions = 0;
 	size_t call_times = 0;
 
+	time_t t1 = time(0);
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(print_solution);
 		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, limits, ms_ptr);

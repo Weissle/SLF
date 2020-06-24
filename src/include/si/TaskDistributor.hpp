@@ -26,14 +26,11 @@ class TaskDistributor :public ThreadPool {
 
 
 
-	bool giveTask(unique_ptr<SIUnit> free_unit) {
+	bool giveTask(unique_ptr<SIUnit> &free_unit) {
 		bool ok;
 		auto tasks = chooseSearchTasks(&ok);
-		if (ok == false) {
-			lock_guard<mutex> lg_fu(free_units_mutex);
-			free_units.push(move(free_unit));
-			return false;
-		}
+		if (ok == false) return false;
+		
 		else {
 			free_unit->prepare(move(tasks));
 			lock_guard<mutex> lg(prepared_units_mutex);
@@ -51,16 +48,20 @@ class TaskDistributor :public ThreadPool {
 		addFreeUnit(move(unit));
 	}
 	void distributeTasks() {
+		if (free_units_mutex.try_lock() == false)return;
 		while (free_units.size()) {
 			unique_ptr<SIUnit> free_unit;
 			{
-				lock_guard<mutex> lg(free_units_mutex);
 				if (free_units.empty())	return;
 				free_unit = move(free_units.front());
 				free_units.pop();
 			}
-			if (giveTask(move(free_unit)) == false)return;
+			if (giveTask(free_unit) == false) {
+				free_units.push(move(free_unit));
+				return;
+			}
 		}
+		free_units_mutex.unlock();
 	}
 public:
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
@@ -68,7 +69,6 @@ public:
 		_end.store(false);
 		using_tasks.reserve(thread_num_ * 3);
 		using_tasks.emplace_back(nullptr);
-		share_tasks_container.push(make_shared<ShareTasksType>());
 	}
 	void output_hittimes() {
 		while (free_units.size()) {
@@ -131,9 +131,9 @@ public:
 		{
 			for (auto i = 1; i < using_tasks.size(); ++i) {
 				if (using_tasks[i].use_count() == 1) {
-					swap(using_tasks[i], using_tasks.back());
 					lock_guard<mutex> lg2(share_tasks_container_mutex);
-					share_tasks_container.push(move(using_tasks.back()));
+					share_tasks_container.push(move(using_tasks[i]));
+					using_tasks[i] = move(using_tasks.back());
 					using_tasks.pop_back();
 					--i;
 				}
