@@ -26,40 +26,36 @@ class TaskDistributor :public ThreadPool {
 
 
 
-	bool giveTask(unique_ptr<SIUnit> &free_unit) {
-		bool ok;
-		auto tasks = chooseSearchTasks(&ok);
-		if (ok == false) return false;
-		
-		else {
-			free_unit->prepare(move(tasks));
+	void giveTask(unique_ptr<SIUnit> &free_unit, shared_ptr<ShareTasksType> &task) {
+		free_unit->prepare(move(task));
+		{
 			lock_guard<mutex> lg(prepared_units_mutex);
 			prepared_units.push(move(free_unit));
-			addThreadTask(&TaskDistributor::giveTaskToThreadPool, this);
-			return true;
 		}
+		addThreadTask(&TaskDistributor::giveTaskToThreadPool, this);
 	}
 	void giveTaskToThreadPool() {
-		prepared_units_mutex.lock();
-		auto unit = move(prepared_units.front());
-		prepared_units.pop();
-		prepared_units_mutex.unlock();
+		unique_ptr<SIUnit> unit;
+		{
+			lock_guard<mutex> lg(prepared_units_mutex);
+			unit = move(prepared_units.front());
+			prepared_units.pop();
+		}
 		unit->run();
 		addFreeUnit(move(unit));
+		allow_distribute = true;
 	}
 	void distributeTasks() {
 		if (free_units_mutex.try_lock() == false)return;
+		bool ok;
+		shared_ptr<ShareTasksType> task;
+		unique_ptr<SIUnit> free_unit;
 		while (free_units.size()) {
-			unique_ptr<SIUnit> free_unit;
-			{
-				if (free_units.empty())	return;
-				free_unit = move(free_units.front());
-				free_units.pop();
-			}
-			if (giveTask(free_unit) == false) {
-				free_units.push(move(free_unit));
-				return;
-			}
+			free_unit = move(free_units.front());
+			free_units.pop();
+			task = chooseSearchTasks(&ok);
+			if (ok == false)break;
+			giveTask(free_unit, task);
 		}
 		free_units_mutex.unlock();
 	}
@@ -123,6 +119,7 @@ public:
 		}
 		allow_distribute = false;
 		distributeTasks();
+		if (free_units.empty() == false)allow_distribute = true;
 	}
 	shared_ptr<ShareTasksType> chooseSearchTasks(bool* ok) {
 		static size_t count = 0;
@@ -150,7 +147,6 @@ public:
 		}*/
 
 		if (the_best_task_index == 0 || using_tasks[the_best_task_index]->empty()) {
-			allow_distribute = true;
 			*ok = false;
 			return nullptr;
 		}
