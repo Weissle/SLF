@@ -11,8 +11,8 @@ namespace wg {
 
 template<class SIUnit>
 class TaskDistributor :public ThreadPool {
-	using EdgeType = typename SIUnit::EdgeType;
-	using ShareTasksType = ShareTasks<EdgeType>;
+	using EdgeLabelType = typename SIUnit::EdgeLabelType;
+	using ShareTasksType = ShareTasks<EdgeLabelType>;
 	mutex free_units_mutex, prepared_units_mutex;
 	queue<unique_ptr<SIUnit>> free_units, prepared_units;
 	mutex share_tasks_container_mutex, using_tasks_mutex;

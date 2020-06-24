@@ -1,28 +1,25 @@
 #pragma once
 #include"Edge.hpp"
 #include"si/si_marcos.h"
-#include<functional>
 #include<algorithm>
 #include<vector>
 using namespace std;
 namespace wg {
-template<typename _EdgeType>
+template<typename _EdgeLabelType>
 class Node {
 public:
+	typedef _EdgeLabelType EdgeLabelType;
+	typedef Node<_EdgeLabelType> NodeType;
 	typedef size_t NodeLabelType;
-	typedef _EdgeType EdgeType;
-	typedef Node<EdgeType> NodeType;
-	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-
 private:
+
 	NodeIDType _id;
 	NodeLabelType _label;
-	vector<EdgeType> _inEdges, _outEdges;
+	vector<SourceEdge<EdgeLabelType>> _inEdges;
+	vector<TargetEdge<EdgeLabelType>> _outEdges;
 
-	bool findEdge(const vector<EdgeType>& edges, const EdgeType&& edge) const {
-		return binary_search(edges.begin(), edges.end(), edge);
-	}
-	inline int _cmp_edge_target(const EdgeType& e, const NodeIDType id, const EdgeLabelType& label)const {
+
+	inline int _cmp_edge_target(const TargetEdge<EdgeLabelType>& e, const NodeIDType id, const EdgeLabelType& label)const {
 		if (e.target() == id) {
 			if (e.label() == label)return -1;
 			return e.label() < label;
@@ -60,13 +57,13 @@ public:
 		_inEdges.reserve(s);
 		_outEdges.reserve(s);
 	}
-	inline const vector<EdgeType>& outEdges() const { return _outEdges; }
-	inline const vector<EdgeType>& inEdges() const { return _inEdges; }
+	inline const auto& outEdges() const { return _outEdges; }
+	inline const auto& inEdges() const { return _inEdges; }
 	inline size_t outEdgesNum() const { return _outEdges.size(); }
 	inline size_t inEdgesNum() const { return _inEdges.size(); }
 	inline size_t nodeIdHash()const { return hash<NodeIDType>()(this->_id); }
-	inline void addInEdge(const EdgeType& e) { _inEdges.push_back(e); }
-	inline void addOutEdge(const EdgeType& e) { _outEdges.push_back(e); }
+	inline void addInEdge(const NodeIDType id, EdgeLabelType l) { _inEdges.emplace_back(id, l); }
+	inline void addOutEdge(const NodeIDType id, EdgeLabelType l) { _outEdges.emplace_back(id, l); }
 	void NodeBuildFinish() {
 		_inEdges.shrink_to_fit();
 		_outEdges.shrink_to_fit();

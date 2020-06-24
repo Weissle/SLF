@@ -11,9 +11,9 @@ using namespace wg;
 static long t = 0;
 
 int main(int argc, char* argv[]) {
-	typedef EdgeSimple<int> EdgeType;
-	typedef Node<EdgeType> NodeType;
-	typedef Graph<NodeType, EdgeType> GraphType;
+	typedef int EdgeLabelType;
+	typedef Node<EdgeLabelType> NodeType;
+	typedef Graph<NodeType, EdgeLabelType> GraphType;
 
 
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-solution","-induce","-qg" });

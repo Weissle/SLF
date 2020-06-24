@@ -16,8 +16,7 @@ template<class GraphType>
 class  AnswerChecker {
 	typedef typename GraphType::NodeType NodeType;
 	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef typename GraphType::EdgeType EdgeType;
-	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
+	typedef typename GraphType::EdgeLabelType EdgeLabelType;
 	typedef vector<size_t> SolutionType;
 	typedef vector<SolutionType> SolutionsType;
 

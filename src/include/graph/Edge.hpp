@@ -2,6 +2,7 @@
 #include<assert.h>
 #include<si/si_marcos.h>
 namespace wg {
+
 //SOURCE edge only allows to gain it's source node id . TARGET edge is similar to SOURCE edge;
 //BOTH edge allows to get both source and target  nodes id
 enum EDGE_RECORD_TYPE { SOURCE, TARGET, BOTH };
@@ -75,7 +76,7 @@ public:
 	inline const NodeIDType& source() const { return _source; }
 	inline const NodeIDType& target()const { return _target; }
 	inline const EdgeLabelType& label()const { return _label; }
-	inline bool isSameTypeEdge(const EdgeType& n) const {return _label == n.label();}
+	inline bool isSameTypeEdge(const EdgeType& n) const { return _label == n.label(); }
 	bool operator<(const EdgeType& e)const {
 		if (_source == e._source) {
 			if (_target == e._target) {
@@ -89,6 +90,40 @@ public:
 		return (_source == e._source && _label == e._label && _target == e._target);
 	}
 
+};
+
+template<typename _LT>
+class SourceEdge {
+	NodeIDType _source;
+	_LT _label;
+public:
+	typedef _LT LabelType;
+	SourceEdge() = default;
+	SourceEdge(const NodeIDType _s, _LT _l) :_source(_s), _label(_l) {}
+	const NodeIDType source()const { return _source; }
+	const LabelType label()const { return _label; }
+	const NodeIDType target()const { return NO_MAP; }
+	bool operator<(const SourceEdge<_LT>& e)const {
+		if (_source == e._source) return _label < e._label;
+		else return _source < e._source;
+	}
+};
+
+template<typename _LT>
+class TargetEdge {
+	NodeIDType _target;
+	_LT _label;
+public:
+	typedef _LT LabelType;
+	TargetEdge() = default;
+	TargetEdge(const NodeIDType _t, _LT _l) :_target(_t), _label(_l) {}
+	const NodeIDType source()const { return NO_MAP; }
+	const LabelType label()const { return _label; }
+	const NodeIDType target()const { return _target; }
+	bool operator<(const TargetEdge<_LT>& e) const {
+		if (_target == e._target) return _label < e._label;
+		else return _target < e._target;
+	}
 };
 
 }

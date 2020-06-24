@@ -7,17 +7,15 @@
 #include<assert.h>
 using namespace std;
 namespace wg {
-template<typename _Node, typename _Edge>
+template<typename _Node, typename _EdgeLabelType>
 class Graph
 {
 public:
 	enum GRAPH_TYPE { BIDIRECTION, DIRECTION };
 	using NodeType = _Node;
-	using EdgeType = _Edge;
-	typedef Graph<NodeType, EdgeType> GraphType;
-	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
-
+	using NodeLabelType = typename NodeType::NodeLabelType;
+	using EdgeLabelType = _EdgeLabelType;
+	typedef Graph<NodeType, _EdgeLabelType> GraphType;
 private:
 
 	vector<NodeType> _nodes;
@@ -55,15 +53,11 @@ public:
 		auto& sourceNode = _nodes[source];
 		auto& targetNode = _nodes[target];
 
-		const EdgeType  sourceEdge = EdgeType(EDGE_RECORD_TYPE::SOURCE, source, target, edgeLabel);
-		const EdgeType  targetEdge = EdgeType(EDGE_RECORD_TYPE::TARGET, source, target, edgeLabel);
-		sourceNode.addOutEdge(targetEdge);
-		targetNode.addInEdge(sourceEdge);
-		if (GRAPH_TYPE::BIDIRECTION == graphType) {
-			const EdgeType sourceEdge1 = EdgeType(EDGE_RECORD_TYPE::SOURCE, target, source, edgeLabel);
-			const EdgeType targetEdge1 = EdgeType(EDGE_RECORD_TYPE::TARGET, target, source, edgeLabel);
-			sourceNode.addInEdge(sourceEdge1);
-			targetNode.addOutEdge(targetEdge1);
+		sourceNode.addOutEdge(target,edgeLabel);
+		targetNode.addInEdge(source,edgeLabel);
+		if (GRAPH_TYPE::BIDIRECTION == graphType && source != target) {
+			sourceNode.addInEdge(target,edgeLabel);
+			targetNode.addOutEdge(source,edgeLabel);
 		}
 	}
 

@@ -66,11 +66,9 @@ public:
 
 template<typename GraphType>
 class State {
+	using EdgeLabelType = typename GraphType::EdgeLabelType;
 	typedef typename GraphType::NodeType NodeType;
-
 	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef typename GraphType::EdgeType EdgeType;
-	typedef typename EdgeType::EdgeLabelType EdgeLabelType;
 
 private:
 	vector<size_t> in_depth, out_depth;
@@ -339,7 +337,7 @@ public:
 	};
 	State() = default;
 
-	void calCandidatePairs(const NodeIDType query_id, Tasks<EdgeType>& container)const {
+	void calCandidatePairs(const NodeIDType query_id, Tasks<EdgeLabelType>& container)const {
 		if (queryStates->inSetIn(query_id, search_depth)) {
 			auto target_pre_index = queryStates->inDepth(query_id, search_depth);
 			auto target_pre_id = mapping[queryStates->matchID(target_pre_index - 1)];

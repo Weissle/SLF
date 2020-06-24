@@ -18,14 +18,14 @@ namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
 public:
-	using EdgeType = typename GraphType::EdgeType;
+	using EdgeLabelType = typename GraphType::EdgeLabelType;
 private:
 	using SIUnit = SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType>;
-	using ShareTasksType = ShareTasks<EdgeType>;
+	using ShareTasksType = ShareTasks<EdgeLabelType>;
 	const GraphType* queryGraphPtr, * targetGraphPtr;
 	AnswerReceiverType& answerReceiver;
 	State<GraphType> state;
-	vector<Tasks<EdgeType>> cand_id;
+	vector<Tasks<EdgeLabelType>> cand_id;
 
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 	shared_ptr<ShareTasksType> tasks, next_tasks;

@@ -30,14 +30,14 @@ public:
 template<typename GraphType, typename AnswerReceiverType>
 class SubgraphIsomorphism : public SubgraphIsomorphismBase {
 	const GraphType* queryGraphPtr, * targetGraphPtr;
-	using EdgeType = typename GraphType::EdgeType;
+	using EdgeLabelType = typename GraphType::EdgeLabelType;
 protected:
 	size_t searchDepth;
 	State<GraphType> mapState;
 	AnswerReceiverType& answerReceiver;
 //	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
 //	vector<vector<NodeIDType>> cand_id;
-	vector<Tasks<EdgeType>> cand_id;
+	vector<Tasks<EdgeLabelType>> cand_id;
 	bool end = false;
 	void run_timeCount()
 	{
