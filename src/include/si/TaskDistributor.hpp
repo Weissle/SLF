@@ -43,10 +43,10 @@ class TaskDistributor :public ThreadPool {
 		}
 		unit->run();
 		addFreeUnit(move(unit));
-		allow_distribute = true;
 	}
 	void distributeTasks() {
-		if (free_units_mutex.try_lock() == false)return;
+		lock_guard<mutex> lg(free_units_mutex);
+		allow_distribute = false;
 		bool ok;
 		shared_ptr<ShareTasksType> task;
 		unique_ptr<SIUnit> free_unit;
@@ -57,7 +57,7 @@ class TaskDistributor :public ThreadPool {
 			if (ok == false)break;
 			giveTask(free_unit, task);
 		}
-		free_units_mutex.unlock();
+		if (free_units.size())allow_distribute = true;
 	}
 public:
 	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
@@ -87,6 +87,7 @@ public:
 	void addFreeUnit(unique_ptr<SIUnit> free_unit) {
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
+		allow_distribute = true;
 	}
 	inline bool allowDistribute() { return allow_distribute; }
 	bool haveQuality(const size_t depth) {
@@ -117,9 +118,7 @@ public:
 			lock_guard<mutex> lg(using_tasks_mutex);
 			using_tasks.push_back(move(tasks));
 		}
-		allow_distribute = false;
-		distributeTasks();
-		if (free_units.empty() == false)allow_distribute = true;
+		addThreadTask(&TaskDistributor<SIUnit>::distributeTasks, this);
 	}
 	shared_ptr<ShareTasksType> chooseSearchTasks(bool* ok) {
 		static size_t count = 0;
@@ -127,7 +126,7 @@ public:
 		lock_guard<mutex> lg(using_tasks_mutex);
 		{
 			for (auto i = 1; i < using_tasks.size(); ++i) {
-				if (using_tasks[i].use_count() == 1) {
+				if (using_tasks[i].use_count() == 1 && using_tasks[i]->size() == 0) {
 					lock_guard<mutex> lg2(share_tasks_container_mutex);
 					share_tasks_container.push(move(using_tasks[i]));
 					using_tasks[i] = move(using_tasks.back());
