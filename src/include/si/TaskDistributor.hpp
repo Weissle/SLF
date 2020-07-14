@@ -26,7 +26,7 @@ class TaskDistributor :public ThreadPool {
 
 
 
-	void giveTask(unique_ptr<SIUnit> &free_unit, shared_ptr<ShareTasksType> &task) {
+	void giveTask(unique_ptr<SIUnit>& free_unit, shared_ptr<ShareTasksType>& task) {
 		free_unit->prepare(move(task));
 		{
 			lock_guard<mutex> lg(prepared_units_mutex);
@@ -51,10 +51,10 @@ class TaskDistributor :public ThreadPool {
 		shared_ptr<ShareTasksType> task;
 		unique_ptr<SIUnit> free_unit;
 		while (free_units.size()) {
-			free_unit = move(free_units.front());
-			free_units.pop();
 			task = chooseSearchTasks(&ok);
 			if (ok == false)break;
+			free_unit = move(free_units.front());
+			free_units.pop();
 			giveTask(free_unit, task);
 		}
 		if (free_units.size())allow_distribute = true;
