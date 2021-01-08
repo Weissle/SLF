@@ -31,7 +31,7 @@ double variance(const T begin, const T end) {
 
 
 template<class _GraphType>
-class MatchOrderSelectorSI {
+class MatchOrderSelectorVF3 {
 public:
 	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;
@@ -180,7 +180,7 @@ public:
 };
 
 template<class _GraphType>
-class MatchOrderSelectorSI_T {
+class MatchOrderSelectorSI {
 public:
 	typedef _GraphType GraphType;
 	typedef typename GraphType::NodeType NodeType;

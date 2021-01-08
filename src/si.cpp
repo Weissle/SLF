@@ -8,19 +8,19 @@
 #include<memory>
 #include"si/AnswerReceiver.hpp"
 #include"si/MatchOrderSelector.hpp"
-#include"si/SubgraphIsomorphismThread.hpp"
+#include"si/ParallelSubgraphIsomorphism.hpp"
 using namespace std;
 static long t = 0;
 using namespace wg;
 
+typedef int EdgeLabelType;
+typedef Node<EdgeLabelType> NodeType;
+typedef Graph<NodeType, EdgeLabelType> GraphType;
+
 std::vector<size_t> readMatchSequence(std::string&);
+shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType*, GraphType*, std::string&);
 int main(int argc, char* argv[]) {
-	typedef int EdgeLabelType;
-	typedef Node<EdgeLabelType> NodeType;
-	typedef Graph<NodeType, EdgeLabelType> GraphType;
-
-
-
+	
 	argh::parser cmdl({ "self-order","-so","-thread","-t","-limits","-l","-print-solution"});
 	cmdl.parse(argc, argv);
 	string queryGraphPath, targetGraphPath, matchOrderPath;
@@ -34,13 +34,7 @@ int main(int argc, char* argv[]) {
 	cmdl({ "-self-order","-so" }) >> matchOrderPath;
 	cmdl({ "-limits","-l" }) >> limits;
 	bool print_solution = cmdl["-print-solution"];
-	//match order
-#define MOS_SI_TEST
-#if defined(MOS_SI)
-	typedef MatchOrderSelectorSI<GraphType> MatchOrderSelectorType;
-#elif defined(MOS_SI_TEST)
-	typedef MatchOrderSelectorSI_T<GraphType> MatchOrderSelectorType;
-#endif
+
 	// graph type ( store in files ) and read graph
 #define GRF_L
 #ifdef GRF_L
@@ -54,25 +48,23 @@ int main(int argc, char* argv[]) {
 	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath, turner),
 		* targetGraph = GraphReader::readGraph(targetGraphPath, turner);
 
+	time_t t1 = time(0);
 	targetGraph->graphBuildFinish();
 	queryGraph->graphBuildFinish();
-	vector<NodeIDType> ms;
-	if (matchOrderPath.size())  ms = move(readMatchSequence(matchOrderPath));
-	else ms = MatchOrderSelectorType::run(*queryGraph, *targetGraph);
-	shared_ptr<const vector<NodeIDType>> ms_ptr = make_shared<const vector<NodeIDType>>(ms);
+
+	shared_ptr<const vector<NodeIDType>> ms = ChooseMatchSequence(queryGraph, targetGraph, matchOrderPath);
 	size_t solutions = 0;
 	size_t call_times = 0;
 
-	time_t t1 = time(0);
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(print_solution);
-		SubgraphIsomorphismThread<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, limits, ms_ptr);
+		ParallelSubgraphIsomorphism<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, limits, ms);
 		si.run();
 		solutions = answerReceiver.solutionsCount();
 	}
 	else {
 		AnswerReceiver answerReceiver(print_solution);
-		SubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, limits, ms_ptr);
+		SequentialSubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, limits, ms);
 		si.run();
 		solutions = answerReceiver.solutionsCount();
 		call_times = si.callTimes();
@@ -105,4 +97,24 @@ std::vector<size_t> readMatchSequence(std::string& matchOrderPath) {
 		f.close();
 	}
 	return move(ms);
+}
+
+shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType* query, GraphType* target, std::string& matchOrderPath) {
+//match order
+#define MOS_SI
+#if defined(MOS_VF3)
+	typedef MatchOrderSelectorVF3<GraphType> MatchOrderSelectorType;
+#elif defined(MOS_SI)
+	typedef MatchOrderSelectorSI<GraphType> MatchOrderSelectorType;
+#endif
+	vector<NodeIDType> ms;
+	//read ms from file
+	if (matchOrderPath.size()) {
+		ms = move(readMatchSequence(matchOrderPath));
+	}
+	//choose match sequence according to query and target graphs.
+	else {
+		ms = MatchOrderSelectorType::run(*query, *target);
+	}
+	return  make_shared<const vector<NodeIDType>>(ms);
 }

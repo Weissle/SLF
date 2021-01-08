@@ -312,7 +312,7 @@ private:
 	bool inSetIn(NodeIDType target_id)const { return inSetUnmap(target_id) && in_depth[target_id]; }
 	bool inSetOut(NodeIDType target_id)const { return inSetUnmap(target_id) && out_depth[target_id]; }
 
-	inline bool simpleCheckPair(const NodeIDType& query_id, const NodeIDType& target_id)const {
+	inline bool simpleAddAble(const NodeIDType& query_id, const NodeIDType& target_id)const {
 		if (mappingAux[target_id] != NO_MAP)return false;
 		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;
 		return true;
@@ -354,9 +354,9 @@ public:
 			container.giveTasks(targetGraphPtr->size());
 		}
 	}
-	bool checkPair(const NodeIDType& query_id, const NodeIDType& target_id)
+	bool AddAble(const NodeIDType& query_id, const NodeIDType& target_id)
 	{
-		if (simpleCheckPair(query_id, target_id) == false) return false;
+		if (simpleAddAble(query_id, target_id) == false) return false;
 	/*	if (mappingAux[target_id] != NO_MAP) return false;
 		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false) return false;*/
 #ifdef INDUCE_ISO
@@ -366,7 +366,7 @@ public:
 #endif
 		return answer;
 	}
-	void pushPair(const NodeIDType& query_id, const NodeIDType& target_id) {
+	void AddPair(const NodeIDType& query_id, const NodeIDType& target_id) {
 		mapping[query_id] = target_id;
 		mappingAux[target_id] = query_id;
 		search_depth++;
@@ -393,7 +393,7 @@ public:
 
 
 	}
-	void popPair(const NodeIDType queryNodeID)  //query node id
+	void RemovePair(const NodeIDType queryNodeID)  //query node id
 	{
 		NodeIDType& targetNodeID = mapping[queryNodeID];
 		const auto id = targetNodeID;
@@ -417,7 +417,7 @@ public:
 		search_depth--;
 	}
 	inline bool isCoverQueryGraph()const { return (queryGraphPtr->size() == search_depth); }
-	MapType getMap(bool showNotCoverWarning = true) const {
+	MapType GetMapping(bool showNotCoverWarning = true) const {
 		if (isCoverQueryGraph() == false && showNotCoverWarning) cout << "WARNING : Map is not covering the whole quert graph\n";
 		return mapping;
 	}

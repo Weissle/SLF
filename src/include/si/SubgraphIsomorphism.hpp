@@ -10,10 +10,7 @@
 
 //#define DETAILS_TIME_COUNT
 using namespace std;
-/*
-About MatchOrderSelector,if MatchOrderSelector is  void type and you do not specify a match order , SubgraphIsomorphism will use default MatchOrderSelector.
 
-*/
 namespace wg {
 
 class SubgraphIsomorphismBase {
@@ -28,18 +25,16 @@ public:
 };
 //for single thread
 template<typename GraphType, typename AnswerReceiverType>
-class SubgraphIsomorphism : public SubgraphIsomorphismBase {
+class SequentialSubgraphIsomorphism : public SubgraphIsomorphismBase {
 	const GraphType* queryGraphPtr, * targetGraphPtr;
 	using EdgeLabelType = typename GraphType::EdgeLabelType;
 protected:
 	size_t searchDepth;
-	State<GraphType> mapState;
+	State<GraphType> state;
 	AnswerReceiverType& answerReceiver;
-//	vector<pair<const NodeIDType*, const NodeIDType*>> cand_id;
-//	vector<vector<NodeIDType>> cand_id;
 	vector<Tasks<EdgeLabelType>> cand_id;
 	bool end = false;
-	void run_timeCount()
+	void sequentialSearch_timeCount()
 	{
 
 		if (searchDepth == queryGraphPtr->size()) {
@@ -52,7 +47,7 @@ protected:
 		}
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
 		auto t1 = clock();
-		mapState.calCandidatePairs(query_id, cand_id[searchDepth]);
+		state.calCandidatePairs(query_id, cand_id[searchDepth]);
 		auto t2 = clock();
 		cal += t2 - t1;
 		canditatePairCount += cand_id[searchDepth].size();
@@ -61,18 +56,18 @@ protected:
 			t1 = clock();
 			const auto target_id = cand_id[searchDepth].back();
 			cand_id[searchDepth].pop_back();
-			const bool suitable = mapState.checkPair(query_id, target_id);
+			const bool suitable = state.AddAble(query_id, target_id);
 			t2 = clock();
 			check += t2 - t1;
 			if (suitable) {
 				t1 = clock();
-				mapState.pushPair(query_id, target_id);
+				state.AddPair(query_id, target_id);
 				++searchDepth;
 				t2 = clock();
 				add += t2 - t1;
-				run_timeCount();
+				sequentialSearch_timeCount();
 				t1 = clock();
-				mapState.popPair(query_id);
+				state.RemovePair(query_id);
 				--searchDepth;
 				t2 = clock();
 				if (end)return;
@@ -82,12 +77,11 @@ protected:
 	}
 
 	inline void ToDoAfterFindASolution() {
-		answerReceiver << mapState.getMap();
+		answerReceiver << state.GetMapping();
 		if ( _limits && answerReceiver.solutionsCount() >= _limits) end = true;
 	}
-	void run_noTimeCount()
+	void sequentialSearch()
 	{
-		++hitTime;
 		const auto search_depth = searchDepth;
 		if (searchDepth == queryGraphPtr->size()) {
 			this->ToDoAfterFindASolution();
@@ -95,15 +89,15 @@ protected:
 		}
 
 		const auto query_id = (*match_sequence_ptr)[searchDepth];
-		mapState.calCandidatePairs(query_id, cand_id[search_depth]);
+		state.calCandidatePairs(query_id, cand_id[search_depth]);
 		while (cand_id[search_depth].size()) {
 			const auto target_id = cand_id[search_depth].getTask();
-			if (mapState.checkPair(query_id, target_id)) {
-				mapState.pushPair(query_id, target_id);
+			if (state.AddAble(query_id, target_id)) {
+				state.AddPair(query_id, target_id);
 				++searchDepth;
-				run_noTimeCount();
+				sequentialSearch();
 				if (end)return;
-				mapState.popPair(query_id);
+				state.RemovePair(query_id);
 				--searchDepth;
 			}
 		}
@@ -115,11 +109,11 @@ private:
 
 public:
 
-	SubgraphIsomorphism() = default;
-	~SubgraphIsomorphism() = default;
-	SubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
+	SequentialSubgraphIsomorphism() = default;
+	~SequentialSubgraphIsomorphism() = default;
+	SequentialSubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
 		:SubgraphIsomorphismBase(_match_sequence_ptr, __limits), answerReceiver(_answerReceiver),queryGraphPtr(&_queryGraph),targetGraphPtr(&_targetGraph),
-		mapState(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
+		state(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE
@@ -132,7 +126,7 @@ public:
 	void run()
 	{
 #ifdef DETAILS_TIME_COUNT
-		run_timeCount();
+		sequentialSearch_timeCount();
 		cout << "cal Canditate Pairs " << double(cal) / CLOCKS_PER_SEC << endl;
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
@@ -140,7 +134,7 @@ public:
 		cout << "hit times " << hitTime << endl;
 		cout << "canditate Pair Count " << canditatePairCount << endl;
 #else
-		run_noTimeCount();
+		sequentialSearch();
 #endif
 	}
 

@@ -16,11 +16,11 @@
 using namespace std;
 namespace wg {
 template<typename GraphType, typename AnswerReceiverType>
-class SubgraphIsomorphismThreadUnit : public SubgraphIsomorphismBase{
+class MatchUnit : public SubgraphIsomorphismBase{
 public:
 	using EdgeLabelType = typename GraphType::EdgeLabelType;
 private:
-	using SIUnit = SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType>;
+	using SIUnit = MatchUnit<GraphType, AnswerReceiverType>;
 	using ShareTasksType = ShareTasks<EdgeLabelType>;
 	const GraphType* queryGraphPtr, * targetGraphPtr;
 	AnswerReceiverType& answerReceiver;
@@ -30,7 +30,7 @@ private:
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 	shared_ptr<ShareTasksType> tasks, next_tasks;
 
-	size_t min_depth;
+	size_t min_depth=0;
 	size_t solutions_count = 0;//Only use if we don't print out solutions and no limit of solutions number;
 	size_t renewMinDepth(){
 		assert(tasks->size()==0);
@@ -40,7 +40,7 @@ private:
 
 	inline void ToDoAfterFindASolution() {
 		if (answerReceiver.printSolution()) {
-			answerReceiver << state.getMap();
+			answerReceiver << state.GetMapping();
 			if (answerReceiver.solutionsCount() >= _limits) task_distributor->setEnd(true);
 			return;
 		}
@@ -62,15 +62,15 @@ private:
 
 		auto& seq = next_tasks->targetSequence();
 		seq = tasks->targetSequence(); //.assign(tasks->targetSequence().begin(), tasks->targetSequence().end());
-		const auto& state_seq = state.getMap(false);
+		const auto& state_seq = state.GetMapping(false);
 		for (auto i = seq.size(); i < min_depth; ++i) {
 			seq.push_back(state_seq[(*match_sequence_ptr)[i]]);
 		}
 		
-		task_distributor->addThreadTask(&TaskDistributor<SIUnit>::addSearchTasks, task_distributor.get(),next_tasks);
+		task_distributor->addThreadTask(&TaskDistributor<SIUnit>::PassSharedTasks, task_distributor.get(),next_tasks);
 	}
 	
-	void run_()
+	void ParallelSearch()
 	{
 		const auto search_depth = state.depth();
 		if (search_depth == queryGraphPtr->size()) {
@@ -86,11 +86,11 @@ private:
 
 		while (cand_id[search_depth].size()) {
 			const auto target_id = cand_id[search_depth].getTask();
-			if (state.checkPair(query_id, target_id)) {
-				state.pushPair(query_id, target_id);
-				run_();
+			if (state.AddAble(query_id, target_id)) {
+				state.AddPair(query_id, target_id);
+				ParallelSearch();
 				if (task_distributor->end()) return;
-				state.popPair(query_id);
+				state.RemovePair(query_id);
 			}
 		}
 
@@ -99,7 +99,7 @@ private:
 
 	void prepareState() {
 		const auto& to_seq = tasks->targetSequence();
-		const auto& state_seq = state.getMap(false);
+		const auto& state_seq = state.GetMapping(false);
 		size_t diff_point = 0;
 		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
 			if (state_seq[(*match_sequence_ptr)[diff_point]] != to_seq[diff_point])break;
@@ -107,10 +107,10 @@ private:
 
 		while (state.depth() > diff_point) { 
 			const auto pop_query_node = (*match_sequence_ptr)[state.depth() - 1];
-			state.popPair(pop_query_node); 
+			state.RemovePair(pop_query_node); 
 		}
 		for (auto i = diff_point; i < to_seq.size(); ++i) {
-			state.pushPair((*match_sequence_ptr)[i], to_seq[i]);
+			state.AddPair((*match_sequence_ptr)[i], to_seq[i]);
 		}
 	}
 	void prepare_all() {
@@ -127,7 +127,7 @@ private:
 public:
 	
 	clock_t run_clock = 0;
-	SubgraphIsomorphismThreadUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, size_t __limits,
+	MatchUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverType& _answerReceiver, shared_ptr<const vector<NodeIDType>> _msp, size_t __limits,
 		shared_ptr<const SubgraphMatchStates<GraphType>> _sp, shared_ptr<TaskDistributor<SIUnit>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),
 		SubgraphIsomorphismBase(_msp, __limits), answerReceiver(_answerReceiver),
 		state(_q, _t, _sp), cand_id(_q.size()), task_distributor(_tc)
@@ -137,7 +137,7 @@ public:
 		next_tasks= move(_tasks);
 		return;
 	}
-	void run() {
+	void ParallelSearchOuter() {
 		NodeIDType query_id;
 		bool ok;
 		do {
@@ -148,17 +148,17 @@ public:
 			while (tasks->size()) {
 				auto target_id = tasks->getTask();
 				if (target_id == NO_MAP)continue;
-				if (state.checkPair(query_id, target_id)) {
-					state.pushPair(query_id, target_id);
-					run_();
+				if (state.AddAble(query_id, target_id)) {
+					state.AddPair(query_id, target_id);
+					ParallelSearch();
 					if(task_distributor->end())return;
-					state.popPair(query_id);
+					state.RemovePair(query_id);
 				}
 			}
 			tasks.reset();
 	//		run_clock += clock() - c1;
 			if (next_tasks.use_count() == 0) {
-				next_tasks = task_distributor->chooseSearchTasks(&ok);
+				next_tasks = task_distributor->ChooseHeavySharedTask(&ok);
 				if (ok == false) break;
 			}
 		} while (next_tasks.use_count());
@@ -169,13 +169,13 @@ public:
 };
 
 template<typename GraphType, typename AnswerReceiverType>
-class SubgraphIsomorphismThread : public SubgraphIsomorphismBase {
-	typedef SubgraphIsomorphismThreadUnit<GraphType, AnswerReceiverType> SIUnit;
+class ParallelSubgraphIsomorphism : public SubgraphIsomorphismBase {
+	typedef MatchUnit<GraphType, AnswerReceiverType> SIUnit;
 	const GraphType* queryGraphPtr, * targetGraphPtr;
 	shared_ptr<TaskDistributor<SIUnit>> task_distributor;
 public:
-	SubgraphIsomorphismThread() = default;
-	SubgraphIsomorphismThread(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answer_receiver, size_t _thread_num,
+	ParallelSubgraphIsomorphism() = default;
+	ParallelSubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answer_receiver, size_t _thread_num,
 		size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr):queryGraphPtr(&_queryGraph), targetGraphPtr(&_targetGraph),
 		SubgraphIsomorphismBase(_match_sequence_ptr, __limits), task_distributor(make_shared<TaskDistributor<SIUnit>>(_thread_num))
 	{
@@ -191,12 +191,12 @@ public:
 	void run() {
 		size_t first_task_num = targetGraphPtr->size();
 
-		auto task_container = task_distributor->getShareTasksContainer();
-		task_container->giveTasks(first_task_num);
+		auto rootTask = task_distributor->getShareTasksContainer();
+		rootTask->giveTasks(first_task_num);
 
 		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
-		task_distributor->addSearchTasks(task_container);
-		task_container.reset();
+		task_distributor->PassSharedTasks(rootTask);
+		rootTask.reset();
 		task_distributor->join();
 //		task_distributor->output_hittimes();
 		return;

@@ -41,17 +41,17 @@ class TaskDistributor :public ThreadPool {
 			unit = move(prepared_units.front());
 			prepared_units.pop();
 		}
-		unit->run();
+		unit->ParallelSearchOuter();
 		addFreeUnit(move(unit));
 	}
-	void distributeTasks() {
+	void SharedTasksDistribution() {
 		lock_guard<mutex> lg(free_units_mutex);
 		allow_distribute = false;
 		bool ok;
 		shared_ptr<ShareTasksType> task;
 		unique_ptr<SIUnit> free_unit;
 		while (free_units.size()) {
-			task = chooseSearchTasks(&ok);
+			task = ChooseHeavySharedTask(&ok);
 			if (ok == false)break;
 			free_unit = move(free_units.front());
 			free_units.pop();
@@ -113,14 +113,14 @@ public:
 
 		return move(answer);
 	}
-	void addSearchTasks(shared_ptr<ShareTasksType> tasks) {
+	void PassSharedTasks(shared_ptr<ShareTasksType> tasks) {
 		{
 			lock_guard<mutex> lg(using_tasks_mutex);
 			using_tasks.push_back(move(tasks));
 		}
-		addThreadTask(&TaskDistributor<SIUnit>::distributeTasks, this);
+		addThreadTask(&TaskDistributor<SIUnit>::SharedTasksDistribution, this);
 	}
-	shared_ptr<ShareTasksType> chooseSearchTasks(bool* ok) {
+	shared_ptr<ShareTasksType> ChooseHeavySharedTask(bool* ok) {
 		static size_t count = 0;
 		size_t the_best_task_index = 0;
 		lock_guard<mutex> lg(using_tasks_mutex);
