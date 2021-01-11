@@ -17,18 +17,7 @@ private:
 	NodeLabelType _label;
 	vector<SourceEdge<EdgeLabelType>> _inEdges;
 	vector<TargetEdge<EdgeLabelType>> _outEdges;
-
-
-	inline int _cmp_edge_target(const TargetEdge<EdgeLabelType>& e, const NodeIDType id, const EdgeLabelType& label)const {
-		if (e.target() == id) {
-			if (e.label() == label)return -1;
-			return e.label() < label;
-		}
-		else {
-			if (e.target() == id)return -1;
-			else return e.target() < id;
-		}
-	}
+	
 	Node() = default;
 public:
 	~Node() = default;
@@ -39,15 +28,8 @@ public:
 	inline bool isSameType(const NodeType& n)const { return _label == n.label(); }
 	inline bool operator>=(const NodeType& n) const { return ((_inEdges.size() >= n.inEdgesNum()) && (_outEdges.size() >= n.outEdgesNum())); }
 	bool existSameTypeEdgeToNode(const NodeIDType to, const EdgeLabelType& elabel)const {
-		size_t begin = 0, end = _outEdges.size();
-		while (begin < end) {
-			const auto mid = (begin + end) / 2;
-			const auto& ele = _outEdges[mid];
-			if (_cmp_edge_target(ele, to, elabel) == -1) return true;
-			else if (_cmp_edge_target(ele, to, elabel) > 0) { begin = mid + 1; }
-			else end = mid;
-		}
-		return false;
+		const TargetEdge<EdgeLabelType> tar(to,elabel);
+		return binary_search(_outEdges.begin(),_outEdges.end(),tar);
 	}
 	/*
 	bool existSameTypeEdgeFromNode(const NodeIDType from, const EdgeLabelType &elabel)const {
@@ -65,8 +47,6 @@ public:
 	inline void addInEdge(const NodeIDType id, EdgeLabelType l) { _inEdges.emplace_back(id, l); }
 	inline void addOutEdge(const NodeIDType id, EdgeLabelType l) { _outEdges.emplace_back(id, l); }
 	void NodeBuildFinish() {
-		_inEdges.shrink_to_fit();
-		_outEdges.shrink_to_fit();
 		sort(_inEdges.begin(), _inEdges.end());
 		sort(_outEdges.begin(), _outEdges.end());
 	}

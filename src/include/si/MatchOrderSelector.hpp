@@ -11,25 +11,6 @@
 using namespace std;
 namespace wg {
 
-template<class T>
-double mean(const T begin, const T end) {
-	if (begin == end)return 0;
-	return (std::accumulate(begin, end, 0.0)) / (end - begin);
-}
-template<class T>
-double variance(const T begin, const T end, double mean) {
-	size_t denominator = end - begin;
-	if (denominator <= 1)return 0;
-	double answer = 0;
-	LOOP(it, begin, end) answer += pow(*it - mean, 2);
-	return answer / (denominator - 1);
-}
-template<class T>
-double variance(const T begin, const T end) {
-	return variance(begin, end, mean(begin, end));
-}
-
-
 template<class _GraphType>
 class MatchOrderSelectorVF3 {
 public:

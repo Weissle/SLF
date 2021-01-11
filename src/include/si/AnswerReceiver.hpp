@@ -10,6 +10,7 @@
 #include<condition_variable>
 #include<assert.h>
 #include<si/si_marcos.h>
+using namespace std;
 namespace wg{
 inline void printoutSolution(const vector<NodeIDType>& mapping,const size_t &no) {
 	cout << "solution " << no << endl;
@@ -44,7 +45,8 @@ public:
 	void operator<<(const vector<NodeIDType>& mapping) {
 		atomic_count++;
 		lock_guard<mutex> lg(m);
-		printoutSolution(mapping, atomic_count.load());
+		if(print_solution)
+			printoutSolution(mapping, atomic_count.load());
 	}
 	void solutionCountAdd(size_t s) { 
 		atomic_count += s;

@@ -102,7 +102,10 @@ public:
 	SourceEdge(const NodeIDType _s, _LT _l) :_source(_s), _label(_l) {}
 	const NodeIDType source()const { return _source; }
 	const LabelType label()const { return _label; }
-	const NodeIDType target()const { return NO_MAP; }
+	const NodeIDType target()const { 
+		assert("Read target node id is not allowed in SourceEdge");
+		return NO_MAP; 
+	}
 	bool operator<(const SourceEdge<_LT>& e)const {
 		if (_source == e._source) return _label < e._label;
 		else return _source < e._source;
@@ -117,7 +120,10 @@ public:
 	typedef _LT LabelType;
 	TargetEdge() = default;
 	TargetEdge(const NodeIDType _t, _LT _l) :_target(_t), _label(_l) {}
-	const NodeIDType source()const { return NO_MAP; }
+	const NodeIDType source()const { 
+		assert("Read source node id is not allowed in SourceEdge");
+		return NO_MAP;
+	}
 	const LabelType label()const { return _label; }
 	const NodeIDType target()const { return _target; }
 	bool operator<(const TargetEdge<_LT>& e) const {
