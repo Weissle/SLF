@@ -25,56 +25,48 @@ struct hash<pair<F, S> >
 	}
 };
 
-template<class GraphType>
-class LADReader {
-	typedef typename GraphType::NodeType NodeType;
-
-public:
-	static GraphType* readGraph(string graphPath) {
+using namespace wg;
+template<typename EdgeLabel>
+class GraphReader{
+	using GraphType = GraphS<EdgeLabel>;
+	fstream OpenFile(const string &graphPath){
 		fstream f;
-
 		f.open(graphPath.c_str(), ios_base::in);
-		//		auto f = openGraphFile(graphPath, ios_base::in);
 		if (f.is_open() == false) {
 			cout << graphPath << " open fail" << endl;
 			exit(0);
 		}
+		return f;
+	}
+public:
+	GraphReader()=default;
+	// not sure is right !!
+	GraphType* ReadFromLAD(string graphPath){
+		fstream f = OpenFile(graphPath);
 		int nodeNum;
 		f >> nodeNum;
 		GraphType* graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
-			int edgeNum;
+			int edgeNum = -1;
 			const int& source = i;
 			f >> edgeNum;
 			for (int j = 0; j < edgeNum; ++j) {
-				int target;
+				int target = -1;
 				f >> target;
-				graph->addEdge(source, target);
+				if(target == -1) break;
+				graph->AddEdge(source, target);
 			}
 		}
-
-
 		f.close();
 		return graph;
 	}
 
-
-};
-
-template<class GraphType>
-class ARGGraphNoLabel {
-	typedef typename GraphType::NodeType NodeType;
-public:
-	static GraphType* readGraph(string graphPath) {
-
+	// not sure is right !!
+	GraphType* ReadFromARGNoLabel(string graphPath){
 		FILE* f = fopen(graphPath.c_str(), "rb");
 		assert(f != nullptr && "open file fail");
-
 		int nodeNum;
 		nodeNum = getwc(f);
-
-
-
 		GraphType* graph = new GraphType(nodeNum);
 		for (int i = 0; i < nodeNum; ++i) {
 			int edgeNum = getwc(f);
@@ -82,96 +74,21 @@ public:
 
 			for (int j = 0; j < edgeNum; ++j) {
 				int target = getwc(f);
-				graph->addEdge(source, target);
+				graph->AddEdge(source, target);
 			}
 		}
-
-
 		fclose(f);
 		return graph;
-	}
+	}	
 
-
-};
-/*
-template<class GraphType>
-class STFGraphNoLabel {
-	typedef typename GraphType::NodeType NodeType;
-public:
-	static GraphType* readGraph(string graphPath) {
-		fstream f;
-		f.open(graphPath.c_str(), ios_base::in);
-		//		auto f = openGraphFile(graphPath, ios_base::in);
-		if (f.is_open() == false) {
-			cout << graphPath << " open fail" << endl;
-			exit(0);
-		}
-		int nodeNum=0;
-		f >> nodeNum;
-
-		GraphType *graph = new GraphType(nodeNum);
-
-
-		for (int i = 0; i < edgeNum; ++i) {
-			int source, target;
-			f >> source >> target;
-			graph->addEdge(source, target);
-		}
-		f.close();
-		return graph;
-	}
-
-};*/
-/*
-template<class GraphType>
-class STFGraphLabel {
-	typedef typename GraphType::NodeType NodeType;
-public:
-	static GraphType* readGraph(string graphPath) {
-		fstream f;
-		f.open(graphPath.c_str(), ios_base::in);
-		//		auto f = openGraphFile(graphPath, ios_base::in);
-		if (f.is_open() == false) {
-			cout << graphPath << " open fail" << endl;
-			exit(0);
-		}
-		int nodeNum=0;
-		f >> nodeNum;
-
-		GraphType *graph = new GraphType(nodeNum);
-
-
-
-		for (int i = 0; i < edgeNum; ++i) {
-			size_t source, target;
-			int label;
-			f >> source >> target >> label;
-			graph->addEdge(source, target, label);
-		}
-
-
-		f.close();
-		return graph;
-	}
-
-};
-*/
-template<class GraphType>
-class GRFGraphNoLabel {
-public:
-	static GraphType* readGraph(string graphPath) {
-		fstream f;
-		f.open(graphPath.c_str(), ios_base::in);
-		//		auto f = openGraphFile(graphPath, ios_base::in);
-		if (f.is_open() == false) {
-			cout << graphPath << " open fail" << endl;
-			exit(0);
-		}
+	GraphType* ReadFromGRFNoLabel(string graphPath){
+		fstream f = OpenFile(graphPath);
 		int nodeNum = 0;
 		f >> nodeNum;
 
 		GraphType* graph = new GraphType(nodeNum);
 		unordered_set< pair<size_t, size_t> > s;
+		s.insert(error_pair);
 		s.reserve(nodeNum * nodeNum);
 
 		while (f.eof() == false) {
@@ -179,26 +96,16 @@ public:
 			f >> source >> target;
 			pair<size_t, size_t> p(source, target);
 
-			if (IN_SET(s, p))continue;
+			if (s.count(p))continue;
 			s.insert(p);
-			graph->addEdge(source, target);
+			graph->AddEdge(source, target);
 		}
 
 		f.close();
 		return graph;
 	}
-};
-
-template<class GraphType,class NodeLabelType=size_t>
-class GRFGraphLabel {
-public:
-	static GraphType* readGraph(string graphPath,wg::IndexTurner<NodeLabelType> &turner) {
-		fstream f;
-		f.open(graphPath.c_str(), ios_base::in);
-		if (f.is_open() == false) {
-			cout << graphPath << " open fail" << endl;
-			exit(0);
-		}
+	GraphType* ReadFromGRF(string graphPath) {
+		fstream f = OpenFile(graphPath);
 		int nodeNum = 0;
 		f >> nodeNum;
 
@@ -208,32 +115,46 @@ public:
 			size_t id;
 			int label;
 			f >> id >> label;
-			graph->setNodeLabel(id, turner(label));
+			graph->SetNodeLabel(id, label);
 		}
-		bool* pp = new bool[nodeNum]();
 		while (f.eof() == false) {
 			int edges = 0;
 			f >> edges;
 			unordered_set< pair<size_t, size_t> > s;
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
-
 				size_t source = UINT32_MAX, target = UINT32_MAX;
-
 				f >> source >> target;
 				if (source == UINT32_MAX || target == UINT32_MAX) continue;
 				pair<size_t, size_t> p(source, target);
-				if (IN_SET(s, p))continue;
-				if (pp[source] == false) {
-					graph->edgeVectorReserve(source, edges);
-					pp[source] = true;
-				}
-
+				if (s.count(p))continue;
 				s.insert(p);
-				graph->addEdge(source, target);
+				graph->AddEdge(source, target);
 			}
 		}
+		f.close();
+		return graph;
+	}
 
+	/*
+	   Each graph is described in a text file. If the graph has n vertices, then the file has n+1 lines:
+		   The first line gives the number n of vertices.
+		   The next n lines give, for each vertex, its number of successor nodes, followed by the list of its successor nodes.
+	*/
+	GraphType* ReadFromBN(string graphPath){
+		fstream f = OpenFile(graphPath);
+		int nodeNum = 0;
+		f >> nodeNum;
+		GraphType* graph = new GraphType(nodeNum);
+		for (int i = 0; i < nodeNum; ++i){ 
+			int edgesNum = 0;
+			f>>edgesNum;
+			for (int j = 0; j < edgesNum; ++j){ 
+				int tar = -1;
+				f >> tar;
+				graph->AddEdge(i, tar);
+			}
+		}
 		f.close();
 		return graph;
 	}

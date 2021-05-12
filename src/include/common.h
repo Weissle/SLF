@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdio>
+
 size_t calHashSuitableSize(const size_t need) 
 {
 	size_t i = 8;

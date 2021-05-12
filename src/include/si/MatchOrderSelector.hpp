@@ -1,10 +1,13 @@
 #pragma once
+#include <algorithm>
 #include<unordered_set>
+#include <queue>
 #include<vector>
 #include<set>
 #include<map>
 #include"graph/Graph.hpp"
 #include"si/ThreadRelatedClass.hpp"
+#include "si/si_marcos.h"
 #include<utility>
 #include<cmath>
 #include<numeric>
@@ -289,5 +292,112 @@ public:
 	}
 };
 
+template<typename EdgeLabel>
+class MatchOrderSelector{
+	using Graph = GraphS<EdgeLabel>;
+public:
+	MatchOrderSelector()=default;
+	vector<NodeIDType> VF3(const Graph &query,const Graph &target){
+		vector<NodeIDType> matchSequence;
+		matchSequence.reserve(query.Size());
+		return matchSequence;
+	}
+	vector<NodeIDType> SI(const Graph &query,const Graph &target){
+		vector<NodeIDType> matchSequence;
+		matchSequence.reserve(query.Size());
+
+		int queryMaxLabel = *max_element(query.GetLabels().begin(),query.GetLabels().end());
+		int targetMaxLabel = *max_element(target.GetLabels().begin(),target.GetLabels().end());
+		vector<int> queryInDegrees(query.Size()),queryOutDegrees(query.Size());
+		vector<int> targetInDegrees(target.Size()),targetOutDegrees(target.Size());
+		int queryInMax = 0,queryOutMax = 0;
+		int targetInMax = 0,targetOutMax = 0;
+		for (int i = 0; i < query.Size(); ++i){ 
+			queryInDegrees[i] = query.GetInEdges(i).size();
+			queryOutDegrees[i] = query.GetOutEdges(i).size();
+			queryInMax = max(queryInMax,queryInDegrees[i]);
+			queryOutMax = max(queryOutMax,queryOutDegrees[i]);
+		}
+		for (int i = 0; i < target.Size(); ++i){ 
+			targetInDegrees[i] = target.GetInEdges(i).size();
+			targetOutDegrees[i] = target.GetOutEdges(i).size();
+			targetInMax = max(targetInMax,targetInDegrees[i]);
+			targetOutMax = max(targetOutMax,targetOutDegrees[i]);
+		}
+		int maxLabel = max(queryMaxLabel,targetMaxLabel);
+		vector<vector<int>> degreesCount[maxLabel+1];
+		for (auto &one:degreesCount){
+			one = vector<vector<int>>(queryInMax+1,vector<int>(queryOutMax+1,0));
+		}
+		for (int i = 0; i < target.Size(); ++i){ 
+			int label = target.GetLabel(i);
+			int inDeg = targetInDegrees[i];
+			int outDeg = targetOutDegrees[i];
+			inDeg = min(inDeg,queryInMax);
+			outDeg = min(outDeg,queryOutMax);
+			degreesCount[label][inDeg][outDeg] ++;
+		}
+		for (int i = 0; i <= maxLabel; ++i){ 
+			for(auto j=queryInMax-1;j>=0;--j){
+				degreesCount[i][j][queryOutMax] += degreesCount[i][j+1][queryOutMax];
+			}
+			for(auto j=queryOutMax-1;j>=0;--j){
+				degreesCount[i][queryInMax][j] += degreesCount[i][queryInMax][j+1];
+			}
+			for(auto j=queryInMax-1;j>=0;--j){
+				for(auto k=queryOutMax-1;k>=0;--k){
+					degreesCount[i][j][k] = degreesCount[i][j+1][k] + degreesCount[i][j][k+1] - degreesCount[i][j+1][k+1];
+				}
+			}
+		}
+
+		// id,poss,deg,connectNum
+		using tipdc = tuple<NodeIDType,double,int,int>;
+		struct tipdc_cmp{
+			int operator()(const tipdc&a,const tipdc&b){
+				if(get<3>(a) != get<3>(b)) return get<3>(a) < get<3>(b);
+				else if(fabs(get<1>(a) - get<1>(b)) > 1e-20) return get<1>(a) > get<1>(b);
+				else return get<2>(a) < get<2>(b);
+			}
+		};
+
+		vector<int> chosen(query.Size(),false);
+		vector<double> possibility(query.Size());
+		vector<int> degs(query.Size()),connectNum(query.Size(),0);
+		priority_queue<tipdc,vector<tipdc>,tipdc_cmp> pq;
+		for (int i = 0; i < query.Size(); ++i){ 
+			int lab = query.GetLabel(i);
+			int inDeg = queryInDegrees[i];
+			int outDeg = queryOutDegrees[i];
+			double poss = degreesCount[lab][inDeg][outDeg] / double(target.Size());
+			possibility[i] = poss;
+			degs[i] = inDeg + outDeg;
+			pq.emplace(i,poss,inDeg + outDeg,0);
+		}
+
+		while(pq.size()){
+			auto temp = pq.top(); pq.pop();
+			auto id = get<0>(temp);
+			if (chosen[id]) continue;
+			chosen[id] = true;
+			matchSequence.push_back(id);
+			assert(get<3>(temp) == connectNum[id]);
+			for (const auto &one:query.GetInEdges(id)){
+				int temp_id = one.source();
+				if(chosen[temp_id]) continue;
+				connectNum[temp_id]++;
+				pq.emplace(temp_id,possibility[temp_id],degs[temp_id],connectNum[temp_id]);
+			}
+			for (const auto &one:query.GetOutEdges(id)){
+				int temp_id = one.target();
+				if(chosen[temp_id]) continue;
+				connectNum[temp_id]++;
+				pq.emplace(temp_id,possibility[temp_id],degs[temp_id],connectNum[temp_id]);
+			}
+		}
+
+		return matchSequence;
+	}
+};
 
 }

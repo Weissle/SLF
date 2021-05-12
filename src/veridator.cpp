@@ -12,8 +12,9 @@ static long t = 0;
 
 int main(int argc, char* argv[]) {
 	typedef int EdgeLabelType;
-	typedef Node<EdgeLabelType> NodeType;
-	typedef Graph<NodeType, EdgeLabelType> GraphType;
+	//typedef Node<EdgeLabelType> NodeType;
+	//typedef Graph<NodeType, EdgeLabelType> GraphType;
+	using GraphType = GraphS<EdgeLabelType>;
 
 
 	argh::parser cmdl({ "-target-graph","-tg","-query-graph","-solution","-induce","-qg" });
@@ -25,14 +26,15 @@ int main(int argc, char* argv[]) {
 	cmdl({ "-solution" }) >> solutionPath;
 	induceGraph = (cmdl[{"-induce"}]) ? false : true;
 
-#define GRF_L
-#ifdef GRF_L
-	typedef GRFGraphLabel<GraphType> GraphReader;
-#elif defined(LAD)
-	typedef LADReader<GraphType> GraphReader;
-#elif defined ARG_NL
-	typedef ARGGraphNoLabel<GraphType> GraphReader;
-#endif
+//#define GRF_L
+//#ifdef GRF_L
+	//typedef GRFGraphLabel<GraphType> GraphReader;
+//#elif defined(LAD)
+	//typedef LADReader<GraphType> GraphReader;
+//#elif defined ARG_NL
+	//typedef ARGGraphNoLabel<GraphType> GraphReader;
+//#endif
+	GraphReader<GraphType> graphReader;
 
 	vector< vector<size_t> > solutions = SolutionReader::readSolutions(solutionPath);
 

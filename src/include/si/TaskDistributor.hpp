@@ -9,12 +9,11 @@
 using namespace std;
 namespace wg {
 
-template<class SIUnit>
+template<typename EdgeLabel,typename MU>
 class TaskDistributor :public ThreadPool {
-	using EdgeLabelType = typename SIUnit::EdgeLabelType;
-	using ShareTasksType = ShareTasks<EdgeLabelType>;
+	using ShareTasksType = ShareTasks<EdgeLabel>;
 	mutex free_units_mutex, prepared_units_mutex;
-	queue<unique_ptr<SIUnit>> free_units, prepared_units;
+	queue<unique_ptr<MU>> free_units, prepared_units;
 	mutex share_tasks_container_mutex, using_tasks_mutex;
 	queue<shared_ptr<ShareTasksType>> share_tasks_container;
 	vector<shared_ptr<ShareTasksType>> using_tasks;
@@ -26,7 +25,7 @@ class TaskDistributor :public ThreadPool {
 
 
 
-	void giveTask(unique_ptr<SIUnit>& free_unit, shared_ptr<ShareTasksType>& task) {
+	void giveTask(unique_ptr<MU>& free_unit, shared_ptr<ShareTasksType>& task) {
 		free_unit->prepare(move(task));
 		{
 			lock_guard<mutex> lg(prepared_units_mutex);
@@ -35,7 +34,7 @@ class TaskDistributor :public ThreadPool {
 		addThreadTask(&TaskDistributor::giveTaskToThreadPool, this);
 	}
 	void giveTaskToThreadPool() {
-		unique_ptr<SIUnit> unit;
+		unique_ptr<MU> unit;
 		{
 			lock_guard<mutex> lg(prepared_units_mutex);
 			unit = move(prepared_units.front());
@@ -49,7 +48,7 @@ class TaskDistributor :public ThreadPool {
 		allow_distribute = false;
 		bool ok;
 		shared_ptr<ShareTasksType> task;
-		unique_ptr<SIUnit> free_unit;
+		unique_ptr<MU> free_unit;
 		while (free_units.size()) {
 			task = ChooseHeavySharedTask(&ok);
 			if (ok == false)break;
@@ -68,7 +67,7 @@ public:
 	}
 	void output_hittimes() {
 		while (free_units.size()) {
-			unique_ptr<SIUnit> free_unit;
+			unique_ptr<MU> free_unit;
 			{
 				lock_guard<mutex> lg(free_units_mutex);
 				if (free_units.empty())	return;
@@ -84,7 +83,7 @@ public:
 	void setEnd(const bool end_) {
 		_end.store(end_);
 	}
-	void addFreeUnit(unique_ptr<SIUnit> free_unit) {
+	void addFreeUnit(unique_ptr<MU> free_unit) {
 		lock_guard<mutex> lg(free_units_mutex);
 		free_units.push(move(free_unit));
 		allow_distribute = true;
@@ -118,7 +117,7 @@ public:
 			lock_guard<mutex> lg(using_tasks_mutex);
 			using_tasks.push_back(move(tasks));
 		}
-		addThreadTask(&TaskDistributor<SIUnit>::SharedTasksDistribution, this);
+		addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
 	}
 	shared_ptr<ShareTasksType> ChooseHeavySharedTask(bool* ok) {
 		static size_t count = 0;

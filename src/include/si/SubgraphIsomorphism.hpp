@@ -1,6 +1,7 @@
 #pragma once
 #include"State.hpp"
 #include"AnswerReceiver.hpp"
+#include "graph/Graph.hpp"
 #include"si/si_marcos.h"
 #include"si/Tasks.hpp"
 #include<vector>
@@ -24,20 +25,20 @@ public:
 	}
 };
 //for single thread
-template<typename GraphType, typename AnswerReceiverType>
+template<typename EdgeLabel>
 class SequentialSubgraphIsomorphism : public SubgraphIsomorphismBase {
+	using GraphType = GraphS<EdgeLabel>;
 	const GraphType* queryGraphPtr, * targetGraphPtr;
-	using EdgeLabelType = typename GraphType::EdgeLabelType;
 protected:
 	size_t searchDepth;
-	State<GraphType> state;
-	AnswerReceiverType& answerReceiver;
-	vector<Tasks<EdgeLabelType>> cand_id;
+	State<EdgeLabel> state;
+	AnswerReceiver *answerReceiver;
+	vector<Tasks<EdgeLabel>> cand_id;
 	bool end = false;
 	void sequentialSearch_timeCount()
 	{
 
-		if (searchDepth == queryGraphPtr->size()) {
+		if (searchDepth == queryGraphPtr->Size()) {
 			this->ToDoAfterFindASolution();
 			return;
 		}
@@ -77,13 +78,13 @@ protected:
 	}
 
 	inline void ToDoAfterFindASolution() {
-		answerReceiver << state.GetMapping();
-		if ( _limits && answerReceiver.solutionsCount() >= _limits) end = true;
+		*answerReceiver << state.GetMapping();
+		if ( _limits && (*answerReceiver).solutionsCount() >= _limits) end = true;
 	}
 	void sequentialSearch()
 	{
 		const auto search_depth = searchDepth;
-		if (searchDepth == queryGraphPtr->size()) {
+		if (searchDepth == queryGraphPtr->Size()) {
 			this->ToDoAfterFindASolution();
 			return;
 		}
@@ -111,9 +112,9 @@ public:
 
 	SequentialSubgraphIsomorphism() = default;
 	~SequentialSubgraphIsomorphism() = default;
-	SequentialSubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverType& _answerReceiver, size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
+	SequentialSubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiver *_answerReceiver, size_t __limits, shared_ptr<const vector<NodeIDType>>& _match_sequence_ptr)
 		:SubgraphIsomorphismBase(_match_sequence_ptr, __limits), answerReceiver(_answerReceiver),queryGraphPtr(&_queryGraph),targetGraphPtr(&_targetGraph),
-		state(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(queryGraphPtr->size())
+		state(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence_ptr)), cand_id(_queryGraph.Size())
 
 	{
 #ifdef OUTPUT_MATCH_SEQUENCE

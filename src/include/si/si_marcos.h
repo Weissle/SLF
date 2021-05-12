@@ -1,4 +1,5 @@
 #pragma once
+#include <limits>
 #include<utility>
 #include<vector>
 #include<string>
@@ -16,11 +17,12 @@
 
 namespace wg {
 
-typedef size_t NodeIDType;
+typedef uint32_t NodeIDType;
 using MapPair = std::pair<NodeIDType, NodeIDType>;
 using MapType = std::vector<NodeIDType>;
-const size_t NO_MAP = SIZE_MAX;
-const MapPair error_pair = MapPair(NO_MAP, NO_MAP);
+//constexpr size_t NO_MAP = SIZE_MAX;
+constexpr NodeIDType NO_MAP = std::numeric_limits<NodeIDType>::max();
+constexpr MapPair error_pair = MapPair(NO_MAP, NO_MAP);
 
 }
 

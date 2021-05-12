@@ -1,4 +1,6 @@
 #pragma once
+#include <algorithm>
+#include <cstdint>
 #include<vector>
 #include"Node.hpp"
 #include"Edge.hpp"
@@ -107,4 +109,58 @@ public:
 
 };
 
+//template<typename _NodeLabelType,typename _EdgeLabelType>
+template<typename _EdgeLabelType>
+class GraphS{
+public:
+	using EdgeLabelType = _EdgeLabelType;
+	using NodeLabelType = uint32_t;
+	using TEdge = TargetEdge<EdgeLabelType>;
+	using SEdge = SourceEdge<EdgeLabelType>;
+private:
+	vector<NodeLabelType> labels;
+	vector<vector<TEdge>> tedges;
+	vector<vector<SEdge>> sedges;
+	size_t _size;
+
+	GraphS()=default;
+public:
+	GraphS(const size_t s) :_size(s){
+		labels.resize(s);
+		tedges.resize(s);
+		sedges.resize(s);
+	}
+	void SetNodeLabel(const NodeIDType _id, const NodeLabelType _label) {
+		assert((_id >= 0 && _id < _size) && "node ID overflow");
+		labels[_id] = _label;
+	}
+	void AddEdge(const NodeIDType source, const NodeIDType target, const EdgeLabelType edgeLabel = EdgeLabelType()) {
+		//	assert(source != target && "not support self loop");
+		assert(source < _size && target < _size && "node id should smaller than node number");
+		tedges[source].emplace_back(TEdge(target,edgeLabel));
+		sedges[target].emplace_back(SEdge(source,edgeLabel));
+	}
+	size_t Size() const {
+		return _size;
+	};
+
+	void SortEdge() {
+		//only allow label type from 0 1 2 3 ... n-1
+		for (int i = 0; i < _size; ++i){ 
+			sort(tedges[i].begin(), tedges[i].end());
+			sort(sedges[i].begin(), sedges[i].end());
+		}
+	}
+	bool ExistEdge(const NodeIDType& from, const NodeIDType& to, const EdgeLabelType& edgeLabel)const {
+		const TEdge t(to,edgeLabel);
+		return binary_search(tedges[from].begin(), tedges[from].end(),t);
+	}
+	const vector<TEdge>& GetOutEdges(int id) const { return tedges[id]; }
+	const vector<SEdge>& GetInEdges(int id) const { return sedges[id]; }
+	int GetInDegree(int id) const { return sedges[id].size(); }
+	int GetOutDegree(int id) const { return tedges[id].size(); }
+	const vector<NodeLabelType>& GetLabels() const { return labels; }
+	const NodeLabelType GetLabel(int id) const { return labels[id]; }
+
+};
 }

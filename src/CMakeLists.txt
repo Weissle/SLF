@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.2)
 
 project (subgraph-isomorphism)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 set_property(GLOBAL PROPERTY USE_FOLDERS On)
 
 set (CMAKE_CXX_STANDARD 14)
@@ -23,7 +23,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(si si.cpp include/si/si_marcos.h)
 #add_executable(sg sg.cpp include/tools/SubgraphGenerator.hpp )
 
-add_executable(veridator veridator.cpp include/tools/AnswerChecker.hpp include/tools/SolutionReader.hpp)
+#add_executable(veridator veridator.cpp include/tools/AnswerChecker.hpp include/tools/SolutionReader.hpp)
 
 message("Hello" + ${CMAKE_CXX_FLAGS})
 

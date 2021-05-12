@@ -1,4 +1,5 @@
 #include"si/SubgraphIsomorphism.hpp"
+#include "si/si_marcos.h"
 #include"tools/GraphReader.hpp"
 #include"tools/argh.h"
 #include<time.h>
@@ -14,10 +15,9 @@ static long t = 0;
 using namespace wg;
 
 typedef int EdgeLabelType;
-typedef Node<EdgeLabelType> NodeType;
-typedef Graph<NodeType, EdgeLabelType> GraphType;
+typedef GraphS<EdgeLabelType> GraphType;
 
-std::vector<size_t> readMatchSequence(std::string&);
+std::vector<NodeIDType> readMatchSequence(std::string&);
 shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType*, GraphType*, std::string&);
 int main(int argc, char* argv[]) {
 	
@@ -35,22 +35,16 @@ int main(int argc, char* argv[]) {
 	cmdl({ "-limits","-l" }) >> limits;
 	bool print_solution = cmdl["-print-solution"];
 
-	// graph type ( store in files ) and read graph
-#define GRF_L
-#ifdef GRF_L
-	typedef GRFGraphLabel<GraphType, size_t> GraphReader;
-#elif defined(LAD)
-	typedef LADReader<GraphType> GraphReader;
-#elif defined ARG_NL
-	typedef ARGGraphNoLabel<GraphType> GraphReader;
-#endif
-	IndexTurner<size_t> turner;
-	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath, turner),
-		* targetGraph = GraphReader::readGraph(targetGraphPath, turner);
+	GraphReader<int> graphReader;
+	/*GraphType* queryGraph = graphReader.ReadFromGRF(queryGraphPath),
+		* targetGraph = graphReader.ReadFromGRF(targetGraphPath);*/
+
+	GraphType* queryGraph = graphReader.ReadFromBN(queryGraphPath),
+	 	*targetGraph = graphReader.ReadFromBN(targetGraphPath);
 
 	time_t t1 = time(0);
-	targetGraph->graphBuildFinish();
-	queryGraph->graphBuildFinish();
+	targetGraph->SortEdge();
+	queryGraph->SortEdge();
 
 	shared_ptr<const vector<NodeIDType>> ms = ChooseMatchSequence(queryGraph, targetGraph, matchOrderPath);
 	size_t solutions = 0;
@@ -58,13 +52,13 @@ int main(int argc, char* argv[]) {
 
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(print_solution);
-		ParallelSubgraphIsomorphism<GraphType, AnswerReceiverThread> si(*queryGraph, *targetGraph, answerReceiver, threadNum, limits, ms);
+		ParallelSubgraphIsomorphism<EdgeLabelType> si(*queryGraph, *targetGraph, &answerReceiver, threadNum, limits, ms);
 		si.run();
 		solutions = answerReceiver.solutionsCount();
 	}
 	else {
 		AnswerReceiver answerReceiver(print_solution);
-		SequentialSubgraphIsomorphism<GraphType, AnswerReceiver> si(*queryGraph, *targetGraph, answerReceiver, limits, ms);
+		SequentialSubgraphIsomorphism<EdgeLabelType> si(*queryGraph, *targetGraph, &answerReceiver, limits, ms);
 		si.run();
 		solutions = answerReceiver.solutionsCount();
 		call_times = si.callTimes();
@@ -80,8 +74,8 @@ int main(int argc, char* argv[]) {
 
 }
 
-std::vector<size_t> readMatchSequence(std::string& matchOrderPath) {
-	std::vector<size_t> ms;
+std::vector<NodeIDType> readMatchSequence(std::string& matchOrderPath) {
+	std::vector<NodeIDType> ms;
 	if (matchOrderPath.empty() == false) {
 		std::fstream f;
 		f.open(matchOrderPath.c_str(), std::ios_base::in);
@@ -96,25 +90,22 @@ std::vector<size_t> readMatchSequence(std::string& matchOrderPath) {
 		}
 		f.close();
 	}
-	return move(ms);
+	return ms;
 }
 
 shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType* query, GraphType* target, std::string& matchOrderPath) {
 //match order
-#define MOS_SI
-#if defined(MOS_VF3)
-	typedef MatchOrderSelectorVF3<GraphType> MatchOrderSelectorType;
-#elif defined(MOS_SI)
-	typedef MatchOrderSelectorSI<GraphType> MatchOrderSelectorType;
-#endif
+	MatchOrderSelector<EdgeLabelType> orderSelector;
+
 	vector<NodeIDType> ms;
 	//read ms from file
 	if (matchOrderPath.size()) {
-		ms = move(readMatchSequence(matchOrderPath));
+		ms = readMatchSequence(matchOrderPath);
 	}
 	//choose match sequence according to query and target graphs.
 	else {
-		ms = MatchOrderSelectorType::run(*query, *target);
+		//ms = MatchOrderSelectorType::run(*query, *target);
+		ms = orderSelector.SI(*query, *target);
 	}
 	return  make_shared<const vector<NodeIDType>>(ms);
 }
