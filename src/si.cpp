@@ -36,11 +36,11 @@ int main(int argc, char* argv[]) {
 	bool print_solution = cmdl["-print-solution"];
 
 	GraphReader<int> graphReader;
-	/*GraphType* queryGraph = graphReader.ReadFromGRF(queryGraphPath),
-		* targetGraph = graphReader.ReadFromGRF(targetGraphPath);*/
+	GraphType* queryGraph = graphReader.ReadFromGRF(queryGraphPath),
+	 *targetGraph = graphReader.ReadFromGRF(targetGraphPath);
 
-	GraphType* queryGraph = graphReader.ReadFromBN(queryGraphPath),
-	 	*targetGraph = graphReader.ReadFromBN(targetGraphPath);
+	//GraphType* queryGraph = graphReader.ReadFromBN(queryGraphPath),
+		 //*targetGraph = graphReader.ReadFromBN(targetGraphPath);
 
 	time_t t1 = time(0);
 	targetGraph->SortEdge();
