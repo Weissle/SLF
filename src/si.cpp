@@ -17,8 +17,8 @@ using namespace wg;
 typedef int EdgeLabelType;
 typedef GraphS<EdgeLabelType> GraphType;
 
-std::vector<NodeIDType> readMatchSequence(std::string&);
-shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType*, GraphType*, std::string&);
+std::vector<NodeIDType> readMatchSequence(const std::string&);
+shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType const*, GraphType const*,const std::string&);
 int main(int argc, char* argv[]) {
 	
 	argh::parser cmdl({ "self-order","-so","-thread","-t","-limits","-l","-print-solution"});
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 
 }
 
-std::vector<NodeIDType> readMatchSequence(std::string& matchOrderPath) {
+std::vector<NodeIDType> readMatchSequence(const std::string& matchOrderPath) {
 	std::vector<NodeIDType> ms;
 	if (matchOrderPath.empty() == false) {
 		std::fstream f;
@@ -86,14 +86,14 @@ std::vector<NodeIDType> readMatchSequence(std::string& matchOrderPath) {
 		while (f.eof() == false) {
 			size_t temp = UINT32_MAX;
 			f >> temp;
-			if (temp != UINT32_MAX)ms.push_back(temp);
+			if (temp != UINT32_MAX) ms.push_back(temp);
 		}
 		f.close();
 	}
 	return ms;
 }
 
-shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType* query, GraphType* target, std::string& matchOrderPath) {
+shared_ptr<const vector<NodeIDType>> ChooseMatchSequence(GraphType const * query, GraphType const * target,const std::string& matchOrderPath) {
 //match order
 	MatchOrderSelector<EdgeLabelType> orderSelector;
 

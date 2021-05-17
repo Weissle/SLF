@@ -1,19 +1,18 @@
 #pragma once
-#include<vector>
-#include"SubgraphIsomorphism.hpp"
-#include"State.hpp"
-#include"graph/Graph.hpp"
-#include"ThreadRelatedClass.hpp"
-#include<mutex>
-#include<utility>
-#include<memory>
+#include <vector>
+#include "SubgraphIsomorphism.hpp"
+#include "State.hpp"
+#include "graph/Graph.hpp"
+#include <mutex>
+#include <utility>
+#include <memory>
 #include "si/AnswerReceiver.hpp"
-#include"tools/ThreadPool.hpp"
-#include"si/TaskDistributor.hpp"
-#include<atomic>
-#include<time.h>
-#include<assert.h>
-#include<iostream>
+#include "tools/ThreadPool.hpp"
+#include "si/TaskDistributor.hpp"
+#include <atomic>
+#include <time.h>
+#include <assert.h>
+#include <iostream>
 using namespace std;
 namespace wg {
 template<typename EdgeLabel>
@@ -170,7 +169,7 @@ public:
 
 template<typename EdgeLabel>
 class ParallelSubgraphIsomorphism : public SubgraphIsomorphismBase {
-	typedef MatchUnit<EdgeLabel> MU;
+	using MU = MatchUnit<EdgeLabel> ;
 	using GraphType = GraphS<EdgeLabel>;
 	const GraphType* queryGraphPtr, * targetGraphPtr;
 	shared_ptr<TaskDistributor<EdgeLabel,MU>> task_distributor;

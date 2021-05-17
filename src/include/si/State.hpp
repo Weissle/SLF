@@ -3,7 +3,6 @@
 #include<vector>
 #include<time.h>
 #include"graph/Graph.hpp"
-#include"graph/Node.hpp"
 #include<assert.h>
 #include<iostream>
 #include<algorithm>
@@ -19,7 +18,7 @@
 #if defined(INDUCE_ISO) && defined(NORMAL_ISO)
 #error you should not defind INDUCE_ISO and NORMAL_ISO at the same time
 #endif
-int cnc = 0;
+
 using namespace std;
 
 namespace wg {
@@ -316,9 +315,9 @@ private:
 		return true;
 	}
 
-	bool inSetUnmap(NodeIDType target_id)const { return mappingAux[target_id] == NO_MAP; }
-	bool inSetIn(NodeIDType target_id)const { return inSetUnmap(target_id) && in_depth[target_id]; }
-	bool inSetOut(NodeIDType target_id)const { return inSetUnmap(target_id) && out_depth[target_id]; }
+	inline bool inSetUnmap(NodeIDType target_id)const { return mappingAux[target_id] == NO_MAP; }
+	inline bool inSetIn(NodeIDType target_id)const { return inSetUnmap(target_id) && in_depth[target_id]; }
+	inline bool inSetOut(NodeIDType target_id)const { return inSetUnmap(target_id) && out_depth[target_id]; }
 
 	inline bool simpleAddAble(const NodeIDType& query_id, const NodeIDType& target_id)const {
 		if (mappingAux[target_id] != NO_MAP)return false;

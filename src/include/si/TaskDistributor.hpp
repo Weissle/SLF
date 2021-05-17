@@ -1,5 +1,4 @@
-#ifndef WG_TASK_DISTRIBUTOR_HPP_
-#define WG_TASK_DISTRIBUTOR_HPP_
+#pragma once
 #include"tools/ThreadPool.hpp"
 #include"si/Tasks.hpp"
 #include<memory>
@@ -159,4 +158,3 @@ public:
 
 }
 
-#endif

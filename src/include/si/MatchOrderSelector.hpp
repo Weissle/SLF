@@ -1,16 +1,13 @@
 #pragma once
 #include <algorithm>
-#include<unordered_set>
+#include <unordered_set>
 #include <queue>
-#include<vector>
-#include<set>
-#include<map>
-#include"graph/Graph.hpp"
-#include"si/ThreadRelatedClass.hpp"
+#include <vector>
+#include "graph/Graph.hpp"
 #include "si/si_marcos.h"
-#include<utility>
-#include<cmath>
-#include<numeric>
+#include <utility>
+#include <cmath>
+#include <cstring>
 using namespace std;
 namespace wg {
 
@@ -114,10 +111,7 @@ class MatchOrderSelector{
 	}
 public:
 	MatchOrderSelector()=default;
-	vector<NodeIDType> run(const Graph &query, const Graph &target, const bool slow = true){
-		vector<double> possibility;
-		if(slow) possibility = CreatePossibilitiesN3(query, target);
-		else possibility = CreatePossibilitiesN(query, target);
+	vector<NodeIDType> run(const Graph &query, const Graph &target, const vector<double> possibility){
 
 		vector<NodeIDType> matchSequence;
 		int n = query.Size();
@@ -161,10 +155,12 @@ public:
 
 	}
 	vector<NodeIDType> VF3(const Graph &query,const Graph &target){
-		return run(query,target,false);
+		const auto possibility = CreatePossibilitiesN(query, target);
+		return run(query,target,possibility);
 	}
 	vector<NodeIDType> SI(const Graph &query,const Graph &target){
-		return run(query,target,true);
+		const auto possibility = CreatePossibilitiesN3(query, target);
+		return run(query,target,possibility);
 	}
 };
 

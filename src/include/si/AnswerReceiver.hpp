@@ -44,9 +44,10 @@ public:
 	AnswerReceiverThread(bool print_solution_) :print_solution(print_solution_) { atomic_count.store(0); }
 	void operator<<(const vector<NodeIDType>& mapping) {
 		atomic_count++;
-		lock_guard<mutex> lg(m);
-		if(print_solution)
+		if(print_solution){
+			lock_guard<mutex> lg(m);
 			printoutSolution(mapping, atomic_count.load());
+		}
 	}
 	void solutionCountAdd(size_t s) { 
 		atomic_count += s;

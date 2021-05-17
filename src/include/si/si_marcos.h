@@ -1,14 +1,11 @@
 #pragma once
 #include <limits>
-#include<utility>
-#include<vector>
-#include<string>
-#include<iostream>
-#include<fstream>
+#include <utility>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <fstream>
 
-// unordered_set class
-#define IN_SET(S,K) ((S).find(K)!=(S).end())
-#define NOT_IN_SET(S,K) ((S).find(K)==(S).end())
 
 #define INDUCE_ISO
 //#define NORMAL_ISO
@@ -18,6 +15,7 @@
 namespace wg {
 
 typedef uint32_t NodeIDType;
+using NodeLabel = uint32_t;
 using MapPair = std::pair<NodeIDType, NodeIDType>;
 using MapType = std::vector<NodeIDType>;
 //constexpr size_t NO_MAP = SIZE_MAX;
