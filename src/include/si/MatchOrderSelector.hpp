@@ -125,7 +125,7 @@ public:
 		vector<bool> chosen(n,false);
 		int connectNum[n];
 		int degs[n];
-
+		memset(connectNum,0,sizeof(connectNum));
 		priority_queue<tipdc,vector<tipdc>,tipdc_cmp> pq;
 		for (int i = 0; i < n; ++i){ 
 			degs[i] = query.GetInDegree(i) + query.GetOutDegree(i);  
