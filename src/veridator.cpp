@@ -1,3 +1,4 @@
+#include "si/si_marcos.h"
 #include"tools/GraphReader.hpp"
 #include"tools/argh.h"
 #include<time.h>
@@ -34,19 +35,18 @@ int main(int argc, char* argv[]) {
 //#elif defined ARG_NL
 	//typedef ARGGraphNoLabel<GraphType> GraphReader;
 //#endif
-	GraphReader<GraphType> graphReader;
+	GraphReader<EdgeLabelType> graphReader;
 
-	vector< vector<size_t> > solutions = SolutionReader::readSolutions(solutionPath);
+	vector< vector<NodeIDType> > solutions = SolutionReader::readSolutions(solutionPath);
 
-	IndexTurner<size_t> turner;
-	GraphType* queryGraph = GraphReader::readGraph(queryGraphPath,turner),
-		* targetGraph = GraphReader::readGraph(targetGraphPath,turner);
-	queryGraph->graphBuildFinish();
-	targetGraph->graphBuildFinish();
-	typedef AnswerChecker<GraphType> ACer;
-	ACer ac(*targetGraph, *queryGraph, solutions);
-	ac.run(ACer::check_type::NORMAL);
+	GraphType* queryGraph = graphReader.ReadFromGRF(queryGraphPath),
+		* targetGraph = graphReader.ReadFromGRF(targetGraphPath);
+	queryGraph->SortEdge();
+	targetGraph->SortEdge();
+	typedef AnswerChecker<EdgeLabelType> ACer;
+	ACer ac;
+	ac.run(*queryGraph,*targetGraph,solutions,ACer::check_type::NORMAL);
 	cout << endl << endl;
-	ac.run(ACer::check_type::INDUCE);
+	ac.run(*queryGraph,*targetGraph,solutions,ACer::check_type::INDUCE);
 	return 0;
 }

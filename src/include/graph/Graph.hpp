@@ -124,6 +124,7 @@ private:
 	size_t _size;
 
 	GraphS()=default;
+	GraphS(const GraphS&)=delete;
 public:
 	GraphS(const size_t s) :_size(s){
 		labels.resize(s);

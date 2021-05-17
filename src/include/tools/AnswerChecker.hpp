@@ -1,72 +1,66 @@
-#include"graph/Graph.hpp"
-#include"graph/Node.hpp"
-#include"graph/Edge.hpp"
-#include<vector>
-#include<iostream>
-#include<memory>
-#include<time.h>
-#include<map>
-#include<fstream>
-#include<typeinfo>
-#include<unordered_map>
-#define TIME_COUNT
+#include "graph/Graph.hpp"
+#include "si/si_marcos.h"
+#include <cstring>
+#include <vector>
+#include <iostream>
+#include <memory>
+#include <time.h>
+#include <map>
+#include <fstream>
+#include <typeinfo>
+#include <unordered_map>
+
 using namespace std;
 using namespace wg;
-template<class GraphType>
+template<class EdgeLabel>
 class  AnswerChecker {
-	typedef typename GraphType::NodeType NodeType;
-	typedef typename NodeType::NodeLabelType NodeLabelType;
-	typedef typename GraphType::EdgeLabelType EdgeLabelType;
-	typedef vector<size_t> SolutionType;
+	using GraphType = GraphS<EdgeLabel>;
+	typedef vector<NodeIDType> SolutionType;
 	typedef vector<SolutionType> SolutionsType;
 
-	const GraphType& bigGraph, & smallGraph;
-	const SolutionsType solutions;
-	bool normalCheck(const SolutionType& solution) {
-		for (const auto& node : smallGraph.nodes()) {
-			const auto from = solution[node.id()];
-			for (const auto& edge : node.outEdges()) {
+	bool normalCheck(const GraphType &query, const GraphType &target, const SolutionType& solution) {
+		int n = query.Size();
+		for (int i = 0; i < n; ++i){ 
+			const auto from = solution[i];
+			const auto outEdges = query.GetOutEdges(from);
+			for (const auto &edge:outEdges){
 				const auto to = solution[edge.target()];
-				if (bigGraph.existEdge(from, to, edge.label()) == false) {
-					return false;
-				}
+				if(target.ExistEdge(from, to, edge.label()) == false) return false;
 			}
 		}
 		return true;
 	}
-	bool induceCheck(const SolutionType& solution) {
-		if (normalCheck(solution) == false)return false;
-		unique_ptr<bool[]> inM(new bool[bigGraph.size()]());
-		unordered_map<NodeIDType, NodeIDType> rm;
-		rm.reserve(smallGraph.size());
-		LOOP(i, 0, solution.size()) {
-			const auto temp = solution[i];
-			inM[temp] = true;
-			rm[temp] = i;
+	bool induceCheck(const GraphType &query, const GraphType &target, const SolutionType& solution) {
+		if (normalCheck(query,target,solution) == false)return false;
+		int m = target.Size();
+		NodeIDType rMapping[m];
+		for (int i = 0; i < m; ++i){ 
+			rMapping[m] = NO_MAP;
 		}
-		for (const auto& node : bigGraph.nodes()) {
-			const auto from = node.id();
-			if (inM[from] == false)continue;
-			for (const auto& edge : node.outEdges()) {
-				const auto to = edge.target();
-				if (inM[to] == false)continue;
-				if (smallGraph.existEdge(rm[from], rm[to], edge.label()) == false)return false;
+		for (int i = 0; i < solution.size(); ++i){ 
+			rMapping[solution[i]] = i;
+		}
+
+		for (int  i= 0;  i < m; i++){ 
+			const auto from = rMapping[i];
+			if(from == NO_MAP) continue;
+			for (const auto& edge : target.GetOutEdges(from)) {
+				const auto to = rMapping[edge.target()];
+				if (to == NO_MAP)continue;
+				if (query.ExistEdge(from, to, edge.label()) == false)return false;
 			}
 		}
 		return true;
 	}
 public:
 	enum check_type { INDUCE, NORMAL };
-	AnswerChecker() = default;
-	~AnswerChecker() = default;
-	AnswerChecker(const GraphType& _b, const GraphType& _s, const SolutionsType& _solutions) :bigGraph(_b), smallGraph(_s), solutions(_solutions) {}
-	void run(check_type ct) {
+	void run(const GraphType &query, const GraphType &target,const SolutionsType&solutions, check_type ct) {
 		size_t solutionCount = 0;
 		for (const auto& oneS : solutions) {
 			cout << ++solutionCount << " ";
 			bool is;
-			if (ct == check_type::NORMAL) is = normalCheck(oneS);
-			else if (ct == check_type::INDUCE) is = induceCheck(oneS);
+			if (ct == check_type::NORMAL) is = normalCheck(query,target,oneS);
+			else if (ct == check_type::INDUCE) is = induceCheck(query,target,oneS);
 			else {
 				cout << "error occur" << endl;
 				return;
