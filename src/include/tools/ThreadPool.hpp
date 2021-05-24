@@ -11,6 +11,7 @@
 #include <functional>
 #include <atomic>
 #include <type_traits>
+
 class ThreadPool {
 	std::queue<std::function<void()>> tasks;
 	std::mutex tasks_mutex;
@@ -90,7 +91,7 @@ public:
 	}
 	void join() {
 		{
-			unique_lock<mutex> ul(tasks_mutex);
+			std::unique_lock<std::mutex> ul(tasks_mutex);
 			wait_stop = true;
 		}
 		wake_up_cv.notify_one();
