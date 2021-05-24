@@ -28,11 +28,11 @@ class SubgraphMatchStates {
 	using GraphType = GraphS<EdgeLabel>;
 	const GraphType* graphPointer;
 	vector<size_t> in_depth, out_depth;
-	shared_ptr<const vector<NodeIDType>> match_sequence;
+	vector<NodeIDType> match_sequence;
 	const vector<size_t> match_depth;	// a node's depth after it add to state , from 1 to n (graphPointer - > size()) ; 
 	SubgraphMatchStates() = default;
 public:
-	SubgraphMatchStates(const GraphType& g, const vector<size_t>& _match_depth, shared_ptr<const vector<NodeIDType>> _match_sequence) :graphPointer(&g), match_depth(_match_depth),
+	SubgraphMatchStates(const GraphType& g, const vector<size_t>& _match_depth,const vector<NodeIDType>& _match_sequence) :graphPointer(&g), match_depth(_match_depth),
 		in_depth(g.Size()), out_depth(g.Size()),match_sequence(_match_sequence)
 	{}
 	void addNode(const NodeIDType id, const size_t search_depth) {
@@ -63,7 +63,7 @@ public:
 	inline bool inSetOut(const NodeIDType id, const size_t search_depth)const { return inSetUnmap(id, search_depth) && outDepth(id, search_depth); }
 	inline bool inSetUnmap(const NodeIDType id, const size_t search_depth)const { return match_depth[id] > search_depth; }
 	inline size_t matchDepth(const NodeIDType id)const { return match_depth[id]; }
-	inline NodeIDType matchID(const size_t depth)const { return (*match_sequence)[depth]; }
+	inline NodeIDType matchID(const size_t depth)const { return match_sequence[depth]; }
 };
 
 template<typename EdgeLabel>
@@ -594,17 +594,17 @@ public:
 };
 
 template<class EdgeType>
-shared_ptr<const SubgraphMatchStates<EdgeType>> makeSubgraphState(const GraphS<EdgeType>& g, shared_ptr<const vector<NodeIDType>> msp) {
-	assert(g.Size() == msp->size());
-	vector<size_t> match_place(msp->size());
-	for (int i = 0; i < msp->size(); ++i) {
-		(match_place)[(*msp)[i]] = i + 1;
+shared_ptr<const SubgraphMatchStates<EdgeType>> makeSubgraphState(const GraphS<EdgeType>& g, const vector<NodeIDType>& ms) {
+	assert(g.Size() == ms.size());
+	vector<size_t> match_place(ms.size());
+	for (int i = 0; i < ms.size(); ++i) {
+		(match_place)[ms[i]] = i + 1;
 	}
-	auto ptr = new SubgraphMatchStates<EdgeType>(g, match_place,msp);
+	auto ptr = new SubgraphMatchStates<EdgeType>(g, match_place,ms);
 	shared_ptr<const SubgraphMatchStates<EdgeType>> p(ptr);
 
-	LOOP(i, 1, msp->size()) {
-		ptr->addNode((*msp)[i - 1], i);
+	LOOP(i, 1, ms.size()) {
+		ptr->addNode(ms[i - 1], i);
 	}
 	return p;
 }
