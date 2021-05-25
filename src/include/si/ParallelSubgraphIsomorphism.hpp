@@ -1,4 +1,5 @@
 #pragma once
+#include <condition_variable>
 #include <vector>
 #include "SubgraphIsomorphism.hpp"
 #include "State.hpp"
@@ -26,7 +27,7 @@ class MatchUnit {
 	State<EdgeLabel> state;
 	vector<Tasks<EdgeLabel>> cand_id;
 
-	shared_ptr<TaskDistributor<EdgeLabel,MU>> task_distributor;
+	TaskDistributor<EdgeLabel> *task_distributor;
 	shared_ptr<ShareTasksType> tasks, next_tasks;
 
 	//shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
@@ -71,7 +72,7 @@ class MatchUnit {
 			seq.push_back(state_seq[matchSequence[i]]);
 		}
 		
-		task_distributor->addThreadTask(&TaskDistributor<EdgeLabel,MU>::PassSharedTasks, task_distributor.get(),next_tasks);
+		task_distributor->addThreadTask(&TaskDistributor<EdgeLabel>::PassSharedTasks, task_distributor.get(),next_tasks);
 		// task_distributor->PassSharedTasks(next_tasks);
 	}
 	
@@ -130,10 +131,8 @@ class MatchUnit {
 public:
 	
 	MatchUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverThread *_answerReceiver, vector<NodeIDType> _msp, size_t __limits,
-		shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, shared_ptr<TaskDistributor<EdgeLabel,MU>> _tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),matchSequence(_msp),_limits(__limits),
-		answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc)
-	{
-	}
+		shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, TaskDistributor<EdgeLabel> *_tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),matchSequence(_msp),_limits(__limits),
+		answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc){}
 	void prepare(shared_ptr<ShareTasksType> _tasks) {
 		next_tasks= move(_tasks);
 		return;
@@ -165,6 +164,22 @@ public:
 		answerReceiver->solutionCountAdd(solutions_count);
 		solutions_count = 0;
 	}
+	void run(){
+		shared_ptr<condition_variable> wakeupCV = task_distributor->wakeupCV;
+		unique_lock<mutex> ul;
+		while(task_distributor->end() == false){
+			wakeupCV->wait(ul,[this](){
+				return this->task_distributor->end() || this->task_distributor->taskAvaliable();
+			});
+			if(task_distributor->end())break;
+			bool ok;
+			tasks = task_distributor->ChooseHeavySharedTask(&ok);
+			if(ok == false) continue;
+			
+
+			ParallelSearchOuter();
+		}
+	}
 
 };
 
@@ -172,36 +187,31 @@ template<typename EdgeLabel>
 class ParallelSubgraphIsomorphism{
 	using MU = MatchUnit<EdgeLabel> ;
 	using GraphType = GraphS<EdgeLabel>;
-	const GraphType* queryGraphPtr, * targetGraphPtr;
-	shared_ptr<TaskDistributor<EdgeLabel,MU>> task_distributor;
 public:
 	ParallelSubgraphIsomorphism() = default;
-	ParallelSubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverThread *_answer_receiver, size_t _thread_num,
-		size_t __limits,const vector<NodeIDType>& _match_sequence):queryGraphPtr(&_queryGraph), targetGraphPtr(&_targetGraph),
-		task_distributor(make_shared<TaskDistributor<EdgeLabel,MU>>(_thread_num))
-	{
-		auto subgraph_states = makeSubgraphState<EdgeLabel>(_queryGraph, _match_sequence);
-		auto f = [&, subgraph_states,__limits]() {
-			auto p = make_unique<MU>(*queryGraphPtr, *targetGraphPtr, _answer_receiver, _match_sequence, __limits, subgraph_states, task_distributor);
-			task_distributor->addFreeUnit(move(p));
-		};
-		LOOP(i, 0, _thread_num) {
-			task_distributor->addThreadTask(f);
-		}
-	}
-	void run() {
-		size_t first_task_num = targetGraphPtr->Size();
+	void run(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverThread *_answer_receiver, size_t _thread_num,size_t __limits,const vector<NodeIDType>& _match_sequence){
 
+		TaskDistributor<EdgeLabel> *task_distributor = new TaskDistributor<EdgeLabel>();
+		size_t first_task_num = _targetGraph.Size();
 		auto rootTask = task_distributor->getShareTasksContainer();
 		rootTask->giveTasks(first_task_num);
-
-		while (task_distributor->runningThreadNum() || task_distributor->restTaskNum());
 		task_distributor->PassSharedTasks(rootTask);
-		rootTask.reset();
-		task_distributor->join();
-//		task_distributor->output_hittimes();
-		return;
-	}
 
+		auto subgraph_states = makeSubgraphState<EdgeLabel>(_queryGraph, _match_sequence);
+		auto f = [&, subgraph_states,__limits]() {
+			auto p = MU(_queryGraph, _targetGraph, _answer_receiver, _match_sequence, __limits, subgraph_states, task_distributor);
+			p->run();
+		};
+		thread match_units[_thread_num];
+		for (int i = 0; i < _thread_num; ++i){ 
+			match_units[i] = thread(f);
+		}
+
+		for (int i = 0; i < _thread_num; ++i){ 
+			if(match_units[i].joinable()) match_units[i].join();
+		}
+		
+		delete task_distributor;
+	}
 };
 }

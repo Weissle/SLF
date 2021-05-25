@@ -1,97 +1,61 @@
 #pragma once
-#include"tools/ThreadPool.hpp"
-#include"si/Tasks.hpp"
-#include<memory>
-#include<atomic>
-#include<mutex>
-#include<queue>
+#include "tools/ThreadPool.hpp"
+#include "si/Tasks.hpp"
+#include <memory>
+#include <atomic>
+#include <mutex>
+#include <stack>
+#include <condition_variable>
+
+
 using namespace std;
 namespace wg {
 
-template<typename EdgeLabel,typename MU>
-class TaskDistributor :public ThreadPool {
+template<typename EdgeLabel>
+class TaskDistributor {
 	using ShareTasksType = ShareTasks<EdgeLabel>;
-	mutex free_units_mutex, prepared_units_mutex;
-	queue<unique_ptr<MU>> free_units, prepared_units;
-	mutex share_tasks_container_mutex, using_tasks_mutex;
-	queue<shared_ptr<ShareTasksType>> share_tasks_container;
-	vector<shared_ptr<ShareTasksType>> using_tasks;
 
-	atomic_bool _end;
+	mutex using_tasks_mutex;
+	vector<shared_ptr<ShareTasksType>> using_tasks;
+	
+	bool _end = false;
 
 	bool allow_distribute = false;
 	size_t allow_depth_count = 0;	//It is used to guess a allow depth, owing to the "guess", we can use size_t instead of atomic_size_t;
 
-
-
-	void giveTask(unique_ptr<MU>& free_unit, shared_ptr<ShareTasksType>& task) {
-		free_unit->prepare(move(task));
-		{
-			lock_guard<mutex> lg(prepared_units_mutex);
-			prepared_units.push(move(free_unit));
-		}
-		addThreadTask(&TaskDistributor::giveTaskToThreadPool, this);
-	}
-	void giveTaskToThreadPool() {
-		unique_ptr<MU> unit;
-		{
-			lock_guard<mutex> lg(prepared_units_mutex);
-			unit = move(prepared_units.front());
-			prepared_units.pop();
-		}
-		unit->ParallelSearchOuter();
-		addFreeUnit(move(unit));
-	}
-	void SharedTasksDistribution() {
-		lock_guard<mutex> lg(free_units_mutex);
-		allow_distribute = false;
-		bool ok;
-		shared_ptr<ShareTasksType> task;
-		unique_ptr<MU> free_unit;
-		while (free_units.size()) {
-			task = ChooseHeavySharedTask(&ok);
-			if (ok == false)break;
-			free_unit = move(free_units.front());
-			free_units.pop();
-			giveTask(free_unit, task);
-		}
-		if (free_units.size())allow_distribute = true;
-	}
+	int threadNum;
+	mutex workingNumMutex;
+	int workingNum;
+	
+	// also use the using_tasks_mutex ;
+	bool task_avaliable = false;
 public:
-	TaskDistributor(size_t thread_num_) :ThreadPool(thread_num_) {
-		//	allow_depth_count.store(0);
-		_end.store(false);
+	shared_ptr<condition_variable> wakeupCV;
+
+	TaskDistributor(size_t thread_num_):threadNum(thread_num_){
 		using_tasks.reserve(thread_num_ * 3);
-		using_tasks.emplace_back(nullptr);
+		using_tasks.emplace_back(new ShareTasksType());
+		wakeupCV = make_shared<condition_variable>();
+		//workingNum.store(0);
+		workingNum = 0;
 	}
-	void output_hittimes() {
-		while (free_units.size()) {
-			unique_ptr<MU> free_unit;
-			{
-				lock_guard<mutex> lg(free_units_mutex);
-				if (free_units.empty())	return;
-				free_unit = move(free_units.front());
-				free_units.pop();
-			}
-			cout << free_unit->run_clock << endl;
-		}
-	}
+
 	bool end()const {
-		return _end.load();
+		return _end;
 	}
-	void setEnd(const bool end_) {
-		_end.store(end_);
+
+	void SetOver() {
+		_end = true;
+		wakeupCV->notify_all();
 	}
-	void addFreeUnit(unique_ptr<MU> free_unit) {
-		lock_guard<mutex> lg(free_units_mutex);
-		free_units.push(move(free_unit));
-		allow_distribute = true;
-	}
-	inline bool allowDistribute() { return allow_distribute; }
+
+	inline bool allowDistribute() const{ return !task_avaliable; }
+	inline bool taskAvaliable()const{ return task_avaliable; }
+
 	bool haveQuality(const size_t depth) {
-		const auto allow_depth = allow_depth_count / threadNum();
+		const auto allow_depth = allow_depth_count / threadNum;
 		if (depth <= allow_depth) {
-			allow_depth_count -= threadNum();
+			allow_depth_count -= threadNum;
 			return true;
 		}
 		else {
@@ -100,39 +64,32 @@ public:
 		}
 	}
 
-	shared_ptr<ShareTasksType> getShareTasksContainer() {
-
-		lock_guard<mutex> lg(share_tasks_container_mutex);
-		if (share_tasks_container.empty()) {
-			return make_shared<ShareTasksType>();
-		}
-		auto answer = move(share_tasks_container.front());
-		share_tasks_container.pop();
-
-		return move(answer);
-	}
 	void PassSharedTasks(shared_ptr<ShareTasksType> tasks) {
 		{
 			lock_guard<mutex> lg(using_tasks_mutex);
 			using_tasks.push_back(move(tasks));
+			task_avaliable = true;
 		}
-		addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
+		wakeupCV->notify_all();
+		//addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
 	}
+
 	shared_ptr<ShareTasksType> ChooseHeavySharedTask(bool* ok) {
 		static size_t count = 0;
 		size_t the_best_task_index = 0;
 		lock_guard<mutex> lg(using_tasks_mutex);
 		{
+			size_t the_best_task_num = 0;
 			for (auto i = 1; i < using_tasks.size(); ++i) {
 				if (using_tasks[i].use_count() == 1 && using_tasks[i]->size() == 0) {
-					lock_guard<mutex> lg2(share_tasks_container_mutex);
-					share_tasks_container.push(move(using_tasks[i]));
-					using_tasks[i] = move(using_tasks.back());
+					swap(using_tasks[i],using_tasks.back());
 					using_tasks.pop_back();
 					--i;
 				}
-				else if (using_tasks[i]->size() == 0)continue;
-				else if (using_tasks[the_best_task_index].get() == nullptr || using_tasks[the_best_task_index]->size() < using_tasks[i]->size()) the_best_task_index = i;
+				else if (the_best_task_num < using_tasks[i]->size()) {
+					the_best_task_index = i;
+					the_best_task_num = using_tasks[i]->size();
+				}
 			}
 		}
 		/*
@@ -143,14 +100,28 @@ public:
 			}
 		}*/
 
-		if (the_best_task_index == 0 || using_tasks[the_best_task_index]->empty()) {
+		if  (using_tasks[the_best_task_index]->empty()) {
 			*ok = false;
+			task_avaliable = true;
 			return nullptr;
 		}
 		else {
 			*ok = true;
+			task_avaliable = false;
 			return using_tasks[the_best_task_index];
 		}
+	}
+
+	// It will only happened on beginning and all tasks is finished ( or received limits );
+	void ReportBecomeLeisure(){
+		lock_guard<mutex> lg(workingNumMutex);
+		workingNum--;
+		if(workingNum == 0 && task_avaliable == false) SetOver();
+	}
+
+	void ReportBecomeBusy(){
+		lock_guard<mutex> lg(workingNumMutex);
+		workingNum++;
 	}
 
 

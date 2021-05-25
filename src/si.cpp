@@ -52,8 +52,8 @@ int main(int argc, char* argv[]) {
 
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(print_solution);
-		ParallelSubgraphIsomorphism<EdgeLabelType> si(*queryGraph, *targetGraph, &answerReceiver, threadNum, limits, ms);
-		si.run();
+		ParallelSubgraphIsomorphism<EdgeLabelType> si;
+		si.run(*queryGraph, *targetGraph, &answerReceiver, threadNum, limits, ms);
 		solutions = answerReceiver.solutionsCount();
 	}
 	else {
