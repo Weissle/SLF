@@ -1,15 +1,15 @@
-#include"si/SubgraphIsomorphism.hpp"
+#include <time.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <memory>
+#include "si/AnswerReceiver.hpp"
+#include "si/MatchOrderSelector.hpp"
+#include "si/ParallelSubgraphIsomorphism.hpp"
+#include "si/SubgraphIsomorphism.hpp"
 #include "si/si_marcos.h"
-#include"tools/GraphReader.hpp"
-#include"tools/argh.h"
-#include<time.h>
-#include<iostream>
-#include<fstream>
-#include<string>
-#include<memory>
-#include"si/AnswerReceiver.hpp"
-#include"si/MatchOrderSelector.hpp"
-#include"si/ParallelSubgraphIsomorphism.hpp"
+#include "tools/GraphReader.hpp"
+#include "tools/argh.h"
 using namespace std;
 static long t = 0;
 using namespace wg;

@@ -17,7 +17,7 @@ IF(UNIX)
 	add_compile_options( -lpthread )
 ENDIF()
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
@@ -25,5 +25,4 @@ add_executable(si si.cpp include/si/si_marcos.h)
 
 add_executable(veridator veridator.cpp include/tools/AnswerChecker.hpp include/tools/SolutionReader.hpp)
 
-message("Hello" + ${CMAKE_CXX_FLAGS})
 

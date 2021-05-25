@@ -1,5 +1,4 @@
 #pragma once
-#include "tools/ThreadPool.hpp"
 #include "si/Tasks.hpp"
 #include <memory>
 #include <atomic>
@@ -23,7 +22,7 @@ class TaskDistributor {
 	bool allow_distribute = false;
 	size_t allow_depth_count = 0;	//It is used to guess a allow depth, owing to the "guess", we can use size_t instead of atomic_size_t;
 
-	int threadNum;
+	int threadNum__;
 	mutex workingNumMutex;
 	int workingNum;
 	
@@ -32,12 +31,16 @@ class TaskDistributor {
 public:
 	shared_ptr<condition_variable> wakeupCV;
 
-	TaskDistributor(size_t thread_num_):threadNum(thread_num_){
+	TaskDistributor(size_t thread_num_):threadNum__(thread_num_){
 		using_tasks.reserve(thread_num_ * 3);
 		using_tasks.emplace_back(new ShareTasksType());
 		wakeupCV = make_shared<condition_variable>();
 		//workingNum.store(0);
 		workingNum = 0;
+	}
+
+	int threadNum()const{
+		return threadNum__;
 	}
 
 	bool end()const {
@@ -53,9 +56,9 @@ public:
 	inline bool taskAvaliable()const{ return task_avaliable; }
 
 	bool haveQuality(const size_t depth) {
-		const auto allow_depth = allow_depth_count / threadNum;
+		const auto allow_depth = allow_depth_count / threadNum__;
 		if (depth <= allow_depth) {
-			allow_depth_count -= threadNum;
+			allow_depth_count -= threadNum__;
 			return true;
 		}
 		else {
@@ -74,23 +77,30 @@ public:
 		//addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
 	}
 
-	shared_ptr<ShareTasksType> ChooseHeavySharedTask(bool* ok) {
+	shared_ptr<ShareTasksType> ChooseHeavySharedTask() {
+		if(end()) return nullptr;
 		static size_t count = 0;
 		size_t the_best_task_index = 0;
 		lock_guard<mutex> lg(using_tasks_mutex);
 		{
 			size_t the_best_task_num = 0;
+			int not_zero_count = 0;
 			for (auto i = 1; i < using_tasks.size(); ++i) {
 				if (using_tasks[i].use_count() == 1 && using_tasks[i]->size() == 0) {
 					swap(using_tasks[i],using_tasks.back());
 					using_tasks.pop_back();
 					--i;
 				}
-				else if (the_best_task_num < using_tasks[i]->size()) {
-					the_best_task_index = i;
-					the_best_task_num = using_tasks[i]->size();
+				else{
+					int temp = using_tasks[i]->size();
+					if(temp) not_zero_count++;
+					if (the_best_task_num < temp) {
+						the_best_task_index = i;
+						the_best_task_num = temp;
+					}
 				}
 			}
+			if(not_zero_count==0) task_avaliable = false;
 		}
 		/*
 		{
@@ -99,23 +109,19 @@ public:
 				cout << using_tasks[i]->size() << " " << using_tasks[i]->depth() << " " << using_tasks[i].use_count() << endl;
 			}
 		}*/
-
 		if  (using_tasks[the_best_task_index]->empty()) {
-			*ok = false;
-			task_avaliable = true;
 			return nullptr;
 		}
 		else {
-			*ok = true;
-			task_avaliable = false;
 			return using_tasks[the_best_task_index];
 		}
 	}
 
-	// It will only happened on beginning and all tasks is finished ( or received limits );
 	void ReportBecomeLeisure(){
 		lock_guard<mutex> lg(workingNumMutex);
 		workingNum--;
+		// It will only happened on this object just be instantiated and all tasks is finished ( or received limits );
+		// But this function will not be call until a match unit get a task.
 		if(workingNum == 0 && task_avaliable == false) SetOver();
 	}
 
@@ -123,7 +129,6 @@ public:
 		lock_guard<mutex> lg(workingNumMutex);
 		workingNum++;
 	}
-
 
 };
 

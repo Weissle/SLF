@@ -1,14 +1,13 @@
 #pragma once
 #include <condition_variable>
 #include <vector>
-#include "SubgraphIsomorphism.hpp"
 #include "State.hpp"
 #include "graph/Graph.hpp"
 #include <mutex>
 #include <utility>
 #include <memory>
 #include "si/AnswerReceiver.hpp"
-#include "tools/ThreadPool.hpp"
+#include "si/Tasks.hpp"
 #include "si/TaskDistributor.hpp"
 #include <atomic>
 #include <time.h>
@@ -38,7 +37,7 @@ class MatchUnit {
 	size_t solutions_count = 0;//Only use if we don't print out solutions .
 
 	size_t renewMinDepth(){
-		assert(tasks->size()==0);
+		// assert(tasks->size()==0);
 		while (min_depth < queryGraphPtr->Size() && cand_id[min_depth].empty())++min_depth;
 		return min_depth;
 	}
@@ -46,34 +45,34 @@ class MatchUnit {
 	inline void ToDoAfterFindASolution() {
 		if (answerReceiver -> printSolution()) {
 			(*answerReceiver) << state.GetMapping();
-			if (answerReceiver -> solutionsCount() >= _limits) task_distributor->setEnd(true);
+			if (answerReceiver -> solutionsCount() >= _limits) task_distributor->SetOver();
 			return;
 		}
 		++solutions_count;
 		if ( _limits && ((_limits - answerReceiver -> solutionsCount()) / task_distributor->threadNum()) <= solutions_count ) {
 			answerReceiver -> solutionCountAdd(solutions_count);
 			solutions_count = 0;
-			if (answerReceiver -> solutionsCount() >= _limits) task_distributor->setEnd(true);
+			if (answerReceiver -> solutionsCount() >= _limits) task_distributor->SetOver();
 		}
 	}
 
 	void distributeTask() {
 		if (min_depth == queryGraphPtr->Size()) return;
 
-		next_tasks = task_distributor->getShareTasksContainer();
+		next_tasks = make_shared<ShareTasksType>();
 
 		//cand_id[min_depth] will be empty
 		next_tasks->giveTasks(cand_id[min_depth]);
+		// cout<<"new share task"<<endl;
 
 		auto& seq = next_tasks->targetSequence();
-		seq = tasks->targetSequence(); //.assign(tasks->targetSequence().begin(), tasks->targetSequence().end());
+		seq.reserve(min_depth);
+
 		const auto& state_seq = state.GetMapping(false);
-		for (auto i = seq.size(); i < min_depth; ++i) {
+		for (int i = 0; i < min_depth; ++i){ 
 			seq.push_back(state_seq[matchSequence[i]]);
 		}
-		
-		task_distributor->addThreadTask(&TaskDistributor<EdgeLabel>::PassSharedTasks, task_distributor.get(),next_tasks);
-		// task_distributor->PassSharedTasks(next_tasks);
+		task_distributor->PassSharedTasks(next_tasks);
 	}
 	
 	void ParallelSearch()
@@ -86,8 +85,11 @@ class MatchUnit {
 		const auto query_id = matchSequence[search_depth];
 		state.calCandidatePairs(query_id, cand_id[search_depth]);
 		// if (task_distributor->allowDistribute()) {
-		if (task_distributor->allowDistribute() && tasks->size() == 0 && (next_tasks.use_count() == 0 || next_tasks->size() == 0)) {
-			next_tasks.reset();
+		if (task_distributor->allowDistribute()) {
+			//cout<<next_tasks.get() << ' '<<next_tasks.use_count();
+			//if(next_tasks.get()) cout<<next_tasks->size();
+			//cout<<endl;
+			// assert(next_tasks.use_count()==0 || next_tasks->empty() == true);
 			if(task_distributor->haveQuality(renewMinDepth()))	distributeTask();
 		}
 
@@ -105,7 +107,9 @@ class MatchUnit {
 	}
 
 	void prepareState() {
+		// according to the match order
 		const auto& to_seq = tasks->targetSequence();
+		// the whole map
 		const auto& state_seq = state.GetMapping(false);
 		size_t diff_point = 0;
 		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
@@ -121,11 +125,27 @@ class MatchUnit {
 		}
 	}
 	void prepare_all() {
-		tasks=move(next_tasks);
-		if (tasks->size()) {
-			min_depth = tasks->targetSequence().size() + 1;
-			prepareState();
+		min_depth = tasks->targetSequence().size() + 1;
+		prepareState();
+	}
+	void ParallelSearchOuter() {
+		prepare_all();
+		const NodeIDType query_id = matchSequence[state.depth()];
+		// query_id = 
+		int temp = state.depth();
+		while (tasks->size()) {
+			auto target_id = tasks->getTask();
+			if (target_id == NO_MAP)continue;
+			if (state.AddAble(query_id, target_id)) {
+				state.AddPair(query_id, target_id);
+				ParallelSearch();
+				if(task_distributor->end())return;
+				state.RemovePair(query_id);
+			}
 		}
+
+		answerReceiver->solutionCountAdd(solutions_count);
+		solutions_count = 0;
 	}
 
 public:
@@ -133,51 +153,24 @@ public:
 	MatchUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverThread *_answerReceiver, vector<NodeIDType> _msp, size_t __limits,
 		shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, TaskDistributor<EdgeLabel> *_tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),matchSequence(_msp),_limits(__limits),
 		answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc){}
-	void prepare(shared_ptr<ShareTasksType> _tasks) {
-		next_tasks= move(_tasks);
-		return;
-	}
-	void ParallelSearchOuter() {
-		NodeIDType query_id;
-		bool ok;
-		do {
-			prepare_all();
-			query_id = matchSequence[state.depth()];
-	
-			while (tasks->size()) {
-				auto target_id = tasks->getTask();
-				if (target_id == NO_MAP)continue;
-				if (state.AddAble(query_id, target_id)) {
-					state.AddPair(query_id, target_id);
-					ParallelSearch();
-					if(task_distributor->end())return;
-					state.RemovePair(query_id);
-				}
-			}
-			tasks.reset();
-			// if (next_tasks.use_count() == 0 || next_tasks->empty()) {
-			if (next_tasks.use_count() == 0) {
-				next_tasks = task_distributor->ChooseHeavySharedTask(&ok);
-				if (ok == false) break;
-			}
-		} while (next_tasks.use_count());
-		answerReceiver->solutionCountAdd(solutions_count);
-		solutions_count = 0;
-	}
+
 	void run(){
 		shared_ptr<condition_variable> wakeupCV = task_distributor->wakeupCV;
-		unique_lock<mutex> ul;
+		mutex __;
+		//is not over
 		while(task_distributor->end() == false){
-			wakeupCV->wait(ul,[this](){
-				return this->task_distributor->end() || this->task_distributor->taskAvaliable();
-			});
-			if(task_distributor->end())break;
-			bool ok;
-			tasks = task_distributor->ChooseHeavySharedTask(&ok);
-			if(ok == false) continue;
-			
 
+			if(tasks.use_count() == 0 || tasks->empty()) {
+				// is over or has task.
+				unique_lock<mutex> ul(__);
+				wakeupCV->wait(ul,[this](){	return this->task_distributor->end() || this->task_distributor->taskAvaliable();});
+				tasks = task_distributor->ChooseHeavySharedTask();
+				if(tasks == nullptr) continue;
+			}
+			task_distributor->ReportBecomeBusy();
 			ParallelSearchOuter();
+			task_distributor->ReportBecomeLeisure();
+			tasks = move(next_tasks);
 		}
 	}
 
@@ -191,24 +184,26 @@ public:
 	ParallelSubgraphIsomorphism() = default;
 	void run(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverThread *_answer_receiver, size_t _thread_num,size_t __limits,const vector<NodeIDType>& _match_sequence){
 
-		TaskDistributor<EdgeLabel> *task_distributor = new TaskDistributor<EdgeLabel>();
+		TaskDistributor<EdgeLabel> *task_distributor = new TaskDistributor<EdgeLabel>(_thread_num);
 		size_t first_task_num = _targetGraph.Size();
-		auto rootTask = task_distributor->getShareTasksContainer();
+		//auto rootTask = task_distributor->getShareTasksContainer();
+		auto rootTask = make_shared<ShareTasks<EdgeLabel>>();
 		rootTask->giveTasks(first_task_num);
 		task_distributor->PassSharedTasks(rootTask);
 
 		auto subgraph_states = makeSubgraphState<EdgeLabel>(_queryGraph, _match_sequence);
 		auto f = [&, subgraph_states,__limits]() {
 			auto p = MU(_queryGraph, _targetGraph, _answer_receiver, _match_sequence, __limits, subgraph_states, task_distributor);
-			p->run();
+			p.run();
 		};
 		thread match_units[_thread_num];
 		for (int i = 0; i < _thread_num; ++i){ 
 			match_units[i] = thread(f);
 		}
-
+		
 		for (int i = 0; i < _thread_num; ++i){ 
 			if(match_units[i].joinable()) match_units[i].join();
+			assert(task_distributor->end());
 		}
 		
 		delete task_distributor;

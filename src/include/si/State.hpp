@@ -1,16 +1,16 @@
 #pragma once
 #include <bits/stdint-uintn.h>
-#include<vector>
-#include<time.h>
-#include"graph/Graph.hpp"
-#include<assert.h>
-#include<iostream>
-#include<algorithm>
-#include<memory>
-#include"common.h"
-#include<si/si_marcos.h>
-#include<cstring>
-#include"si/Tasks.hpp"
+#include <vector>
+#include <time.h>
+#include "graph/Graph.hpp"
+#include <assert.h>
+#include <iostream>
+#include <algorithm>
+#include <memory>
+#include "common.h"
+#include <si/si_marcos.h>
+#include <cstring>
+#include "si/Tasks.hpp"
 //defind INDUCE_ISO or NORMAL_ISO in si_marcos.h
 #if !defined(INDUCE_ISO) && !defined(NORMAL_ISO)
 #error  you should defind INDUCE_ISO or NORMAL_ISO
@@ -30,6 +30,7 @@ class SubgraphMatchStates {
 	vector<size_t> in_depth, out_depth;
 	vector<NodeIDType> match_sequence;
 	const vector<size_t> match_depth;	// a node's depth after it add to state , from 1 to n (graphPointer - > size()) ; 
+	
 	SubgraphMatchStates() = default;
 public:
 	SubgraphMatchStates(const GraphType& g, const vector<size_t>& _match_depth,const vector<NodeIDType>& _match_sequence) :graphPointer(&g), match_depth(_match_depth),
@@ -69,7 +70,6 @@ public:
 template<typename EdgeLabel>
 class State {
 	using GraphType = GraphS<EdgeLabel>;
-
 private:
 	vector<size_t> in_depth, out_depth;
 	shared_ptr<const SubgraphMatchStates<EdgeLabel>> queryStates;
