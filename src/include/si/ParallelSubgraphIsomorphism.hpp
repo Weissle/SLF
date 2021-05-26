@@ -15,11 +15,11 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include "si/ShareTasksContainerPool.hpp"
+
 
 using namespace std;
 mutex m;
-atomic_int32_t create_tasks_times;
-// create_tasks_times.store(0);
 namespace wg {
 template<typename EdgeLabel>
 class MatchUnit {
@@ -33,6 +33,7 @@ class MatchUnit {
 	vector<Tasks<EdgeLabel>> cand_id;
 
 	TaskDistributor<EdgeLabel> *task_distributor;
+	ShareTasksContainerPool<EdgeLabel> *share_tasks_container_pool;
 	shared_ptr<ShareTasksType> tasks, next_tasks;
 
 	//shared_ptr<const vector<NodeIDType>> match_sequence_ptr;
@@ -64,8 +65,7 @@ class MatchUnit {
 	void distributeTask() {
 		//if (min_depth == queryGraphPtr->Size()) return;
 		assert (min_depth != queryGraphPtr->Size());
-		create_tasks_times++;
-		next_tasks = make_shared<ShareTasksType>();
+		next_tasks = share_tasks_container_pool->get();
 
 		//cand_id[min_depth] will be empty
 		next_tasks->giveTasks(cand_id[min_depth]);
@@ -158,8 +158,9 @@ public:
 	chrono::duration<double> work_time_;	
 	chrono::duration<double> prepare_time_;	
 	MatchUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverThread *_answerReceiver, vector<NodeIDType> _msp, size_t __limits,
-		shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, TaskDistributor<EdgeLabel> *_tc) :queryGraphPtr(&_q), targetGraphPtr(&_t),matchSequence(_msp),_limits(__limits),
-	answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc){ 
+			shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, TaskDistributor<EdgeLabel> *_tc,ShareTasksContainerPool<EdgeLabel> *_stcp) :
+		queryGraphPtr(&_q), targetGraphPtr(&_t),matchSequence(_msp),_limits(__limits),
+	answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc),share_tasks_container_pool(_stcp){ 
 		work_time_ = work_time_.zero();
 	}
 
@@ -203,6 +204,7 @@ public:
 	void run(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiverThread *_answer_receiver, size_t _thread_num,size_t __limits,const vector<NodeIDType>& _match_sequence){
 
 		TaskDistributor<EdgeLabel> *task_distributor = new TaskDistributor<EdgeLabel>(_thread_num);
+		ShareTasksContainerPool<EdgeLabel> *share_tasks_container_pool_ptr = new ShareTasksContainerPool<EdgeLabel>(_thread_num);
 		size_t first_task_num = _targetGraph.Size();
 		//auto rootTask = task_distributor->getShareTasksContainer();
 		auto rootTask = make_shared<ShareTasks<EdgeLabel>>();
@@ -211,7 +213,7 @@ public:
 
 		auto subgraph_states = makeSubgraphState<EdgeLabel>(_queryGraph, _match_sequence);
 		auto f = [&]() {
-			auto p = MU(_queryGraph, _targetGraph, _answer_receiver, _match_sequence, __limits, subgraph_states, task_distributor);
+			auto p = MU(_queryGraph, _targetGraph, _answer_receiver, _match_sequence, __limits, subgraph_states, task_distributor,share_tasks_container_pool_ptr);
 			task_distributor->ReportBecomeBusy();
 			p.run();
 		};
@@ -226,7 +228,7 @@ public:
 		}
 		
 		delete task_distributor;
-		cout<<"create tasks time:"<<create_tasks_times.load()<<endl;
+		delete share_tasks_container_pool_ptr;
 	}
 };
 }
