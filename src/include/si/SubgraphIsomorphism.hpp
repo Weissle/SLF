@@ -18,7 +18,6 @@ namespace wg {
 template<typename EdgeLabel>
 class SequentialSubgraphIsomorphism {
 	using GraphType = GraphS<EdgeLabel>;
-	const GraphType* queryGraphPtr, * targetGraphPtr;
 protected:
 	vector<NodeIDType> matchSequence;
 	size_t _limits; //how many _limits you need , _limits == 0 means no _limits;
@@ -30,7 +29,7 @@ protected:
 	void sequentialSearch_timeCount(const int searchDepth)
 	{
 		const auto next_depth = searchDepth + 1;
-		if (searchDepth == queryGraphPtr->Size()) {
+		if (state.isCoverQueryGraph()) {
 			this->ToDoAfterFindASolution();
 			return;
 		}
@@ -74,7 +73,7 @@ protected:
 	{
 		const auto search_depth = searchDepth;
 		const auto next_depth = searchDepth + 1;
-		if (searchDepth == queryGraphPtr->Size()) {
+		if (state.isCoverQueryGraph()) {
 			this->ToDoAfterFindASolution();
 			return;
 		}
@@ -101,7 +100,7 @@ public:
 	SequentialSubgraphIsomorphism() = default;
 	~SequentialSubgraphIsomorphism() = default;
 	SequentialSubgraphIsomorphism(const GraphType& _queryGraph, const GraphType& _targetGraph, AnswerReceiver *_answerReceiver, size_t __limits, const vector<NodeIDType>& _match_sequence)
-		:matchSequence(_match_sequence),_limits(__limits),answerReceiver(_answerReceiver),queryGraphPtr(&_queryGraph),targetGraphPtr(&_targetGraph),
+		:matchSequence(_match_sequence),_limits(__limits),answerReceiver(_answerReceiver),
 		state(_queryGraph, _targetGraph, makeSubgraphState(_queryGraph, _match_sequence)), cand_id(_queryGraph.Size()) {};
 	void run()
 	{

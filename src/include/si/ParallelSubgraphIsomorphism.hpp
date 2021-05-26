@@ -27,7 +27,7 @@ class MatchUnit {
 	using MU = MatchUnit<EdgeLabel>;
 	using ShareTasksType = ShareTasks<EdgeLabel>;
 
-	const GraphType* queryGraphPtr, * targetGraphPtr;
+	const GraphType* queryGraphPtr;
 	AnswerReceiverThread *answerReceiver;
 	State<EdgeLabel> state;
 	vector<Tasks<EdgeLabel>> cand_id;
@@ -159,7 +159,7 @@ public:
 	chrono::duration<double> prepare_time_;	
 	MatchUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverThread *_answerReceiver, vector<NodeIDType> _msp, size_t __limits,
 			shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, TaskDistributor<EdgeLabel> *_tc,ShareTasksContainerPool<EdgeLabel> *_stcp) :
-		queryGraphPtr(&_q), targetGraphPtr(&_t),matchSequence(_msp),_limits(__limits),
+		queryGraphPtr(&_q), matchSequence(_msp),_limits(__limits),
 	answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc),share_tasks_container_pool(_stcp){ 
 		work_time_ = work_time_.zero();
 	}
