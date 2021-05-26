@@ -35,8 +35,8 @@ public:
 		free_container.reserve(3*thread_num_);
 	}
 	~ShareTasksContainerPool(){
-		cout<<"create container_num:"<<create_container_num_<<endl;
-		cout<<"recycle_threshold:"<<recycle_threshold<<endl;
+		//cout<<"create container_num:"<<create_container_num_<<endl;
+		//cout<<"recycle_threshold:"<<recycle_threshold<<endl;
 	}
 	shared_ptr<ST> get(){
 		lock_guard<mutex> lg(m);

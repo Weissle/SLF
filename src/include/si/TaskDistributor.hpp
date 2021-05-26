@@ -8,8 +8,6 @@
 #include <thread>
 #include <map>
 
-
-
 using namespace std;
 namespace wg {
 
@@ -33,11 +31,11 @@ class TaskDistributor {
 public:
 	shared_ptr<condition_variable> wakeupCV;
 	~TaskDistributor(){
-		cout<<"choose heavy tasks times: "<<into_choose_count<<endl;
-		cout<<"really choose heavy tasks times: "<<really_choose_count<<endl;
+		//cout<<"choose heavy tasks times: "<<into_choose_count<<endl;
+		//cout<<"really choose heavy tasks times: "<<really_choose_count<<endl;
 	}
 	TaskDistributor(size_t thread_num_):threadNum__(thread_num_){
-		using_tasks.reserve(thread_num_ * 3);
+		using_tasks.reserve(thread_num_);
 		using_tasks.emplace_back(new ShareTasksType());
 		wakeupCV = make_shared<condition_variable>();
 		//workingNum.store(0);
@@ -81,21 +79,21 @@ public:
 		wakeupCV->notify_all();
 		//addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
 	}
-	size_t into_choose_count = 0;
-	size_t really_choose_count = 0;
+	//size_t into_choose_count = 0;
+	//size_t really_choose_count = 0;
 
 	shared_ptr<ShareTasksType> ChooseHeavySharedTask() {
-		into_choose_count++;
+		//into_choose_count++;
 		if(end() || !task_avaliable) return nullptr;
 		size_t the_best_task_index = 0;
 		lock_guard<mutex> lg(using_tasks_mutex);
-		really_choose_count++;
+		//really_choose_count++;
 		{
 			size_t the_best_task_num = 0;
 			int not_zero_count = 0;
 			for (auto i = 1; i < using_tasks.size(); ++i) {
 				if (using_tasks[i]->size() == 0) {
-					swap(using_tasks[i],using_tasks.back());
+					using_tasks[i] = move(using_tasks.back());
 					using_tasks.pop_back();
 					--i;
 				}
@@ -119,15 +117,8 @@ public:
 		}
 	}
 
-	//map<thread::id,int> m__;
 	void ReportBecomeLeisure(){
 		lock_guard<mutex> lg(workingNumMutex);
-		/*
-		m__[this_thread::get_id()]--;
-		if (m__[this_thread::get_id()] == -1) {
-			int a = 0;
-		}
-		*/
 		workingNum--;
 		// It will only happened on this object just be instantiated and all tasks is finished ( or received limits );
 		// But this function will not be call until a match unit get a task.
@@ -136,12 +127,6 @@ public:
 
 	void ReportBecomeBusy(){
 		lock_guard<mutex> lg(workingNumMutex);
-		/*
-		m__[this_thread::get_id()]++;
-		if (m__[this_thread::get_id()] == -1) {
-			int a = 0;
-		}
-		*/
 		workingNum++;
 	}
 

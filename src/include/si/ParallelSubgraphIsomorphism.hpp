@@ -84,7 +84,7 @@ class MatchUnit {
 	void ParallelSearch()
 	{
 		const auto search_depth = state.depth();
-		if (search_depth == queryGraphPtr->Size()) {
+		if (state.isCoverQueryGraph()) {
 			this->ToDoAfterFindASolution();
 			return;
 		}
@@ -132,9 +132,9 @@ class MatchUnit {
 	}
 	void ParallelSearchOuter() {
 
-		chrono::time_point<chrono::steady_clock> start__ = chrono::steady_clock::now();
+		//chrono::time_point<chrono::steady_clock> start__ = chrono::steady_clock::now();
 		prepare_all();
-		prepare_time_ += chrono::steady_clock::now() - start__;
+		//prepare_time_ += chrono::steady_clock::now() - start__;
 
 		const NodeIDType query_id = matchSequence[state.depth()];
 		// query_id = 
@@ -155,13 +155,14 @@ class MatchUnit {
 	}
 
 public:
-	chrono::duration<double> work_time_;	
-	chrono::duration<double> prepare_time_;	
+	//chrono::duration<double> work_time_;	
+	//chrono::duration<double> prepare_time_;	
 	MatchUnit(const GraphType& _q, const GraphType& _t, AnswerReceiverThread *_answerReceiver, vector<NodeIDType> _msp, size_t __limits,
 			shared_ptr<const SubgraphMatchStates<EdgeLabel>> _sp, TaskDistributor<EdgeLabel> *_tc,ShareTasksContainerPool<EdgeLabel> *_stcp) :
 		queryGraphPtr(&_q), matchSequence(_msp),_limits(__limits),
 	answerReceiver(_answerReceiver),state(_q, _t, _sp), cand_id(_q.Size()), task_distributor(_tc),share_tasks_container_pool(_stcp){ 
-		work_time_ = work_time_.zero();
+		//work_time_ = work_time_.zero();
+		//prepare_time_ = prepare_time_.zero();
 	}
 
 	void run(){
@@ -180,16 +181,16 @@ public:
 				if(tasks == nullptr) continue;
 			}
 
-			chrono::time_point<chrono::steady_clock> start__ = chrono::steady_clock::now();
+			//chrono::time_point<chrono::steady_clock> start__ = chrono::steady_clock::now();
 			ParallelSearchOuter();
 
 			if(next_tasks !=nullptr && next_tasks->empty()==false) tasks = move(next_tasks);
 			else tasks = task_distributor->ChooseHeavySharedTask();
-			work_time_ += chrono::steady_clock::now() - start__;
+			//work_time_ += chrono::steady_clock::now() - start__;
 			
 		}
 		m.lock();
-		cout<<"thread id : "<<this_thread::get_id()<<' '<< work_time_.count()<<' '<<prepare_time_.count()<<endl;
+		//cout<<"thread id : "<<this_thread::get_id()<<' '<< work_time_.count()<<' '<<prepare_time_.count()<<endl;
 		m.unlock();
 	}
 
@@ -207,7 +208,7 @@ public:
 		ShareTasksContainerPool<EdgeLabel> *share_tasks_container_pool_ptr = new ShareTasksContainerPool<EdgeLabel>(_thread_num);
 		size_t first_task_num = _targetGraph.Size();
 		//auto rootTask = task_distributor->getShareTasksContainer();
-		auto rootTask = make_shared<ShareTasks<EdgeLabel>>();
+		auto rootTask = share_tasks_container_pool_ptr->get();
 		rootTask->giveTasks(first_task_num);
 		task_distributor->PassSharedTasks(rootTask);
 

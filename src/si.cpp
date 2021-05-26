@@ -110,5 +110,10 @@ vector<NodeIDType> ChooseMatchSequence(GraphType const * query, GraphType const 
 		//ms = MatchOrderSelectorType::run(*query, *target);
 		ms = orderSelector.SI(*query, *target);
 	}
+	//cout<<"match sequential:";
+	//for (const auto &one:ms){
+		//cout<<one<<' ';
+	//}
+	//cout<<endl;
 	return ms;
 }
