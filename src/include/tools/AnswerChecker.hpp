@@ -33,9 +33,10 @@ class  AnswerChecker {
 	bool induceCheck(const GraphType &query, const GraphType &target, const SolutionType& solution) {
 		if (normalCheck(query,target,solution) == false)return false;
 		int m = target.Size();
-		NodeIDType rMapping[m];
+		//NodeIDType rMapping[m];
+		vector<NodeIDType> rMapping(m);
 		for (int i = 0; i < m; ++i){ 
-			rMapping[m] = NO_MAP;
+			rMapping[i] = NO_MAP;
 		}
 		for (int i = 0; i < solution.size(); ++i){ 
 			rMapping[solution[i]] = i;

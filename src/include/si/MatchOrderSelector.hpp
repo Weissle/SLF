@@ -46,7 +46,7 @@ class MatchOrderSelector{
 			targetOutMax = max(targetOutMax,targetOutDegrees[i]);
 		}
 		int maxLabel = max(queryMaxLabel,targetMaxLabel);
-		vector<vector<int>> degreesCount[maxLabel+1];
+		vector<vector<vector<int>>> degreesCount(maxLabel+1);
 		for (auto &one:degreesCount){
 			one = vector<vector<int>>(queryInMax+1,vector<int>(queryOutMax+1,0));
 		}
@@ -117,9 +117,9 @@ public:
 		int n = query.Size();
 		matchSequence.reserve(n);
 		vector<bool> chosen(n,false);
-		int connectNum[n];
-		int degs[n];
-		memset(connectNum,0,sizeof(connectNum));
+		vector<int> connectNum(n,0);
+		vector<int> degs(n);
+		//memset(connectNum,0,sizeof(connectNum));
 		priority_queue<tipdc,vector<tipdc>,tipdc_cmp> pq;
 		for (int i = 0; i < n; ++i){ 
 			degs[i] = query.GetInDegree(i) + query.GetOutDegree(i);  
