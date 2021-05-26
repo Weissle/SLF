@@ -5,6 +5,9 @@
 #include <mutex>
 #include <stack>
 #include <condition_variable>
+#include <thread>
+#include <map>
+
 
 
 using namespace std;
@@ -19,7 +22,6 @@ class TaskDistributor {
 	
 	bool _end = false;
 
-	bool allow_distribute = false;
 	size_t allow_depth_count = 0;	//It is used to guess a allow depth, owing to the "guess", we can use size_t instead of atomic_size_t;
 
 	int threadNum__;
@@ -30,7 +32,10 @@ class TaskDistributor {
 	bool task_avaliable = false;
 public:
 	shared_ptr<condition_variable> wakeupCV;
-
+	~TaskDistributor(){
+		cout<<"choose heavy tasks times: "<<into_choose_count<<endl;
+		cout<<"really choose heavy tasks times: "<<really_choose_count<<endl;
+	}
 	TaskDistributor(size_t thread_num_):threadNum__(thread_num_){
 		using_tasks.reserve(thread_num_ * 3);
 		using_tasks.emplace_back(new ShareTasksType());
@@ -76,24 +81,27 @@ public:
 		wakeupCV->notify_all();
 		//addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
 	}
+	size_t into_choose_count = 0;
+	size_t really_choose_count = 0;
 
 	shared_ptr<ShareTasksType> ChooseHeavySharedTask() {
-		if(end()) return nullptr;
-		static size_t count = 0;
+		into_choose_count++;
+		if(end() || !task_avaliable) return nullptr;
 		size_t the_best_task_index = 0;
 		lock_guard<mutex> lg(using_tasks_mutex);
+		really_choose_count++;
 		{
 			size_t the_best_task_num = 0;
 			int not_zero_count = 0;
 			for (auto i = 1; i < using_tasks.size(); ++i) {
-				if (using_tasks[i].use_count() == 1 && using_tasks[i]->size() == 0) {
+				if (using_tasks[i]->size() == 0) {
 					swap(using_tasks[i],using_tasks.back());
 					using_tasks.pop_back();
 					--i;
 				}
 				else{
 					int temp = using_tasks[i]->size();
-					if(temp) not_zero_count++;
+					not_zero_count++;
 					if (the_best_task_num < temp) {
 						the_best_task_index = i;
 						the_best_task_num = temp;
@@ -102,13 +110,7 @@ public:
 			}
 			if(not_zero_count==0) task_avaliable = false;
 		}
-		/*
-		{
-			cout << count++ << endl;
-			for (auto i = 1; i < using_tasks.size(); ++i) {
-				cout << using_tasks[i]->size() << " " << using_tasks[i]->depth() << " " << using_tasks[i].use_count() << endl;
-			}
-		}*/
+		//cout<<"this time tasks size : "<<using_tasks.size()<<endl;
 		if  (using_tasks[the_best_task_index]->empty()) {
 			return nullptr;
 		}
@@ -117,8 +119,15 @@ public:
 		}
 	}
 
+	//map<thread::id,int> m__;
 	void ReportBecomeLeisure(){
 		lock_guard<mutex> lg(workingNumMutex);
+		/*
+		m__[this_thread::get_id()]--;
+		if (m__[this_thread::get_id()] == -1) {
+			int a = 0;
+		}
+		*/
 		workingNum--;
 		// It will only happened on this object just be instantiated and all tasks is finished ( or received limits );
 		// But this function will not be call until a match unit get a task.
@@ -127,6 +136,12 @@ public:
 
 	void ReportBecomeBusy(){
 		lock_guard<mutex> lg(workingNumMutex);
+		/*
+		m__[this_thread::get_id()]++;
+		if (m__[this_thread::get_id()] == -1) {
+			int a = 0;
+		}
+		*/
 		workingNum++;
 	}
 
