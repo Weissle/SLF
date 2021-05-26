@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <memory>
+#include <chrono>
 #include "si/AnswerReceiver.hpp"
 #include "si/MatchOrderSelector.hpp"
 #include "si/ParallelSubgraphIsomorphism.hpp"
@@ -42,7 +43,8 @@ int main(int argc, char* argv[]) {
 	//GraphType* queryGraph = graphReader.ReadFromBN(queryGraphPath),
 		 //*targetGraph = graphReader.ReadFromBN(targetGraphPath);
 
-	time_t t1 = time(0);
+	//time_t t1 = time(0);
+	auto t1 = chrono::steady_clock::now();
 	targetGraph->SortEdge();
 	queryGraph->SortEdge();
 
@@ -63,10 +65,11 @@ int main(int argc, char* argv[]) {
 		solutions = answerReceiver.solutionsCount();
 		call_times = si.callTimes();
 	}
-	time_t TimeC = time(0) - t1;
+	//time_t TimeC = time(0) - t1;
+	chrono::duration<double> costTime = (chrono::steady_clock::now()-t1);
 	delete queryGraph;
 	delete targetGraph;
-	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(TimeC) + "]" << endl;
+	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + to_string(costTime.count()) + "]" << endl;
 	if (call_times)	std::cout << "[" + std::string(queryGraphPath) + "," + std::string(targetGraphPath) + "," + std::to_string(solutions) + +"," + std::to_string(call_times) + "]" << endl;
 
 
