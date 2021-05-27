@@ -167,15 +167,16 @@ public:
 
 	void run(){
 		shared_ptr<condition_variable> wakeupCV = task_distributor->wakeupCV;
-		mutex __;
 		//is not over
 		while(task_distributor->end() == false){
 
 			if(tasks == nullptr || tasks->empty()) {
 				// is over or has task.
 				task_distributor->ReportBecomeLeisure();
-				unique_lock<mutex> ul(__);
-				wakeupCV->wait(ul,[this](){	return this->task_distributor->end() || this->task_distributor->taskAvaliable();});
+				{
+					unique_lock<mutex> ul(task_distributor->wakeupMutex);
+					wakeupCV->wait(ul,[this](){	return this->task_distributor->end() || this->task_distributor->taskAvaliable();});
+				}
 				tasks = task_distributor->ChooseHeavySharedTask();
 				task_distributor->ReportBecomeBusy();
 				if(tasks == nullptr) continue;

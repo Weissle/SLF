@@ -9,15 +9,9 @@
 #include "IndexTurner.hpp"
 #include<utility>
 using namespace std;
-/*
-fstream& openGraphFile(string graphPath,ios_base::openmode mode) {
-	fstream f;
-	f.open(graphPath.c_str(), mode);
 
-}*/
-template<typename F, typename S>
-struct hash<pair<F, S> >
-{
+struct hash_pair{
+	template<typename F, typename S>
 	size_t operator()(const pair<F, S>& p)const {
 		auto hash1 = hash<F>()(p.first);
 		auto hash2 = hash<S>()(p.second);
@@ -29,20 +23,19 @@ using namespace wg;
 template<typename EdgeLabel>
 class GraphReader{
 	using GraphType = GraphS<EdgeLabel>;
-	fstream OpenFile(const string &graphPath){
-		fstream f;
+	void OpenFile(const string &graphPath,fstream &f){
 		f.open(graphPath.c_str(), ios_base::in);
 		if (f.is_open() == false) {
 			cout << graphPath << " open fail" << endl;
 			exit(0);
 		}
-		return f;
 	}
 public:
 	GraphReader()=default;
 	// not sure is right !!
 	GraphType* ReadFromLAD(string graphPath){
-		fstream f = OpenFile(graphPath);
+		fstream f;
+		OpenFile(graphPath,f);
 		int nodeNum;
 		f >> nodeNum;
 		GraphType* graph = new GraphType(nodeNum);
@@ -82,12 +75,13 @@ public:
 	}	
 
 	GraphType* ReadFromGRFNoLabel(string graphPath){
-		fstream f = OpenFile(graphPath);
+		fstream f;
+		OpenFile(graphPath);
 		int nodeNum = 0;
 		f >> nodeNum;
 
 		GraphType* graph = new GraphType(nodeNum);
-		unordered_set< pair<size_t, size_t> > s;
+		unordered_set< pair<size_t, size_t>,hash_pair > s;
 		s.insert(error_pair);
 		s.reserve(nodeNum * nodeNum);
 
@@ -105,7 +99,8 @@ public:
 		return graph;
 	}
 	GraphType* ReadFromGRF(string graphPath) {
-		fstream f = OpenFile(graphPath);
+		fstream f;
+		OpenFile(graphPath,f);
 		int nodeNum = 0;
 		f >> nodeNum;
 
@@ -120,7 +115,7 @@ public:
 		while (f.eof() == false) {
 			int edges = 0;
 			f >> edges;
-			unordered_set< pair<size_t, size_t> > s;
+			unordered_set< pair<size_t, size_t> ,hash_pair> s;
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
 				size_t source = UINT32_MAX, target = UINT32_MAX;
@@ -142,7 +137,8 @@ public:
 		   The next n lines give, for each vertex, its number of successor nodes, followed by the list of its successor nodes.
 	*/
 	GraphType* ReadFromBN(string graphPath){
-		fstream f = OpenFile(graphPath);
+		fstream f;
+		OpenFile(graphPath,f);
 		int nodeNum = 0;
 		f >> nodeNum;
 		GraphType* graph = new GraphType(nodeNum);

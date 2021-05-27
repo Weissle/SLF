@@ -30,6 +30,7 @@ class TaskDistributor {
 	bool task_avaliable = false;
 public:
 	shared_ptr<condition_variable> wakeupCV;
+	mutex wakeupMutex;
 	~TaskDistributor(){
 		//cout<<"choose heavy tasks times: "<<into_choose_count<<endl;
 		//cout<<"really choose heavy tasks times: "<<really_choose_count<<endl;
