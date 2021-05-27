@@ -23,8 +23,7 @@ class TaskDistributor {
 	size_t allow_depth_count = 0;	//It is used to guess a allow depth, owing to the "guess", we can use size_t instead of atomic_size_t;
 
 	int threadNum__;
-	mutex workingNumMutex;
-	int workingNum;
+	atomic<int32_t> workingNum;
 	
 	// also use the using_tasks_mutex ;
 	bool task_avaliable = false;
@@ -32,27 +31,25 @@ public:
 	shared_ptr<condition_variable> wakeupCV;
 	mutex wakeupMutex;
 	~TaskDistributor(){
-		//cout<<"choose heavy tasks times: "<<into_choose_count<<endl;
-		//cout<<"really choose heavy tasks times: "<<really_choose_count<<endl;
 	}
 	TaskDistributor(size_t thread_num_):threadNum__(thread_num_){
 		using_tasks.reserve(thread_num_);
 		using_tasks.emplace_back(new ShareTasksType());
 		wakeupCV = make_shared<condition_variable>();
-		//workingNum.store(0);
-		workingNum = 0;
+		workingNum.store(0);
 	}
 
-	int threadNum()const{
+	inline int threadNum()const{
 		return threadNum__;
 	}
 
-	bool end()const {
+	inline bool end()const {
 		return _end;
 	}
 
-	void SetOver() {
+	inline void SetOver() {
 		_end = true;
+		lock_guard<mutex> lg(wakeupMutex);
 		wakeupCV->notify_all();
 	}
 
@@ -78,7 +75,6 @@ public:
 			task_avaliable = true;
 		}
 		wakeupCV->notify_all();
-		//addThreadTask(&TaskDistributor<EdgeLabel,MU>::SharedTasksDistribution, this);
 	}
 	//size_t into_choose_count = 0;
 	//size_t really_choose_count = 0;
@@ -118,16 +114,14 @@ public:
 		}
 	}
 
-	void ReportBecomeLeisure(){
-		lock_guard<mutex> lg(workingNumMutex);
+	inline void ReportBecomeLeisure(){
 		workingNum--;
 		// It will only happened on this object just be instantiated and all tasks is finished ( or received limits );
 		// But this function will not be call until a match unit get a task.
-		if(workingNum == 0 && task_avaliable == false) SetOver();
+		if(workingNum.load() == 0 && task_avaliable == false) SetOver();
 	}
 
-	void ReportBecomeBusy(){
-		lock_guard<mutex> lg(workingNumMutex);
+	inline void ReportBecomeBusy(){
 		workingNum++;
 	}
 
