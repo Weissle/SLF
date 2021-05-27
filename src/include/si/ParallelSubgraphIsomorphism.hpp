@@ -16,6 +16,7 @@
 #include <thread>
 #include <chrono>
 #include "si/ShareTasksContainerPool.hpp"
+#include "si/si_marcos.h"
 
 
 using namespace std;
@@ -71,13 +72,11 @@ class MatchUnit {
 		next_tasks->giveTasks(cand_id[min_depth]);
 		// cout<<"new share task"<<endl;
 
-		auto& seq = next_tasks->targetSequence();
-		seq.reserve(min_depth);
-		seq = tasks->targetSequence();
-		const auto& state_seq = state.GetMapping(false);
-		for (int i = seq.size(); i < min_depth; ++i){ 
-			seq.push_back(state_seq[matchSequence[i]]);
-		}
+		vector<NodeIDType>& seq = next_tasks->targetSequence();
+		seq.resize(min_depth);
+		const vector<NodeIDType>& state_seq = state.GetTargetMatchSequence();
+		memcpy(seq.data(), state_seq.data(),sizeof(NodeIDType)*min_depth);
+
 		task_distributor->PassSharedTasks(next_tasks);
 	}
 	
@@ -108,27 +107,28 @@ class MatchUnit {
 
 	}
 
-	void prepareState() {
+	void prepare_all() {
+		min_depth = tasks->targetSequence().size() + 1;
+
+		//Create state --------------------------------------
 		// according to the match order
 		const auto& to_seq = tasks->targetSequence();
-		// the whole map
-		const auto& state_seq = state.GetMapping(false);
+		const auto& now_seq = state.GetTargetMatchSequence();
+
 		size_t diff_point = 0;
 		for (diff_point = 0; diff_point < to_seq.size(); ++diff_point) {
-			if (state_seq[matchSequence[diff_point]] != to_seq[diff_point])break;
+			if (now_seq[diff_point] != to_seq[diff_point])break;
 		}
 
 		while (state.depth() > diff_point) { 
 			const auto pop_query_node = matchSequence[state.depth() - 1];
 			state.RemovePair(pop_query_node); 
 		}
+
 		for (auto i = diff_point; i < to_seq.size(); ++i) {
 			state.AddPair(matchSequence[i], to_seq[i]);
 		}
-	}
-	void prepare_all() {
-		min_depth = tasks->targetSequence().size() + 1;
-		prepareState();
+		
 	}
 	void ParallelSearchOuter() {
 

@@ -36,13 +36,8 @@ public:
 		in_depth(g.Size()), out_depth(g.Size()),match_sequence(_match_sequence)
 	{}
 	void addNode(const NodeIDType id, const size_t search_depth) {
-		//const GraphType& graph = *graphPointer;
-		//		search_depth++;
-		//const auto& node = graph.node(id);
-		//for (const auto& tempEdge : node.inEdges()) {
 		for (const auto& tempEdge : graphPointer -> GetInEdges(id)) {
 			const auto& nodeID = tempEdge.source();
-			// was not be mapped and not in set in
 			if (!inSetIn(nodeID, search_depth) && inSetUnmap(nodeID, search_depth)) 	in_depth[nodeID] = search_depth;
 		}
 		for (const auto& tempEdge : graphPointer -> GetOutEdges(id)) {
@@ -76,18 +71,18 @@ private:
 	size_t search_depth = 0;
 	MapType mapping;
 	MapType mappingAux; //from target to query
+	vector<NodeIDType> targetMatchSequence__;
 
 	vector<int> inNewCount, outNewCount, bothNewCount, notNewCount;
 	//used in look forward 2 
 	void clearNewCount() {
-		for (auto i = 0; i < inNewCount.size(); ++i) {
-			inNewCount[i] = 0; 
-			outNewCount[i] = 0;
-			bothNewCount[i] = 0; 
+		const int n__ = inNewCount.size();
+		memset(inNewCount.data(),0,sizeof(int)*n__);
+		memset(outNewCount.data(),0,sizeof(int)*n__);
+		memset(bothNewCount.data(),0,sizeof(int)*n__);
 #ifdef INDUCE_ISO
-			notNewCount[i] = 0;
+		memset(notNewCount.data(),0,sizeof(int)*n__);
 #endif
-		}
 	}
 	bool checkNewCount()const {
 		for (auto i = 0; i < inNewCount.size(); ++i) {
@@ -98,11 +93,6 @@ private:
 	//check the mapping is still consistent after add this pair
 
 	bool induceCheck(const NodeIDType& query_id, const NodeIDType& target_id) {
-		//const GraphType& targetGraph = *targetGraphPtr;
-		//const GraphType& queryGraph = *queryGraphPtr;
-
-		//const auto& query_node = queryGraph.node(query_id);
-		//const auto& target_node = targetGraph.node(target_id);
 
 		int out_edge_inmap_num = 0, in_edge_inmap_num = 0;
 		clearNewCount();
@@ -118,7 +108,6 @@ private:
 				const bool o = inSetOut(target_toid);
 				const bool i = inSetIn(target_toid);
 				const bool b = (i && o);
-				//const auto label = targetGraph[target_toid].label();
 				const auto label = targetGraphPtr->GetLabel(target_toid);
 				if (b) 	bothNewCount[label]++;
 				else if (o)	outNewCount[label]++;
@@ -134,13 +123,11 @@ private:
 
 		for (const auto& tempEdge : queryGraphPtr->GetOutEdges(query_id)) {
 			const auto& query_toid = tempEdge.target();
-			//this tempnode have been mapped
 			const bool notMapped = queryStates->inSetUnmap(query_toid, search_depth);
 			if (notMapped && query_toid != query_id) {
 				const bool o = queryStates->inSetOut(query_toid, search_depth);
 				const bool i = queryStates->inSetIn(query_toid, search_depth);
 				const bool b = (o && i);
-				//const auto label = queryGraph[query_toid].label();
 				const auto label = queryGraphPtr->GetLabel(query_toid);
 				if (b) { bothNewCount[label]--; }
 				else if (o) { outNewCount[label]--; }
@@ -186,7 +173,6 @@ private:
 				const bool o = queryStates->inSetOut(query_fromid, search_depth);
 				const bool i = queryStates->inSetIn(query_fromid, search_depth);
 				const bool b = (o && i);
-				//const auto label = queryGraph[query_fromid].label();
 				const auto label = queryGraphPtr->GetLabel(query_fromid);
 				if (b) { bothNewCount[label]--; }
 				else if (o) { outNewCount[label]--; }
@@ -206,7 +192,6 @@ private:
 	bool normalCheck(const NodeIDType& query_id, const NodeIDType& target_id) {
 		clearNewCount();
 
-		//for (const auto& tempEdge : target_node.outEdges()) {
 		for (const auto& tempEdge : targetGraphPtr->GetOutEdges(target_id)) {
 			const auto& target_toid = tempEdge.target();
 			const bool notMapped = inSetUnmap(target_toid);
@@ -214,7 +199,6 @@ private:
 				const bool o = inSetOut(target_toid);
 				const bool i = inSetIn(target_toid);
 				const bool b = (i && o);
-				//const auto label = targetGraph[target_toid].label();
 				const auto label = targetGraphPtr->GetLabel(target_toid);
 				if (b) {
 					bothNewCount[label]++;
@@ -227,7 +211,6 @@ private:
 			}
 		}
 
-		//for (const auto& tempEdge : query_node.outEdges()) {
 		for (const auto& tempEdge : queryGraphPtr->GetOutEdges(query_id)) {
 			const auto& query_toid = tempEdge.target();
 			//this tempnode have been mapped
@@ -236,7 +219,6 @@ private:
 				const bool o = queryStates->inSetOut(query_toid, search_depth);
 				const bool i = queryStates->inSetIn(query_toid, search_depth);
 				const bool b = (o && i);
-				//const auto label = queryGraph[query_toid].label();
 				const auto label = queryGraphPtr->GetLabel(query_toid);
 				if (b) {
 					bothNewCount[label]--; 
@@ -259,7 +241,6 @@ private:
 		}
 		clearNewCount();
 
-		//for (const auto& tempEdge : target_node.inEdges()) {
 		for (const auto& tempEdge : targetGraphPtr->GetInEdges(target_id)) {
 			const auto& target_fromid = tempEdge.source();
 			const bool notMapped = inSetUnmap(target_fromid);
@@ -267,7 +248,6 @@ private:
 				const bool o = inSetOut(target_fromid);
 				const bool i = inSetIn(target_fromid);
 				const bool b = (o && i);
-				//const auto label = targetGraph[target_fromid].label();
 				const auto label = targetGraphPtr->GetLabel(target_fromid);
 				if (b) {
 					bothNewCount[label]++;
@@ -283,7 +263,6 @@ private:
 
 		}
 
-		//for (const auto& tempEdge : query_node.inEdges()) {
 		for (const auto& tempEdge : queryGraphPtr->GetInEdges(query_id)) {
 			const auto& query_fromid = tempEdge.source();
 			const bool notMapped = queryStates->inSetUnmap(query_fromid,search_depth);
@@ -291,7 +270,6 @@ private:
 				const bool o = queryStates->inSetOut(query_fromid,search_depth);
 				const bool i = queryStates->inSetIn(query_fromid,search_depth);
 				const bool b = (o && i);
-				//const auto label = queryGraph[query_fromid].label();
 				const auto label = queryGraphPtr->GetLabel(query_fromid);
 				if (b) {
 					bothNewCount[label]--;
@@ -323,7 +301,6 @@ private:
 		if (queryGraphPtr->GetLabel(query_id) != targetGraphPtr->GetLabel(target_id)) return false;
 		if (queryGraphPtr->GetInDegree(query_id) > targetGraphPtr->GetInDegree(target_id)) return false;
 		if (queryGraphPtr->GetOutDegree(query_id) > targetGraphPtr->GetOutDegree(target_id)) return false;
-		//if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;
 		return true;
 	}
 
@@ -336,6 +313,7 @@ public:
 
 		mappingAux.resize(targetGraphSize, NO_MAP);
 		mapping.resize(queryGraphSize, NO_MAP);
+		targetMatchSequence__.resize(queryGraphSize,NO_MAP);
 		//const auto labelNum = max(_q.maxLabel(), _t.maxLabel()) + 1;
 		uint32_t labelNum = 0;
 		for (const auto &lab:_q.GetLabels()){
@@ -377,8 +355,6 @@ public:
 	bool AddAble(const NodeIDType& query_id, const NodeIDType& target_id)
 	{
 		if (simpleAddAble(query_id, target_id) == false) return false;
-	/*	if (mappingAux[target_id] != NO_MAP) return false;
-		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false) return false;*/
 #ifdef INDUCE_ISO
 		const bool answer = induceCheck(query_id, target_id);
 #elif defined(NORMAL_ISO)
@@ -389,6 +365,7 @@ public:
 	void AddPair(const NodeIDType& query_id, const NodeIDType& target_id) {
 		mapping[query_id] = target_id;
 		mappingAux[target_id] = query_id;
+		targetMatchSequence__[search_depth] = target_id;
 		search_depth++;
 
 		const auto id = target_id;
@@ -412,18 +389,12 @@ public:
 	}
 	void RemovePair(const NodeIDType queryNodeID)  //query node id
 	{
-		//NodeIDType& targetNodeID = mapping[queryNodeID];
-		//const auto id = targetNodeID;
-		//mappingAux[targetNodeID] = NO_MAP;
-		//targetNodeID = NO_MAP;
 		const auto targetNodeID = mapping[queryNodeID];
 		mapping[queryNodeID] = NO_MAP;
 		mappingAux[targetNodeID] = NO_MAP;
 
 		const GraphType& graph = *targetGraphPtr;
-		//const auto& node = graph.node(id);
 
-		//for (const auto& tempEdge : node.inEdges()) {
 		for (const auto& tempEdge : targetGraphPtr->GetInEdges(targetNodeID)) {
 			const auto& nodeID = tempEdge.source();
 			auto& nodeDepth = in_depth[nodeID];
@@ -436,12 +407,14 @@ public:
 			if (nodeDepth == search_depth)	nodeDepth = 0;
 		}
 		search_depth--;
+		targetMatchSequence__[search_depth] = NO_MAP;
 	}
 	inline bool isCoverQueryGraph()const { return (queryGraphPtr->Size() == search_depth); }
 	MapType GetMapping(bool showNotCoverWarning = true) const {
 		if (isCoverQueryGraph() == false && showNotCoverWarning) cout << "WARNING : Map is not covering the whole quert graph\n";
 		return mapping;
 	}
+	const vector<NodeIDType>& GetTargetMatchSequence() const { return targetMatchSequence__; }
 	size_t depth() const { return search_depth; }
 
 
@@ -458,6 +431,7 @@ private:
 	size_t search_depth = 0;
 	MapType mapping;
 	MapType mappingAux; //from target to query
+	vector<NodeIDType> targetMatchSequence__;
 
 	//check the mapping is still consistent after add this pair
 
@@ -465,12 +439,9 @@ private:
 		const GraphType& targetGraph = *targetGraphPtr;
 		const GraphType& queryGraph = *queryGraphPtr;
 
-		//const auto& query_node = queryGraph.node(query_id);
-		//const auto& target_node = targetGraph.node(target_id);
 
 		int out_edge_inmap_num = 0, in_edge_inmap_num = 0;
 
-		//for (const auto& tempEdge : target_node.outEdges()) {
 		for (const auto& tempEdge : targetGraph.GetOutEdges(target_id)) {
 			const auto& target_toid = tempEdge.target();
 			const bool notMapped = inSetUnmap(target_toid);
@@ -484,10 +455,8 @@ private:
 			}
 		}
 
-		//for (const auto& tempEdge : query_node.outEdges()) {
 		for (const auto& tempEdge : queryGraph.GetOutEdges(query_id)) {
 			const auto& query_toid = tempEdge.target();
-			//this tempnode have been mapped
 			const bool notMapped = queryStates->inSetUnmap(query_toid, search_depth);
 			if (notMapped && query_toid != query_id) {
 				continue;
@@ -510,7 +479,6 @@ private:
 			}
 		}
 
-		//for (const auto& tempEdge : query_node.inEdges()) {
 		for (const auto& tempEdge : queryGraph.GetInEdges(query_id)) {
 			const auto& query_fromid = tempEdge.source();
 			const bool notMapped = queryStates->inSetUnmap(query_fromid, search_depth);
@@ -527,8 +495,6 @@ private:
 	bool inSetUnmap(NodeIDType target_id)const { return mappingAux[target_id] == NO_MAP; }
 
 	inline bool simpleAddAble(const NodeIDType& query_id, const NodeIDType& target_id)const {
-		/*if (mappingAux[target_id] != NO_MAP)return false;
-		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;*/
 		if (mappingAux[target_id] != NO_MAP)return false;
 		if (queryGraphPtr->GetLabel(query_id) != targetGraphPtr->GetLabel(target_id)) return false;
 		if (queryGraphPtr->GetInDegree(query_id) > targetGraphPtr->GetInDegree(target_id)) return false;
@@ -545,6 +511,7 @@ public:
 
 		mappingAux.resize(targetGraphSize, NO_MAP);
 		mapping.resize(queryGraphSize, NO_MAP);
+		targetMatchSequence__.resize(queryGraphSize,NO_MAP);
 	};
 	StateL() = default;
 
@@ -580,6 +547,7 @@ public:
 	void AddPair(const NodeIDType& query_id, const NodeIDType& target_id) {
 		mapping[query_id] = target_id;
 		mappingAux[target_id] = query_id;
+		targetMatchSequence__[search_depth] = query_id;
 		search_depth++;
 	}
 	void RemovePair(const NodeIDType queryNodeID)  //query node id
@@ -589,6 +557,7 @@ public:
 		mappingAux[targetNodeID] = NO_MAP;
 
 		search_depth--;
+		targetMatchSequence__[search_depth] = NO_MAP;
 	}
 	inline bool isCoverQueryGraph()const { return (queryGraphPtr->Size() == search_depth); }
 	MapType GetMapping(bool showNotCoverWarning = true) const {
@@ -596,6 +565,7 @@ public:
 		return mapping;
 	}
 	size_t depth() const { return search_depth; }
+	const vector<NodeIDType>& GetTargetMatchSequence() const { return targetMatchSequence__; }
 };
 
 template<class EdgeType>
