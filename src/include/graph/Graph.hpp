@@ -63,6 +63,13 @@ public:
 	int GetOutDegree(int id) const { return tedges[id].size(); }
 	const vector<NodeLabel>& GetLabels() const { return labels; }
 	const NodeLabel GetLabel(int id) const { return labels[id]; }
-
+	
+	// To reserve all vector to avoid cost too much time on new and delete array.(This is an option and is not necessary)
+	void reserve(int n){
+		for (int i = 0; i < _size; ++i){ 
+			tedges[i].reserve(n);
+			sedges[i].reserve(n);
+		}
+	}
 };
 }

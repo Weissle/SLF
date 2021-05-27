@@ -112,9 +112,17 @@ public:
 			f >> id >> label;
 			graph->SetNodeLabel(id, label);
 		}
+
+		bool has_reserved = false;
 		while (f.eof() == false) {
 			int edges = 0;
 			f >> edges;
+			{
+				if(has_reserved==false){
+					has_reserved = true;
+					graph->reserve(edges);
+				}
+			}
 			unordered_set< pair<size_t, size_t> ,hash_pair> s;
 			s.reserve(calHashSuitableSize(edges));
 			for (auto i = 0; i < edges; ++i) {
