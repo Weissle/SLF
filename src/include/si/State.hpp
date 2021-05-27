@@ -465,15 +465,13 @@ private:
 		const GraphType& targetGraph = *targetGraphPtr;
 		const GraphType& queryGraph = *queryGraphPtr;
 
-		const auto& query_node = queryGraph.node(query_id);
-		const auto& target_node = targetGraph.node(target_id);
+		//const auto& query_node = queryGraph.node(query_id);
+		//const auto& target_node = targetGraph.node(target_id);
 
 		int out_edge_inmap_num = 0, in_edge_inmap_num = 0;
-		// targetSourceNode is the predecessor of three typies of nodes
-		//1. not in map AND not self loop  
-		//2. self loop and 3. in map
 
-		for (const auto& tempEdge : target_node.outEdges()) {
+		//for (const auto& tempEdge : target_node.outEdges()) {
+		for (const auto& tempEdge : targetGraph.GetOutEdges(target_id)) {
 			const auto& target_toid = tempEdge.target();
 			const bool notMapped = inSetUnmap(target_toid);
 			if (notMapped && target_toid != target_id) {
@@ -482,11 +480,12 @@ private:
 			else {
 				++out_edge_inmap_num;
 				const auto query_toid = (notMapped) ? query_id : mappingAux[target_toid];
-				if (queryGraph.existEdge(query_id, query_toid, tempEdge.label()) == false) return false;
+				if (queryGraph.ExistEdge(query_id, query_toid, tempEdge.label()) == false) return false;
 			}
 		}
 
-		for (const auto& tempEdge : query_node.outEdges()) {
+		//for (const auto& tempEdge : query_node.outEdges()) {
+		for (const auto& tempEdge : queryGraph.GetOutEdges(query_id)) {
 			const auto& query_toid = tempEdge.target();
 			//this tempnode have been mapped
 			const bool notMapped = queryStates->inSetUnmap(query_toid, search_depth);
@@ -497,7 +496,8 @@ private:
 
 		}
 		if (out_edge_inmap_num) return false;
-		for (const auto& tempEdge : target_node.inEdges()) {
+		//for (const auto& tempEdge : target_node.inEdges()) {
+		for (const auto& tempEdge : targetGraph.GetInEdges(target_id)) {
 			const auto& target_fromid = tempEdge.source();
 			const bool notMapped = inSetUnmap(target_fromid);
 			if (notMapped && target_id != target_fromid) {
@@ -506,11 +506,12 @@ private:
 			else {
 				++in_edge_inmap_num;
 				const auto query_fromid = (notMapped) ? query_id : mappingAux[target_fromid];
-				if (queryGraph.existEdge(query_fromid, query_id, tempEdge.label()) == false)return false;
+				if (queryGraph.ExistEdge(query_fromid, query_id, tempEdge.label()) == false)return false;
 			}
 		}
 
-		for (const auto& tempEdge : query_node.inEdges()) {
+		//for (const auto& tempEdge : query_node.inEdges()) {
+		for (const auto& tempEdge : queryGraph.GetInEdges(query_id)) {
 			const auto& query_fromid = tempEdge.source();
 			const bool notMapped = queryStates->inSetUnmap(query_fromid, search_depth);
 			if (notMapped && query_id != query_fromid) {
@@ -526,21 +527,24 @@ private:
 	bool inSetUnmap(NodeIDType target_id)const { return mappingAux[target_id] == NO_MAP; }
 
 	inline bool simpleAddAble(const NodeIDType& query_id, const NodeIDType& target_id)const {
+		/*if (mappingAux[target_id] != NO_MAP)return false;
+		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;*/
 		if (mappingAux[target_id] != NO_MAP)return false;
-		if (queryGraphPtr->node(query_id).isSameType(targetGraphPtr->node(target_id)) == false || (targetGraphPtr->node(target_id) >= queryGraphPtr->node(query_id)) == false)	return false;
+		if (queryGraphPtr->GetLabel(query_id) != targetGraphPtr->GetLabel(target_id)) return false;
+		if (queryGraphPtr->GetInDegree(query_id) > targetGraphPtr->GetInDegree(target_id)) return false;
+		if (queryGraphPtr->GetOutDegree(query_id) > targetGraphPtr->GetOutDegree(target_id)) return false;
 		return true;
 	}
 
 public:
-	StateL(const GraphType& _q, const GraphType& _t, shared_ptr<const SubgraphMatchStates<GraphType>> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t),
+	StateL(const GraphType& _q, const GraphType& _t, shared_ptr<const SubgraphMatchStates<EdgeLabel>> _queryStates) :queryGraphPtr(&_q), targetGraphPtr(&_t),
 		queryStates(_queryStates)
 	{
-		const auto queryGraphSize = _q.size();
-		const auto targetGraphSize = _t.size();
+		const auto queryGraphSize = _q.Size();
+		const auto targetGraphSize = _t.Size();
 
 		mappingAux.resize(targetGraphSize, NO_MAP);
 		mapping.resize(queryGraphSize, NO_MAP);
-		const auto labelNum = max(_q.maxLabel(), _t.maxLabel()) + 1;
 	};
 	StateL() = default;
 
@@ -548,13 +552,15 @@ public:
 		if (queryStates->inSetIn(query_id, search_depth)) {
 			auto target_pre_index = queryStates->inDepth(query_id, search_depth);
 			auto target_pre_id = mapping[queryStates->matchID(target_pre_index - 1)];
-			const auto& edges = targetGraphPtr->node(target_pre_id).inEdges();
+			//const auto& edges = targetGraphPtr->node(target_pre_id).inEdges();
+			const auto& edges = targetGraphPtr->GetInEdges(target_pre_id);
 			container.giveTasks(edges.size(), edges.data(), TASK_TYPE::S);
 		}
 		else if (queryStates->inSetOut(query_id, search_depth)) {
 			auto target_pre_index = queryStates->outDepth(query_id, search_depth);
 			auto target_pre_id = mapping[queryStates->matchID(target_pre_index - 1)];
-			const auto& edges = targetGraphPtr->node(target_pre_id).outEdges();
+			//const auto& edges = targetGraphPtr->node(target_pre_id).outEdges();
+			const auto& edges = targetGraphPtr->GetOutEdges(target_pre_id);
 			container.giveTasks(edges.size(), edges.data(), TASK_TYPE::T);
 		}
 		else {
