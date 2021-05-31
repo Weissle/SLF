@@ -74,9 +74,12 @@ class MatchUnit {
 
 		vector<NodeIDType>& seq = next_tasks->targetSequence();
 		seq.resize(min_depth);
+		*(next_tasks->state) = state;
 		const vector<NodeIDType>& state_seq = state.GetTargetMatchSequence();
 		memcpy(seq.data(), state_seq.data(),sizeof(NodeIDType)*min_depth);
-
+		while(next_tasks->state->depth() > min_depth){
+			next_tasks->state->RemovePair(matchSequence[next_tasks->state->depth()-1]);
+		}
 		task_distributor->PassSharedTasks(next_tasks);
 	}
 	
@@ -110,9 +113,10 @@ class MatchUnit {
 	void prepare_all() {
 		min_depth = tasks->targetSequence().size() + 1;
 
+		state = *(tasks->state);
 		//Create state --------------------------------------
 		// according to the match order
-		const auto& to_seq = tasks->targetSequence();
+		/*const auto& to_seq = tasks->targetSequence();
 		const auto& now_seq = state.GetTargetMatchSequence();
 
 		size_t diff_point = 0;
@@ -127,7 +131,7 @@ class MatchUnit {
 
 		for (auto i = diff_point; i < to_seq.size(); ++i) {
 			state.AddPair(matchSequence[i], to_seq[i]);
-		}
+		}*/
 		
 	}
 	void ParallelSearchOuter() {
@@ -210,10 +214,13 @@ public:
 		size_t first_task_num = _targetGraph.Size();
 		//auto rootTask = task_distributor->getShareTasksContainer();
 		auto rootTask = share_tasks_container_pool_ptr->get();
-		rootTask->giveTasks(first_task_num);
-		task_distributor->PassSharedTasks(rootTask);
 
 		auto subgraph_states = makeSubgraphState<EdgeLabel>(_queryGraph, _match_sequence);
+
+		rootTask->giveTasks(first_task_num);
+		*(rootTask->state) = State<EdgeLabel>(_queryGraph,_targetGraph,subgraph_states);
+		task_distributor->PassSharedTasks(rootTask);
+
 		auto f = [&]() {
 			auto p = MU(_queryGraph, _targetGraph, _answer_receiver, _match_sequence, __limits, subgraph_states, task_distributor,share_tasks_container_pool_ptr);
 			task_distributor->ReportBecomeBusy();

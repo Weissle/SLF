@@ -3,8 +3,16 @@
 #include<si/si_marcos.h>
 #include<mutex>
 
+
 using namespace std;
 namespace wg{
+
+template<typename EdgeLabel>
+class State;
+
+template<typename EdgeLabel>
+class StateL;
+
 enum class TASK_TYPE{ S,T,N };//source edge , target edge , N is from 0 to targetGraph.size()
 template<class EdgeLabelType>
 class Tasks {
@@ -62,7 +70,10 @@ class ShareTasks :public Tasks<EdgeLabelType>{
 	mutex m;
 	vector<NodeIDType> target_sequence;
 public:
-	ShareTasks() = default;
+	State<EdgeLabelType> *state;
+	ShareTasks(){
+		state = new State<EdgeLabelType>();
+	}
 	const NodeIDType getTask() {
 		lock_guard<mutex> lg(m);
 		return Tasks<EdgeLabelType>::getTask();
@@ -72,6 +83,8 @@ public:
 	size_t depth()const {
 		return target_sequence.size();
 	}
-
+	~ShareTasks(){
+		delete state;
+	}
 };
 }
