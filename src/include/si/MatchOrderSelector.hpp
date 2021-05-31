@@ -67,7 +67,7 @@ class MatchOrderSelector{
 			}
 			for(auto j=queryInMax-1;j>=0;--j){
 				for(auto k=queryOutMax-1;k>=0;--k){
-					degreesCount[i][j][k] = degreesCount[i][j+1][k] + degreesCount[i][j][k+1] - degreesCount[i][j+1][k+1];
+					degreesCount[i][j][k] += degreesCount[i][j+1][k] + degreesCount[i][j][k+1] - degreesCount[i][j+1][k+1];
 				}
 			}
 		}
