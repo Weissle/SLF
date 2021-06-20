@@ -547,7 +547,7 @@ public:
 	void AddPair(const NodeIDType& query_id, const NodeIDType& target_id) {
 		mapping[query_id] = target_id;
 		mappingAux[target_id] = query_id;
-		targetMatchSequence__[search_depth] = query_id;
+		targetMatchSequence__[search_depth] = target_id;
 		search_depth++;
 	}
 	void RemovePair(const NodeIDType queryNodeID)  //query node id
