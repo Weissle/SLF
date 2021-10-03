@@ -21,6 +21,8 @@
 using namespace std;
 
 namespace wg {
+
+// Precompute the query graph's state.
 template<typename EdgeLabel>
 class SubgraphMatchStates {
 	//	size_t search_depth = 0;

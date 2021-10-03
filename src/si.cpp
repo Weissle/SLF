@@ -18,8 +18,11 @@ using namespace wg;
 typedef int EdgeLabelType;
 typedef GraphS<EdgeLabelType> GraphType;
 
+// Read the match sequence from file. 
 std::vector<NodeIDType> readMatchSequence(const std::string&);
+// Choose the match sequence. Create from query and target graphs or read from file.
 vector<NodeIDType> ChooseMatchSequence(GraphType const*, GraphType const*,const std::string&);
+
 int main(int argc, char* argv[]) {
 	
 	argh::parser cmdl({ "self-order","-so","-thread","-t","-limits","-l","-print-solution"});
@@ -43,8 +46,8 @@ int main(int argc, char* argv[]) {
 	//GraphType* queryGraph = graphReader.ReadFromBN(queryGraphPath),
 		 //*targetGraph = graphReader.ReadFromBN(targetGraphPath);
 
-	//time_t t1 = time(0);
 	auto t1 = chrono::steady_clock::now();
+
 	targetGraph->SortEdge();
 	queryGraph->SortEdge();
 
@@ -52,12 +55,14 @@ int main(int argc, char* argv[]) {
 	size_t solutions = 0;
 	size_t call_times = 0;
 
+	// multi threads
 	if (threadNum > 1) {
 		AnswerReceiverThread answerReceiver(print_solution);
 		ParallelSubgraphIsomorphism<EdgeLabelType> si;
 		si.run(*queryGraph, *targetGraph, &answerReceiver, threadNum, limits, ms);
 		solutions = answerReceiver.solutionsCount();
 	}
+	//single thread
 	else {
 		AnswerReceiver answerReceiver(print_solution);
 		SequentialSubgraphIsomorphism<EdgeLabelType> si(*queryGraph, *targetGraph, &answerReceiver, limits, ms);
@@ -65,7 +70,7 @@ int main(int argc, char* argv[]) {
 		solutions = answerReceiver.solutionsCount();
 		call_times = si.callTimes();
 	}
-	//time_t TimeC = time(0) - t1;
+
 	chrono::duration<double> costTime = (chrono::steady_clock::now()-t1);
 	delete queryGraph;
 	delete targetGraph;
@@ -108,7 +113,7 @@ vector<NodeIDType> ChooseMatchSequence(GraphType const * query, GraphType const 
 	//choose match sequence according to query and target graphs.
 	else {
 		//ms = MatchOrderSelectorType::run(*query, *target);
-		ms = orderSelector.SI(*query, *target);
+		ms = orderSelector.SLF(*query, *target);
 	}
 	//cout<<"match sequential:";
 	//for (const auto &one:ms){

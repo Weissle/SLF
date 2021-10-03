@@ -119,7 +119,7 @@ public:
 		vector<bool> chosen(n,false);
 		vector<int> connectNum(n,0);
 		vector<int> degs(n);
-		//memset(connectNum,0,sizeof(connectNum));
+
 		priority_queue<tipdc,vector<tipdc>,tipdc_cmp> pq;
 		for (int i = 0; i < n; ++i){ 
 			degs[i] = query.GetInDegree(i) + query.GetOutDegree(i);  
@@ -127,7 +127,9 @@ public:
 		}
 		unordered_set<NodeIDType> us;
 		us.reserve(n);
+
 		while(pq.size()){
+			// Get the next match node.
 			auto temp = pq.top(); pq.pop();
 			auto id = get<0>(temp);
 			if (chosen[id]) continue;
@@ -135,6 +137,7 @@ public:
 			matchSequence.push_back(id);
 			assert(get<3>(temp) == connectNum[id]);
 			us.clear();
+			// update connectNum
 			for (const auto &one:query.GetInEdges(id)){
 				int temp_id = one.source();
 				if(chosen[temp_id]) continue;
@@ -147,10 +150,12 @@ public:
 				us.insert(temp_id);
 				connectNum[temp_id]++;
 			}
+
 			for (const auto &tid:us){
 				pq.emplace(tid,possibility[tid],degs[tid],connectNum[tid]);
 			}
 		}
+
 		return matchSequence;
 
 	}
@@ -158,7 +163,8 @@ public:
 		const auto possibility = CreatePossibilitiesN(query, target);
 		return run(query,target,possibility);
 	}
-	vector<NodeIDType> SI(const Graph &query,const Graph &target){
+	// use in the paper.
+	vector<NodeIDType> SLF(const Graph &query,const Graph &target){
 		const auto possibility = CreatePossibilitiesN3(query, target);
 		return run(query,target,possibility);
 	}

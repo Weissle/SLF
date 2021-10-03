@@ -17,6 +17,7 @@ inline void printoutSolution(const vector<NodeIDType>& mapping,const size_t &no)
 	for (auto i = 0; i < mapping.size(); ++i) cout << "(" << i << ',' << mapping[i] << ") ";
 	cout << endl;
 }
+
 class AnswerReceiver {
 protected:
 	size_t count = 0;

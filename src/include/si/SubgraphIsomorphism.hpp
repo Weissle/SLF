@@ -33,10 +33,7 @@ protected:
 			this->ToDoAfterFindASolution();
 			return;
 		}
-		++hitTime;
-		if ((int)hitTime % (int)1E4 == 0) {
-			//			cout << hitTime << endl;
-		}
+		//++hitTime;
 		const auto query_id = matchSequence[searchDepth];
 		auto t1 = clock();
 		state.calCandidatePairs(query_id, cand_id[searchDepth]);
@@ -110,7 +107,7 @@ public:
 		cout << "check Canditate Pairs " << double(check) / CLOCKS_PER_SEC << endl;
 		cout << "add Canditate Pairs " << double(add) / CLOCKS_PER_SEC << endl;
 		cout << "delete Canditate Pairs " << double(del) / CLOCKS_PER_SEC << endl;
-		cout << "hit times " << hitTime << endl;
+		//cout << "hit times " << hitTime << endl;
 		cout << "canditate Pair Count " << canditatePairCount << endl;
 #else
 		sequentialSearch(0);

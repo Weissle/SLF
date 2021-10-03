@@ -21,6 +21,7 @@ private:
 	size_t _size;
 
 	GraphS()=default;
+	// copy is not allow.
 	GraphS(const GraphS&)=delete;
 public:
 	GraphS(const size_t s) :_size(s){
@@ -29,6 +30,7 @@ public:
 		sedges.resize(s);
 	}
 	void SetNodeLabel(const NodeIDType _id, const NodeLabel _label) {
+		//only allow label type from 0 1 2 3 ... n-1
 		assert((_id >= 0 && _id < _size) && "node ID overflow");
 		labels[_id] = _label;
 	}
@@ -42,8 +44,8 @@ public:
 		return _size;
 	};
 
+	// Edges with same source, target and label only leave one.
 	void SortEdge() {
-		//only allow label type from 0 1 2 3 ... n-1
 		for (int i = 0; i < _size; ++i){ 
 			sort(tedges[i].begin(), tedges[i].end());
 			sort(sedges[i].begin(), sedges[i].end());
@@ -53,10 +55,12 @@ public:
 			sedges[i].erase(sit,sedges[i].end());
 		}
 	}
+
 	bool ExistEdge(const NodeIDType& from, const NodeIDType& to, const EdgeLabel& edgeLabel)const {
 		const TEdge t(to,edgeLabel);
 		return binary_search(tedges[from].begin(), tedges[from].end(),t);
 	}
+
 	const vector<TEdge>& GetOutEdges(int id) const { return tedges[id]; }
 	const vector<SEdge>& GetInEdges(int id) const { return sedges[id]; }
 	int GetInDegree(int id) const { return sedges[id].size(); }

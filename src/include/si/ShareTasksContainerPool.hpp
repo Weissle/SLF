@@ -9,6 +9,7 @@
 using namespace std;
 namespace wg {
 
+// reuse shared tasks.
 template<typename EdgeLabel>
 class ShareTasksContainerPool{
 	using ST = ShareTasks<EdgeLabel>;
@@ -19,6 +20,7 @@ class ShareTasksContainerPool{
 	void recycle(){
 		int free_num = 0;
 		for (int i = 0; i < using_container.size(); ++i){ 
+			// use_count() == 1 means there is no thread holding it.
 			if(using_container[i].use_count()==1){
 				++free_num;
 				free_container.emplace_back(using_container[i]);
@@ -27,6 +29,7 @@ class ShareTasksContainerPool{
 				--i;
 			}
 		}
+		// if there is no shared tasks container be recycled, increase the recycle_threshold.
 		if(free_num==0) recycle_threshold++;
 	}
 public:
@@ -40,6 +43,7 @@ public:
 	}
 	shared_ptr<ST> get(){
 		lock_guard<mutex> lg(m);
+		// recycle the shared tasks containers which are not used by anyone.
 		if(recycle_threshold <= using_container.size()){
 			recycle();
 		}
