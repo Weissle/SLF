@@ -1,0 +1,23 @@
+{
+	"log":{
+		"path":"slf.log",
+		"level":"debug"
+	},
+	"slf":{
+		"thread_number":2,
+		"graph_format":"grf",
+		"max_log_results":1,
+		"search_results_limitation": 0,
+		"search_time_limitation_seconds": 0,
+		"tasks":[
+			{
+				"query": "data/query.graph",
+				"target": "data/target.graph"
+			},
+			{
+				"query": "data/si2_r001_m400.02.query.graph",
+				"target": "data/si2_r001_m400.02.target.graph"
+			}			
+		]
+	}
+}
