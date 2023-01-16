@@ -1,5 +1,4 @@
 #include "si/tasks.h"
-#include <iostream>
 namespace slf
 {
 

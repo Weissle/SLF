@@ -46,7 +46,7 @@ public:
     size_t size();
 };
 
-class shared_tasks : public tasks<true, false>
+class shared_tasks : public tasks<true, true>
 {
     std::vector<node_id_t> target_match_sequence_;
 

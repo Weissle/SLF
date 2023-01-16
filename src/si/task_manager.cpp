@@ -1,6 +1,7 @@
 #include "si/task_manager.h"
 #include "si/parallel_subgraph_isomorphism.h"
 #include <boost/format.hpp>
+
 namespace slf
 {
 
@@ -44,6 +45,8 @@ task_manager::share_tasks(tasks<false>& task,
                           const std::vector<node_id_t>& target_match_sequence)
 {
     auto ptr = shared_tasks_memory_pool_.get();
+    shared_tasks_number_.fetch_add(1, std::memory_order_relaxed);
+    shared_subtasks_number_.fetch_add(task.size(), std::memory_order_relaxed);
     ptr->transfer_tasks(task, target_match_sequence);
     shared_tasks_pool_.add(ptr);
     return ptr;
@@ -61,5 +64,22 @@ bool task_manager::check_share_qualification(size_t depth)
         return false;
 }
 
-
+task_manager::~task_manager()
+{
+    int subtask_left = 0;
+    std::shared_ptr<shared_tasks> st;
+    while (shared_tasks_pool_.get(st))
+    {
+        subtask_left += st->size();
+        st->set_tasks(nullptr, nullptr);
+        st = nullptr;
+    }
+    BOOST_LOG_TRIVIAL(debug)
+        << boost::format("task_manager::~task_manager: shared tasks number: "
+                         "[%1%], shared sub-tasks number [%2%], unused shared "
+                         "sub-tasks number [%3%]") %
+               shared_tasks_number_.load(std::memory_order_relaxed) %
+               shared_subtasks_number_.load(std::memory_order_release) %
+               subtask_left;
+}
 } // namespace slf

@@ -20,6 +20,10 @@ class task_manager
 
     shared_tasks_pool<false> shared_tasks_pool_;
 
+    atomic_size_t shared_tasks_number_{0};
+    //  A shared tasks contains many sub-tasks
+    atomic_size_t shared_subtasks_number_{0};
+
     inline void become_idle()
     {
         [[maybe_unused]] uint32_t current_working_thread =
@@ -43,6 +47,7 @@ class task_manager
 
 public:
     task_manager(subgraph_isomorphism_base* _solver);
+    ~task_manager();
     inline uint32_t thread_number() const { return thread_number_; }
 
     inline bool end_flag() const { return solver_->is_end(); }

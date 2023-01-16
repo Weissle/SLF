@@ -18,11 +18,11 @@ public:
     sequential_subgraph_isomorphism(const std::string& query,
                                     const std::string& target,
                                     const slf::config::slf_config& slf_config);
-    inline size_t results_number() const override
+    size_t results_number() const override
     {
         return results_taker_.result_number();
     }
-    inline size_t threads_number() const override { return 1; }
+    size_t threads_number() const override { return 1; }
 };
 
 } // namespace slf
