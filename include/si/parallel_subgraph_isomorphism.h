@@ -16,6 +16,8 @@ class parallel_subgraph_isomorphism_thread
 	size_t lowest_depth{0};
 	std::shared_ptr<shared_tasks> nxt_shared_task_{nullptr};
 	size_t solution_count_{0};
+    size_t shared_subtasks_count_{0};
+    size_t subtasks_count_{0};
 
 	// in memory temp variable
 	std::vector<node_id_t> target_match_sequence_;
@@ -27,7 +29,7 @@ class parallel_subgraph_isomorphism_thread
 
 public:
     parallel_subgraph_isomorphism_thread(
-        size_t id, parallel_subgraph_isomorphism* _solver);
+        size_t id, parallel_subgraph_isomorphism* _solver, std::shared_ptr<shared_tasks> root_tasks_);
     void run();
 };
 

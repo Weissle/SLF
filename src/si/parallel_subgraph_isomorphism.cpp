@@ -7,11 +7,14 @@ namespace slf
 {
 
 parallel_subgraph_isomorphism_thread::parallel_subgraph_isomorphism_thread(
-    size_t id, parallel_subgraph_isomorphism* _solver)
+    size_t id, parallel_subgraph_isomorphism* _solver,
+    std::shared_ptr<shared_tasks> root_tasks_)
     : id_(id), solver_(_solver),
       state_(*_solver->query_graph_, *_solver->target_graph_,
-             _solver->query_complete_state_sub_ptr_, _solver->preset_tasks_ptr_),
-      tasks_(_solver->query_graph_->node_number())
+             _solver->query_complete_state_sub_ptr_,
+             _solver->preset_tasks_ptr_),
+      tasks_(_solver->query_graph_->node_number()),
+      nxt_shared_task_(std::move(root_tasks_))
 {
 }
 
@@ -42,8 +45,9 @@ void parallel_subgraph_isomorphism_thread::run()
     thread_search();
     BOOST_LOG_TRIVIAL(debug)
         << boost::format("parallel_subgraph_isomorphism_thread::run: Thread "
-                         "[%1%] found [%2%] mappings.") %
-               id_ % solution_count_;
+                         "[%1%] found [%2%] mappings, finished shared sub-task "
+                         "[%3%], finished sub-task [%4%].") %
+               id_ % solution_count_ % shared_subtasks_count_ % subtasks_count_;
 }
 
 void parallel_subgraph_isomorphism_thread::search()
@@ -61,6 +65,7 @@ void parallel_subgraph_isomorphism_thread::search()
         while (tasks_[depth].get_task(target_node_id))
         {
             assert(depth == state_.depth());
+            ++subtasks_count_;
             if (!state_.add_pair_if_abbable(query_node_id, target_node_id))
                 continue;
             if (state_.cover_query_graph())
@@ -105,6 +110,7 @@ void parallel_subgraph_isomorphism_thread::thread_search()
             solver_->match_sequence_[st->target_match_sequence().size()];
         while (st->get_task(target_node_id))
         {
+            ++shared_subtasks_count_;
             if (state_.add_pair_if_abbable(query_node_id, target_node_id))
             {
                 search();
@@ -169,14 +175,16 @@ void parallel_subgraph_isomorphism::search()
     for (size_t id = 0; id < thread_number_; ++id)
     {
         threads[id] = std::thread(
-            [](size_t id, parallel_subgraph_isomorphism* solver_)
+            [](size_t id, parallel_subgraph_isomorphism* solver_,
+               std::shared_ptr<shared_tasks> root_tasks_)
             {
-                parallel_subgraph_isomorphism_thread thread_solver_(id,
-                                                                    solver_);
+                parallel_subgraph_isomorphism_thread thread_solver_(
+                    id, solver_, root_tasks_);
                 thread_solver_.run();
             },
-            id, this);
+            id, this, ptr);
     }
+    ptr = nullptr;
     for (auto& thread : threads)
     {
         if (thread.joinable())

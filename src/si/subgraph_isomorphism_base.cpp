@@ -227,7 +227,7 @@ void subgraph_isomorphism_base::run()
     BOOST_LOG_TRIVIAL(info)
         << boost::format(
                "subgraph_isomorphism_base::run: Task (query graph:[%1%] target "
-               "graph:[%2%]) is finished. Use [%3%] thread(s)."
+               "graph:[%2%]) is finished. Use [%3%] thread(s). "
                "Find mapping number [%4%]. Total Time cost: [%5%ms](w/o IO "
                "time).") %
                query_path_ % target_path_ % threads_number() %

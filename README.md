@@ -24,7 +24,7 @@ sudo apt install libboost-all-dev # We get boost-1.71, but other versions should
 git clone https://github.com/Weissle/SLF.git && cd SLF 
 mkdir build && cd build 
 cmake -DCMAKE_BUILD_TYPE=RELEASE ../ 
-# build and test
+# build
 make -j
 # test
 make test
