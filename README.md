@@ -4,7 +4,7 @@ SLF is a parallel algorithms for subgraph isomorphism.
 **Paper link**: https://www.sciencedirect.com/science/article/abs/pii/S0020025522015286  
 
 ## :warning:Warning  ##
-* If you want to re-run the experiment in the paper, please checkout `master` branch and see the `README.md` at that branch.
+* If you want to re-produce the experiment in the paper, please checkout `master` branch and see the `README.md` at that branch.
 * The same edges (same source, target and label) will only leave one.
 * This version cannot solve subgraph monomorphism problem. (WIP, need dataset to test.)
 
@@ -40,22 +40,17 @@ cat slf.log
 // Copy from the data/config.json
 {
     "log":{
-        // Log path. Log to console if the path is empty.
-        "path":"slf.log",
-        // Log level. Use "info" to ignore unimportant log.
-        "level":"debug"
+        "path":"slf.log", // Log path. Log to console if the path is empty.
+        "level":"debug"   // Log level. Use "info" to ignore unimportant log.
     },
     "slf":{
         "thread_number":2,
         "graph_format":"grf",
-        // At most log {max_log_results} mappings. 0 means unlimited.
-        "max_log_results":1,
-        // Stop searching when find {search_results_limitation} results. 0 means unlimited.
-        "search_results_limitation": 0,
-        // Stop searching when a task takes more than {search_time_limitation_seconds} seconds. 0 means unlimited.
-        "search_time_limitation_seconds": 0,
+        "max_log_results":1,                 // At most log {max_log_results} mappings. 0 means unlimited.
+        "search_results_limitation": 0,      // Stop searching when find {search_results_limitation} results. 0 means unlimited.
+        "search_time_limitation_seconds": 0, // Stop searching when a task takes more than {search_time_limitation_seconds} seconds. 0 means unlimited.
         // The task we want to run.
-        "tasks":[
+        "tasks":[         
             {
                 "query": "data/query.graph",
                 "target": "data/target.graph"
