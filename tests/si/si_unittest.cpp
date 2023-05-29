@@ -623,10 +623,10 @@ BOOST_AUTO_TEST_CASE(task_manager_share_multi_times)
                 constexpr size_t share_times = 20;
                 size_t tlen = 1000;
                 size_t ben = share_times * tlen;
+                auto ptrs = new std::unique_ptr<node_id_t[]>[share_times];
                 for (size_t i = 0; i < share_times; i++)
                 {
-                    std::unique_ptr<node_id_t[]> ptr;
-                    auto task_ptr_ = prepare_tasks<false>(tlen, true, ptr, ben);
+                    auto task_ptr_ = prepare_tasks<false>(tlen, true, ptrs[i], ben);
                     ben -= tlen;
                     auto shared_tasks_ptr_ = tm.share_tasks(*task_ptr_, {});
                     while (tm.allow_sharing_flag() == false)
