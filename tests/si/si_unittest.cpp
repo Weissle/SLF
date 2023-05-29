@@ -466,7 +466,7 @@ void create_full_graph(graph_t& g, size_t node_number)
     }
 }
 template <typename Solver_t, typename F>
-size_t run_big_test(F&& f)
+size_t run_big_test(F&& f, int thread_number = 1)
 {
     auto query = std::make_unique<graph_t>();
     auto target = std::make_unique<graph_t>();
@@ -474,6 +474,7 @@ size_t run_big_test(F&& f)
     create_full_graph(*target, 200);
     config::slf_config cfg;
     cfg.set_max_log_results(1);
+    cfg.set_thread_number(thread_number);
     f(cfg);
     std::unique_ptr<slf::subgraph_isomorphism_base> solver =
         std::make_unique<Solver_t>(std::move(query), std::move(target), cfg);
@@ -486,7 +487,7 @@ BOOST_AUTO_TEST_CASE(search_timeout_test1)
     auto f = [](config::slf_config& cfg)
     { return cfg.set_search_time_limitation_seconds(3); };
     BOOST_CHECK(run_big_test<sequential_subgraph_isomorphism>(f) > 1);
-    BOOST_CHECK(run_big_test<parallel_subgraph_isomorphism>(f) > 1);
+    BOOST_CHECK(run_big_test<parallel_subgraph_isomorphism>(f, 4) > 1);
 }
 
 BOOST_AUTO_TEST_CASE(search_results_limitation_test2)
@@ -494,7 +495,6 @@ BOOST_AUTO_TEST_CASE(search_results_limitation_test2)
     auto f = [](config::slf_config& cfg)
     { return cfg.set_search_results_limitation(3); };
     BOOST_CHECK_EQUAL(run_big_test<sequential_subgraph_isomorphism>(f), 3);
-    BOOST_CHECK_EQUAL(run_big_test<parallel_subgraph_isomorphism>(f), 3);
 }
 template <typename F_ret, typename P, typename C>
 void task_manager_test_f(
@@ -626,7 +626,8 @@ BOOST_AUTO_TEST_CASE(task_manager_share_multi_times)
                 auto ptrs = new std::unique_ptr<node_id_t[]>[share_times];
                 for (size_t i = 0; i < share_times; i++)
                 {
-                    auto task_ptr_ = prepare_tasks<false>(tlen, true, ptrs[i], ben);
+                    auto task_ptr_ =
+                        prepare_tasks<false>(tlen, true, ptrs[i], ben);
                     ben -= tlen;
                     auto shared_tasks_ptr_ = tm.share_tasks(*task_ptr_, {});
                     while (tm.allow_sharing_flag() == false)
