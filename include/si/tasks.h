@@ -21,7 +21,6 @@ class tasks
 
     add_atomic_if_multithread<const node_id_t*> begin_{nullptr};
     const node_id_t* end_{nullptr};
-    add_atomic_if_multithread<size_t> size_{0};
 
 public:
     tasks() = default;

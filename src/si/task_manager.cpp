@@ -79,7 +79,7 @@ task_manager::~task_manager()
                          "[%1%], shared sub-tasks number [%2%], unused shared "
                          "sub-tasks number [%3%]") %
                shared_tasks_number_.load(std::memory_order_relaxed) %
-               shared_subtasks_number_.load(std::memory_order_release) %
+               shared_subtasks_number_.load(std::memory_order_relaxed) %
                subtask_left;
 }
 } // namespace slf

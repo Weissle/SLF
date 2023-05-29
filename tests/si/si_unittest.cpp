@@ -71,7 +71,8 @@ BOOST_AUTO_TEST_CASE(results_taker_multithread)
 }
 
 template <bool multi_thread>
-auto prepare_tasks(size_t len, bool inc, std::unique_ptr<node_id_t[]>& ids, size_t bgn = 0)
+auto prepare_tasks(size_t len, bool inc, std::unique_ptr<node_id_t[]>& ids,
+                   size_t bgn = 0)
 {
     static std::vector<source_edge_t> source_edges_;
     static std::vector<target_edge_t> target_edges_;
@@ -250,9 +251,10 @@ std::unique_ptr<graph_t> create_query_graph()
 std::unique_ptr<graph_t> create_target_graph()
 {
     auto ret = std::make_unique<graph_t>();
-	std::vector<int> group_node = {3,3,3,4};
-	int group = 0;
-    ret->set_node_number(std::accumulate(group_node.begin(),group_node.end(),0));
+    std::vector<int> group_node = {3, 3, 3, 4};
+    int group = 0;
+    ret->set_node_number(
+        std::accumulate(group_node.begin(), group_node.end(), 0));
     int id_offset = 0;
     // group 1: match
     ret->set_node_label(0 + id_offset, 0);
@@ -428,7 +430,8 @@ BOOST_AUTO_TEST_CASE(state_test1)
     check(offset);
 }
 
-BOOST_AUTO_TEST_CASE(sequential_subgraph_isomorphism_test1){
+BOOST_AUTO_TEST_CASE(sequential_subgraph_isomorphism_test1)
+{
     auto query = create_query_graph();
     auto target = create_target_graph();
     config::slf_config cfg;
@@ -439,13 +442,14 @@ BOOST_AUTO_TEST_CASE(sequential_subgraph_isomorphism_test1){
     BOOST_CHECK_EQUAL(solver.results_number(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(parallel_subgraph_isomorphism_test1){
+BOOST_AUTO_TEST_CASE(parallel_subgraph_isomorphism_test1)
+{
     auto query = create_query_graph();
     auto target = create_target_graph();
     config::slf_config cfg;
     cfg.set_max_log_results(1);
     parallel_subgraph_isomorphism solver(std::move(query), std::move(target),
-                                           cfg);
+                                         cfg);
     solver.run();
     BOOST_CHECK_EQUAL(solver.results_number(), 1);
 }

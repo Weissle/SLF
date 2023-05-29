@@ -1,6 +1,7 @@
 #pragma once
 #include <chrono>
 #include <unordered_map>
+#include <string>
 namespace slf
 {
 

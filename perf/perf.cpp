@@ -18,9 +18,11 @@ void tasks_test_f(benchmark::State& state)
         benchmark::ClobberMemory();
         while (tasks_.get_task(id))
         {
+            auto s = tasks_.size();
+            auto e = tasks_.empty();
             benchmark::DoNotOptimize(id);
-            benchmark::DoNotOptimize(tasks_.size());
-            benchmark::DoNotOptimize(tasks_.empty());
+            benchmark::DoNotOptimize(s);
+            benchmark::DoNotOptimize(e);
         }
     }
 }

@@ -7,15 +7,13 @@ void tasks<false>::set_tasks(const node_id_t* _begin, const node_id_t* _end)
 {
     begin_ = _begin;
     end_ = _end;
-    size_ = end_ - begin_;
 }
 template <>
 size_t tasks<false>::size() const
 {
-    assert(static_cast<size_t>(end_ - begin_) == size_);
-    return size_;
+    assert(end_ >= begin_);
+    return end_ - begin_;
 }
-
 
 template <>
 bool tasks<false>::get_task(node_id_t& id)
@@ -25,22 +23,21 @@ bool tasks<false>::get_task(node_id_t& id)
         return false;
     id = *begin_;
     begin_++;
-    size_--;
     return true;
 }
 
 template <>
 void tasks<true>::set_tasks(const node_id_t* _begin, const node_id_t* _end)
 {
-    begin_.store(_begin, std::memory_order_relaxed);
     end_ = _end;
-    size_.store(_end - _begin, std::memory_order_release);
+    begin_.store(_begin, std::memory_order_release);
 }
 
 template <>
 size_t tasks<true>::size() const
 {
-    return size_.load(std::memory_order_relaxed);
+    auto it = begin_.load(std::memory_order_acquire);
+    return (end_ > it) ? end_ - it : 0;
 }
 
 template <>
@@ -51,7 +48,6 @@ bool tasks<true>::get_task(node_id_t& id)
     if (it >= end_)
         return false;
     id = *it;
-    size_.fetch_sub(1, std::memory_order_release);
     return true;
 }
 
@@ -79,7 +75,7 @@ bool shared_tasks::transfer_tasks(
 {
     target_match_sequence_ = target_match_sequence;
     set_tasks(task.begin_, task.end_);
-    task.set_tasks(nullptr,nullptr);
+    task.set_tasks(nullptr, nullptr);
     return true;
 }
 

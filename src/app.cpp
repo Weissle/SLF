@@ -61,14 +61,14 @@ void initialize_logger(std::string log_path, std::string log_level)
         level = boost::log::trivial::severity_level::trace;
     else if (log_level == "debug")
         level = boost::log::trivial::severity_level::debug;
-    else if (log_level == "info")
-        level = boost::log::trivial::severity_level::info;
     else if (log_level == "warning")
         level = boost::log::trivial::severity_level::warning;
     else if (log_level == "error")
         level = boost::log::trivial::severity_level::error;
     else if (log_level == "fatal")
         level = boost::log::trivial::severity_level::fatal;
+    else // if (log_level == "info")
+        level = boost::log::trivial::severity_level::info;
     boost::log::core::get()->set_filter(boost::log::trivial::severity >= level);
 }
 } // namespace slf
