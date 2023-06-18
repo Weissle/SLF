@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.10)
 
 project (subgraph-isomorphism)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
@@ -9,11 +9,13 @@ add_compile_options(-Wall -Wextra -pedantic -Werror)
 IF(UNIX)
 	link_libraries(pthread)
 ENDIF()
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 # BOOST 
 SET(Boost_USE_STATIC_LIBS ON) 
 find_package(Boost REQUIRED COMPONENTS program_options log log_setup)
 include_directories(${Boost_INCLUDE_DIRS})
+
+find_package(OpenMP)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 enable_testing()
@@ -32,4 +34,4 @@ add_executable(slf
 	./src/si/state.cpp
 	./src/si/tasks.cpp
 )
-target_link_libraries(slf ${Boost_LIBRARIES} )
+target_link_libraries(slf ${Boost_LIBRARIES} OpenMP::OpenMP_CXX)

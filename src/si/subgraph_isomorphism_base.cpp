@@ -6,6 +6,7 @@
 #include <boost/log/trivial.hpp>
 #include <chrono>
 #include <cstring>
+#include <omp.h>
 
 namespace slf
 {
@@ -205,6 +206,7 @@ void subgraph_isomorphism_base::stop()
 
 void subgraph_isomorphism_base::run()
 {
+    omp_set_num_threads(threads_number());
     if (!read_query_graph() || !read_target_graph())
     {
         BOOST_LOG_TRIVIAL(error)

@@ -2,6 +2,7 @@
 #include "tools/timer.h"
 #include <boost/format.hpp>
 #include <boost/log/trivial.hpp>
+#include <omp.h>
 
 namespace slf
 {
@@ -35,9 +36,9 @@ void parallel_subgraph_isomorphism_thread::try_to_share()
         target_match_sequence_.insert(target_match_sequence_.end(),
                                       cur_tms.begin(),
                                       cur_tms.begin() + lowest_depth);
-		assert(tasks_[lowest_depth].size() > 0);
-                nxt_shared_task_ = tm.share_tasks(tasks_[lowest_depth],
-                                                  target_match_sequence_);
+        assert(tasks_[lowest_depth].size() > 0);
+        nxt_shared_task_ =
+            tm.share_tasks(tasks_[lowest_depth], target_match_sequence_);
     }
 }
 void parallel_subgraph_isomorphism_thread::run()
@@ -56,7 +57,7 @@ void parallel_subgraph_isomorphism_thread::search()
     const auto& match_sequence = solver_->match_sequence_;
     node_id_t query_node_id, target_node_id;
     size_t depth = state_.depth();
-	const size_t start_depth = depth;
+    const size_t start_depth = depth;
     state_.get_tasks(match_sequence[depth], tasks_[depth]);
     while (!solver_->is_end())
     {
@@ -140,7 +141,7 @@ void parallel_subgraph_isomorphism_thread::prepare_state(
         assert(state_.addable(qms[i], tms[i]));
         state_.add_pair(qms[i], tms[i]);
     }
-	lowest_depth = state_.depth();
+    lowest_depth = state_.depth();
 }
 
 parallel_subgraph_isomorphism::parallel_subgraph_isomorphism(
@@ -172,23 +173,11 @@ void parallel_subgraph_isomorphism::search()
     tasks<false> t;
     preset_tasks_ptr_->get_tasks(std::nullopt, std::nullopt, t);
     auto ptr = task_manager_.share_tasks(t, {});
-    for (size_t id = 0; id < thread_number_; ++id)
+#pragma omp parallel
     {
-        threads[id] = std::thread(
-            [](size_t id, parallel_subgraph_isomorphism* solver_,
-               std::shared_ptr<shared_tasks> root_tasks_)
-            {
-                parallel_subgraph_isomorphism_thread thread_solver_(
-                    id, solver_, root_tasks_);
-                thread_solver_.run();
-            },
-            id, this, ptr);
-    }
-    ptr = nullptr;
-    for (auto& thread : threads)
-    {
-        if (thread.joinable())
-            thread.join();
+        parallel_subgraph_isomorphism_thread thread_solver_(
+            omp_get_thread_num(), this, ptr);
+        thread_solver_.run();
     }
 }
 
