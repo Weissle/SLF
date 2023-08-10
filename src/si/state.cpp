@@ -257,10 +257,10 @@ preset_tasks::create_preset_tasks(const graph_t& g)
     return std::shared_ptr<const preset_tasks>(ptr);
 }
 
-state::state(const graph_t& query, const graph_t& target,
-             std::shared_ptr<const query_complete_sub_state>&
-                 _query_complete_sub_state_ptr,
-             std::shared_ptr<const preset_tasks>& _preset_tasks_ptr)
+state_base::state_base(const graph_t& query, const graph_t& target,
+                       std::shared_ptr<const query_complete_sub_state>&
+                           _query_complete_sub_state_ptr,
+                       std::shared_ptr<const preset_tasks>& _preset_tasks_ptr)
     : query_(query), target_(target),
       query_complete_sub_state_ptr_(_query_complete_sub_state_ptr),
       preset_tasks_ptr_(_preset_tasks_ptr),
@@ -272,7 +272,7 @@ state::state(const graph_t& query, const graph_t& target,
     mapping_rev_.resize(target_node_number, error_node_id);
 }
 
-void state::add_pair(node_id_t query_node_id, node_id_t target_node_id)
+void state_base::add_pair(node_id_t query_node_id, node_id_t target_node_id)
 {
     assert(addable(query_node_id, target_node_id));
     assert(query_node_id ==
@@ -283,11 +283,9 @@ void state::add_pair(node_id_t query_node_id, node_id_t target_node_id)
     target_sub_state_.add_node(target_.get_node(target_node_id));
 }
 
-bool state::addable(node_id_t query_node_id, node_id_t target_node_id) const
+bool state_base::addable_basic(node_id_t query_node_id,
+                               node_id_t target_node_id) const
 {
-    assert(mapping_[query_node_id] == error_node_id);
-    assert(query_node_id ==
-           query_complete_sub_state_ptr_->match_id(depth_ + 1));
     if (mapping_rev_[target_node_id] != error_node_id)
         return false;
     auto& query_node = query_.get_node(query_node_id);
@@ -298,6 +296,60 @@ bool state::addable(node_id_t query_node_id, node_id_t target_node_id) const
         return false;
     if (query_node.get_self_loop() != target_node.get_self_loop())
         return false;
+    return true;
+}
+
+void state_base::remove_pair()
+{
+    auto query_node_id = query_complete_sub_state_ptr_->match_id(depth_);
+    auto target_node_id = mapping_[query_node_id];
+    assert(target_sub_state_.match_id(depth_) == mapping_[query_node_id]);
+    mapping_[query_node_id] = mapping_rev_[target_node_id] = error_node_id;
+    --depth_;
+}
+
+bool state_base::cover_query_graph() const
+{
+    return depth_ == query_.node_number();
+}
+
+const std::vector<node_id_t>& state_base::mapping() const { return mapping_; }
+
+const std::vector<node_id_t>& state_base::target_match_sequence() const
+{
+    return target_sub_state_.match_sequence();
+}
+
+void state_base::get_tasks(node_id_t query_id, tasks<false>& task)
+{
+    auto in_dep = query_complete_sub_state_ptr_->in_depth(query_id, depth_);
+    auto out_dep = query_complete_sub_state_ptr_->out_depth(query_id, depth_);
+    std::optional<node_id_t> in_id, out_id;
+    if (in_dep)
+        in_id.emplace(target_sub_state_.match_id(in_dep.value()));
+    if (out_dep)
+        out_id.emplace(target_sub_state_.match_id(out_dep.value()));
+    preset_tasks_ptr_->get_tasks(in_id, out_id, task);
+}
+
+state::state(const graph_t& query, const graph_t& target,
+             std::shared_ptr<const query_complete_sub_state>&
+                 _query_complete_sub_state_ptr,
+             std::shared_ptr<const preset_tasks>& _preset_tasks_ptr)
+    : state_base(query, target, _query_complete_sub_state_ptr,
+                 _preset_tasks_ptr)
+{
+}
+
+bool state::addable(node_id_t query_node_id, node_id_t target_node_id) const
+{
+    assert(mapping_[query_node_id] == error_node_id);
+    assert(query_node_id ==
+           query_complete_sub_state_ptr_->match_id(depth_ + 1));
+    if (addable_basic(query_node_id, target_node_id) == false)
+        return false;
+    auto& query_node = query_.get_node(query_node_id);
+    auto& target_node = target_.get_node(target_node_id);
     size_t in{0}, out{0}, both{0}, not_{0};
     size_t source_mapped_num{0}, target_mapped_num{0};
     for (const auto& e : target_node.source_edges())
@@ -381,26 +433,6 @@ bool state::addable(node_id_t query_node_id, node_id_t target_node_id) const
     return true;
 }
 
-void state::remove_pair()
-{
-    auto query_node_id = query_complete_sub_state_ptr_->match_id(depth_);
-    auto target_node_id = target_sub_state_.match_id(depth_);
-    assert(mapping_[query_node_id] == target_node_id &&
-           mapping_rev_[target_node_id] == query_node_id);
-    mapping_[query_node_id] = mapping_rev_[target_node_id] = error_node_id;
-    target_sub_state_.remove_node();
-    --depth_;
-}
-
-bool state::cover_query_graph() const { return depth_ == query_.node_number(); }
-
-const std::vector<node_id_t>& state::mapping() const { return mapping_; }
-
-const std::vector<node_id_t>& state::target_match_sequence() const
-{
-    return target_sub_state_.match_sequence();
-}
-
 bool state::add_pair_if_abbable(node_id_t query_node_id,
                                 node_id_t target_node_id)
 {
@@ -412,16 +444,80 @@ bool state::add_pair_if_abbable(node_id_t query_node_id,
     return false;
 }
 
-void state::get_tasks(node_id_t query_id, tasks<false>& task)
+statel::statel(const graph_t& query, const graph_t& target,
+               std::shared_ptr<const query_complete_sub_state>&
+                   _query_complete_sub_state_ptr,
+               std::shared_ptr<const preset_tasks>& _preset_tasks_ptr)
+    : state_base(query, target, _query_complete_sub_state_ptr,
+                 _preset_tasks_ptr)
 {
-    auto in_dep = query_complete_sub_state_ptr_->in_depth(query_id, depth_);
-    auto out_dep = query_complete_sub_state_ptr_->out_depth(query_id, depth_);
-    std::optional<node_id_t> in_id, out_id;
-    if (in_dep)
-        in_id.emplace(target_sub_state_.match_id(in_dep.value()));
-    if (out_dep)
-        out_id.emplace(target_sub_state_.match_id(out_dep.value()));
-    preset_tasks_ptr_->get_tasks(in_id, out_id, task);
+}
+
+bool statel::add_pair_if_abbable(node_id_t query_node_id,
+                                 node_id_t target_node_id)
+{
+    if (addable(query_node_id, target_node_id))
+    {
+        add_pair(query_node_id, target_node_id);
+        return true;
+    }
+    return false;
+}
+
+bool statel::addable(node_id_t query_node_id, node_id_t target_node_id) const
+{
+    assert(mapping_[query_node_id] == error_node_id);
+    assert(query_node_id ==
+           query_complete_sub_state_ptr_->match_id(depth_ + 1));
+    if (addable_basic(query_node_id, target_node_id) == false)
+        return false;
+
+    auto& query_node = query_.get_node(query_node_id);
+    auto& target_node = target_.get_node(target_node_id);
+    size_t source_mapped_num{0}, target_mapped_num{0};
+    for (const auto& e : target_node.source_edges())
+    {
+        auto source = e.source();
+        assert(source != target_node_id);
+        auto unmapped = target_sub_state_.unmapped(source, depth_);
+        if (!unmapped)
+        {
+            ++source_mapped_num;
+            assert(mapping_rev_[source] != error_node_id);
+            if (!query_.has_edge(mapping_rev_[source], query_node_id,
+                                 e.label()))
+                return false;
+        }
+    }
+
+    const auto& source_count_info_ =
+        query_complete_sub_state_ptr_->source_info(query_node, depth_);
+    assert(source_count_info_.mapped_ >= source_mapped_num);
+    if (source_mapped_num < source_count_info_.mapped_)
+        return false;
+
+    for (const auto& e : target_node.target_edges())
+    {
+        auto target = e.target();
+        assert(target != target_node_id);
+        auto unmapped = target_sub_state_.unmapped(target, depth_);
+        if (!unmapped)
+        {
+            ++target_mapped_num;
+            assert(mapping_rev_[target] != error_node_id);
+            if (!query_.has_edge(query_node_id, mapping_rev_[target],
+                                 e.label()))
+                return false;
+        }
+    }
+
+    assert(target_count_info_.mapped_ >= target_mapped_num);
+    const auto& target_count_info_ =
+        query_complete_sub_state_ptr_->target_info(query_node, depth_);
+    if (target_mapped_num < target_count_info_.mapped_)
+        return false;
+
+    return true;
 }
 
 } // namespace slf

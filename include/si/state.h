@@ -78,32 +78,53 @@ public:
     create_preset_tasks(const graph_t& g);
 };
 
-class state
+class state_base
+{
+public:
+    state_base(const graph_t& query, const graph_t& target,
+               std::shared_ptr<const query_complete_sub_state>&
+                   _query_complete_sub_state_ptr,
+               std::shared_ptr<const preset_tasks>& _preset_tasks_ptr);
+
+    void add_pair(node_id_t query_node_id, node_id_t target_node_id);
+    void remove_pair();
+    bool cover_query_graph() const;
+    const std::vector<node_id_t>& mapping() const;
+    const std::vector<node_id_t>& target_match_sequence() const;
+    void get_tasks(node_id_t query_id, tasks<false>& task);
+    size_t depth() const { return depth_; }
+
+protected:
+    bool addable_basic(node_id_t query_node_id, node_id_t target_node_id) const;
+    const graph_t &query_, &target_;
+    size_t depth_{0}; // how many node in mapping
+    std::vector<node_id_t> mapping_, mapping_rev_;
+    std::shared_ptr<const query_complete_sub_state>
+        query_complete_sub_state_ptr_;
+    std::shared_ptr<const preset_tasks> preset_tasks_ptr_;
+    compress_sub_state target_sub_state_;
+};
+
+class state : public state_base
 {
 public:
     state(const graph_t& query, const graph_t& target,
           std::shared_ptr<const query_complete_sub_state>&
               _query_complete_sub_state_ptr,
           std::shared_ptr<const preset_tasks>& _preset_tasks_ptr);
-    void remove_pair();
-    bool cover_query_graph() const;
-    const std::vector<node_id_t>& mapping() const;
     const std::vector<node_id_t>& target_match_sequence() const;
     bool addable(node_id_t query_node_id, node_id_t target_node_id) const;
-    void add_pair(node_id_t query_node_id, node_id_t target_node_id);
     bool add_pair_if_abbable(node_id_t query_node_id, node_id_t target_node_id);
-    void get_tasks(node_id_t query_id, tasks<false>& task);
-
-    size_t depth() const { return depth_; }
-
-private:
-    const graph_t &query_, &target_;
-    size_t depth_{0}; // how many node in mapping
-    std::shared_ptr<const query_complete_sub_state>
-        query_complete_sub_state_ptr_;
-    std::shared_ptr<const preset_tasks> preset_tasks_ptr_;
-    compress_sub_state target_sub_state_;
-    std::vector<node_id_t> mapping_, mapping_rev_;
 };
 
+class statel : public state_base
+{
+public:
+    statel(const graph_t& query, const graph_t& target,
+           std::shared_ptr<const query_complete_sub_state>&
+               _query_complete_sub_state_ptr,
+           std::shared_ptr<const preset_tasks>& _preset_tasks_ptr);
+    bool addable(node_id_t query_node_id, node_id_t target_node_id) const;
+    bool add_pair_if_abbable(node_id_t query_node_id, node_id_t target_node_id);
+};
 } // namespace slf
